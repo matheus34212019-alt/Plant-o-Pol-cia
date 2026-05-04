@@ -2237,3 +2237,4 @@ function salvarExtra() {
     renderDiario(vDate);
     updateDashboard();
 }
+//trigger deploy
