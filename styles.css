@@ -138,6 +138,23 @@ body {
 .priority-row:first-of-type { border-top: 0; }
 .priority-row span { color: #fbbf24; font-weight: 900; white-space: nowrap; }
 .priority-row .mini-bar { grid-column: 1 / -1; width: 100%; }
+.profile-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; align-items: start; }
+.profile-main-card { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 18px; border-color: rgba(56, 189, 248, 0.34); }
+.profile-avatar { width: 76px; height: 76px; border-radius: 22px; overflow: hidden; background: linear-gradient(135deg, var(--accent-strong), #0f766e); color: white; display: grid; place-items: center; font-size: 1.4rem; font-weight: 900; flex-shrink: 0; }
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.profile-main-card small { color: var(--accent); font-weight: 900; text-transform: uppercase; font-size: 0.68rem; }
+.profile-main-card h3 { margin: 6px 0; color: #f8fafc; font-size: 1.35rem; }
+.profile-main-card p, .profile-actions-card p { color: var(--text-sec); font-weight: 700; line-height: 1.5; }
+.profile-info-card { display: grid; gap: 12px; }
+.profile-info-row { background: #0f172a; border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: grid; gap: 6px; }
+.profile-info-row span { color: var(--text-sec); font-size: 0.68rem; font-weight: 900; text-transform: uppercase; }
+.profile-info-row strong { color: #f8fafc; overflow-wrap: anywhere; }
+.profile-actions-card { grid-column: 1 / -1; display: grid; gap: 10px; }
+.profile-actions-card .btn { width: fit-content; }
+.profile-deadline-card { grid-column: 1 / -1; display: grid; gap: 8px; }
+.profile-deadline-card input { max-width: 260px; }
+.profile-deadline-card .btn { width: fit-content; }
+.deadline-preview { width: fit-content; max-width: 100%; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.24); color: #bae6fd; border-radius: 999px; padding: 8px 12px; font-size: 0.78rem; font-weight: 900; }
 
 input, textarea, select {
     width: 100%;
@@ -266,6 +283,8 @@ label { font-size: 0.8rem; font-weight: 700; }
     .main { padding: 24px; }
     .stats-grid { grid-template-columns: 1fr; }
     .perf-kpi-grid, .perf-grid { grid-template-columns: 1fr; }
+    .profile-grid, .profile-main-card { grid-template-columns: 1fr; }
+    .profile-actions-card .btn, .profile-deadline-card .btn, .profile-deadline-card input { width: 100%; max-width: none; }
     .priority-row, .perf-question-row { grid-template-columns: 1fr; }
     .welcome-box, .page-header { align-items: flex-start; flex-direction: column; }
     .base-summary { grid-template-columns: 1fr 1fr; }
