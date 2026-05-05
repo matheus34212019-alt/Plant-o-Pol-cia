@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plantão Polícia v.122</title>
+    <title>Plantão v.123</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,7 +12,7 @@
 <body>
     <div id="login-screen">
         <div class="login-card">
-            <h2 style="font-weight:800; margin-bottom:20px;">PLANTÃO POLÍCIA</h2>
+            <h2 style="font-weight:800; margin-bottom:20px;">PLANTÃO</h2>
             <button class="btn google-btn" style="width:100%;" onclick="loginGoogle()"><i class="fab fa-google"></i> ENTRAR COM GOOGLE</button>
             <div id="cloud-login-status" class="login-status">Modo local disponivel enquanto o Supabase nao estiver conectado.</div>
             <div class="login-divider"><span>ou acesso local</span></div>
@@ -97,7 +97,7 @@
     <div id="toast-area" class="toast-area"></div>
 
     <aside class="sidebar">
-        <div class="logo-box"><i class="fas fa-shield-halved"></i> PLANTÃO POLÍCIA</div>
+        <div class="logo-box"><i class="fas fa-shield-halved"></i> PLANTÃO</div>
         <div class="nav-item active" onclick="showTab('diaria', this)"><i class="fas fa-calendar-day"></i><span>Painel Hoje</span></div>
         <div class="nav-item" onclick="showTab('semanal', this)"><i class="fas fa-calendar-week"></i><span>Cronograma</span></div>
         <div class="nav-item" onclick="showTab('performance', this)"><i class="fas fa-chart-pie"></i><span>Meu Desempenho</span></div>
@@ -263,4 +263,4 @@
     <script src="script.js"></script>
 </body>
 </html>
-<!-- deploy: v122-utf8-supabase-fix -->
+<!-- deploy: v123-brand-plantao -->
