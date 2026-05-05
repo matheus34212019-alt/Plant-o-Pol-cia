@@ -91,6 +91,18 @@ function setCloudStatus(texto) {
     if(el) el.innerText = texto;
 }
 
+function mostrarTelaLogin() {
+    const tela = document.getElementById('login-screen');
+    if(tela) tela.style.display = 'flex';
+    const pass = document.getElementById('pass-input');
+    if(pass) pass.value = '';
+}
+
+function ocultarTelaLogin() {
+    const tela = document.getElementById('login-screen');
+    if(tela) tela.style.display = 'none';
+}
+
 function nomeUsuario() {
     if(!cloudUser) return 'Matheus';
     const meta = cloudUser.user_metadata || {};
@@ -173,7 +185,7 @@ async function initSupabaseAuth() {
             cloudUser = {...data.session.user, provider: 'supabase'};
             setCloudStatus(`Conectado como ${cloudUser.email || 'Google'}`);
             await carregarDadosDaNuvem();
-            document.getElementById('login-screen').style.display = 'none';
+            ocultarTelaLogin();
             atualizarPersonalizacao();
             init();
         }
@@ -182,12 +194,13 @@ async function initSupabaseAuth() {
             if(cloudUser) {
                 setCloudStatus(`Conectado como ${cloudUser.email || 'Google'}`);
                 await carregarDadosDaNuvem();
-                document.getElementById('login-screen').style.display = 'none';
+                ocultarTelaLogin();
                 atualizarPersonalizacao();
                 init();
             } else {
                 setCloudStatus('Entre com Google para sincronizar na nuvem.');
                 atualizarPersonalizacao();
+                mostrarTelaLogin();
             }
         });
         return true;
@@ -212,12 +225,13 @@ function initFirebaseAuth() {
             if(user) {
                 setCloudStatus(`Conectado como ${user.email || user.displayName || 'Google'}`);
                 await carregarDadosDaNuvem();
-                document.getElementById('login-screen').style.display = 'none';
+                ocultarTelaLogin();
                 atualizarPersonalizacao();
                 init();
             } else {
                 setCloudStatus('Entre com Google para sincronizar na nuvem.');
                 atualizarPersonalizacao();
+                mostrarTelaLogin();
             }
         });
     } catch(e) {
@@ -256,17 +270,18 @@ async function loginGoogle() {
 }
 
 async function sairGoogle() {
-    if(supabaseClient) {
-        await supabaseClient.auth.signOut();
+    try {
+        clearTimeout(cloudSaveTimer);
+        if(supabaseClient) await supabaseClient.auth.signOut();
+        if(firebaseAuth) await firebaseAuth.signOut();
+    } catch(e) {
+        setCloudStatus('Sessao local encerrada. Entre novamente com Google.');
+    } finally {
         cloudUser = null;
         atualizarPersonalizacao();
-        document.getElementById('login-screen').style.display = 'flex';
-        return;
+        renderPerfil();
+        mostrarTelaLogin();
     }
-    if(firebaseAuth) await firebaseAuth.signOut();
-    cloudUser = null;
-    atualizarPersonalizacao();
-    document.getElementById('login-screen').style.display = 'flex';
 }
 
 function refDadosUsuario() {
@@ -428,7 +443,7 @@ normalizarBanco();
 function checkAccess() {
     if(document.getElementById('pass-input').value === "123") {
         cloudUser = null;
-        document.getElementById('login-screen').style.display = 'none';
+        ocultarTelaLogin();
         atualizarPersonalizacao();
         init();
     }
