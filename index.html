@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plantão v.123</title>
+    <title>Plantão v.125</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -101,6 +101,7 @@
         <div class="nav-item active" onclick="showTab('diaria', this)"><i class="fas fa-calendar-day"></i><span>Painel Hoje</span></div>
         <div class="nav-item" onclick="showTab('semanal', this)"><i class="fas fa-calendar-week"></i><span>Cronograma</span></div>
         <div class="nav-item" onclick="showTab('performance', this)"><i class="fas fa-chart-pie"></i><span>Meu Desempenho</span></div>
+        <div class="nav-item" onclick="showTab('perfil', this)"><i class="fas fa-user-circle"></i><span>Meu Perfil</span></div>
         <div class="nav-item" onclick="toggleSub()"><i class="fas fa-sliders"></i><span>Meu Plano</span><i class="fas fa-chevron-down" style="margin-left:auto;"></i></div>
         <div id="sub-plano" class="submenu">
             <div class="sub-link" onclick="showTab('edital')">Importar Edital</div>
@@ -128,7 +129,7 @@
 
             <div id="diaria" class="page active">
                 <div class="welcome-box">
-                    <h3 style="margin:0;">FORÇA E HONRA, MATHEUS! 👮‍♂️</h3>
+                    <h3 id="welcome-title" style="margin:0;">FORÇA E HONRA!</h3>
                     <div id="streak-info"><i class="fas fa-fire"></i> STREAK: <span id="streak-val">0</span> DIAS</div>
                 </div>
                 <div class="stat-card cycle-card">
@@ -183,6 +184,16 @@
                 <div id="perf-questoes" class="perf-page"></div>
                 <div id="perf-melhores" class="perf-page"></div>
                 <div id="perf-prioridades" class="perf-page"></div>
+            </div>
+
+            <div id="perfil" class="page">
+                <div class="page-header">
+                    <div>
+                        <h2>Meu Perfil</h2>
+                        <p class="meta-sub">Dados da conta usada para sincronizar seu planejamento.</p>
+                    </div>
+                </div>
+                <div id="perfil-content"></div>
             </div>
 
             <div id="edital" class="page">
@@ -263,4 +274,4 @@
     <script src="script.js"></script>
 </body>
 </html>
-<!-- deploy: v123-brand-plantao -->
+<!-- deploy: v125-profile-entry -->
