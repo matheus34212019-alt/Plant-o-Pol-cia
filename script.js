@@ -91,6 +91,75 @@ function setCloudStatus(texto) {
     if(el) el.innerText = texto;
 }
 
+function nomeUsuario() {
+    if(!cloudUser) return 'Matheus';
+    const meta = cloudUser.user_metadata || {};
+    const nome = cloudUser.displayName || meta.full_name || meta.name || cloudUser.email || 'Matheus';
+    return String(nome).split('@')[0].trim() || 'Matheus';
+}
+
+function emailUsuario() {
+    return cloudUser?.email || 'Acesso local';
+}
+
+function loginUsuario() {
+    if(!cloudUser) return 'local';
+    return cloudUser.provider || cloudUser.appName || 'google';
+}
+
+function avatarUsuario() {
+    const meta = cloudUser?.user_metadata || {};
+    return cloudUser?.photoURL || meta.avatar_url || '';
+}
+
+function escapeHtml(valor) {
+    return String(valor ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    }[c]));
+}
+
+function parseDataISO(valor) {
+    if(!valor) return null;
+    const partes = String(valor).split('-').map(Number);
+    if(partes.length !== 3 || partes.some(Number.isNaN)) return null;
+    const data = new Date(partes[0], partes[1] - 1, partes[2]);
+    data.setHours(0, 0, 0, 0);
+    return data;
+}
+
+function formatarDataBR(valor) {
+    const data = parseDataISO(valor);
+    if(!data) return 'Nao definida';
+    return data.toLocaleDateString('pt-BR');
+}
+
+function diasAteData(valor) {
+    const alvo = parseDataISO(valor);
+    if(!alvo) return null;
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    return Math.ceil((alvo - hoje) / 86400000);
+}
+
+function textoDataEdital() {
+    const dias = diasAteData(db.editalPublicacao);
+    if(dias === null) return '';
+    const data = formatarDataBR(db.editalPublicacao);
+    if(dias > 1) return `Edital em ${dias} dias (${data})`;
+    if(dias === 1) return `Edital amanha (${data})`;
+    if(dias === 0) return `Edital hoje (${data})`;
+    return `Edital publicado em ${data}`;
+}
+
+function atualizarPersonalizacao() {
+    const welcome = document.getElementById('welcome-title');
+    if(welcome) welcome.innerText = `FORCA E HONRA, ${nomeUsuario().toUpperCase()}!`;
+}
+
 async function initSupabaseAuth() {
     if(!supabaseConfigurado()) return false;
     try {
@@ -105,6 +174,7 @@ async function initSupabaseAuth() {
             setCloudStatus(`Conectado como ${cloudUser.email || 'Google'}`);
             await carregarDadosDaNuvem();
             document.getElementById('login-screen').style.display = 'none';
+            atualizarPersonalizacao();
             init();
         }
         supabaseClient.auth.onAuthStateChange(async (_event, session) => {
@@ -113,9 +183,11 @@ async function initSupabaseAuth() {
                 setCloudStatus(`Conectado como ${cloudUser.email || 'Google'}`);
                 await carregarDadosDaNuvem();
                 document.getElementById('login-screen').style.display = 'none';
+                atualizarPersonalizacao();
                 init();
             } else {
                 setCloudStatus('Entre com Google para sincronizar na nuvem.');
+                atualizarPersonalizacao();
             }
         });
         return true;
@@ -141,9 +213,11 @@ function initFirebaseAuth() {
                 setCloudStatus(`Conectado como ${user.email || user.displayName || 'Google'}`);
                 await carregarDadosDaNuvem();
                 document.getElementById('login-screen').style.display = 'none';
+                atualizarPersonalizacao();
                 init();
             } else {
                 setCloudStatus('Entre com Google para sincronizar na nuvem.');
+                atualizarPersonalizacao();
             }
         });
     } catch(e) {
@@ -185,11 +259,13 @@ async function sairGoogle() {
     if(supabaseClient) {
         await supabaseClient.auth.signOut();
         cloudUser = null;
+        atualizarPersonalizacao();
         document.getElementById('login-screen').style.display = 'flex';
         return;
     }
     if(firebaseAuth) await firebaseAuth.signOut();
     cloudUser = null;
+    atualizarPersonalizacao();
     document.getElementById('login-screen').style.display = 'flex';
 }
 
@@ -298,6 +374,7 @@ function normalizarBanco() {
     if(!Array.isArray(db.lista)) db.lista = [];
     if(!Array.isArray(db.ciclo)) db.ciclo = [];
     if(!Array.isArray(db.diasPausados)) db.diasPausados = [];
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(db.editalPublicacao || '')) db.editalPublicacao = '';
     for(let i=0; i<7; i++) db.h[i] = Math.max(0, parseFloat(db.h[i] || 0));
     db.lista.forEach((item, idx) => {
         item.m = String(item.m || '').toUpperCase();
@@ -352,6 +429,7 @@ function checkAccess() {
     if(document.getElementById('pass-input').value === "123") {
         cloudUser = null;
         document.getElementById('login-screen').style.display = 'none';
+        atualizarPersonalizacao();
         init();
     }
 }
@@ -365,6 +443,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function init() {
+    atualizarPersonalizacao();
     renderDiario(vDate);
     updateDashboard();
 }
@@ -383,6 +462,7 @@ function showTab(id, el) {
     if(id === 'backup') renderBackup();
     if(id === 'lancamentos') renderLancamentos();
     if(id === 'performance') renderPerformance();
+    if(id === 'perfil') renderPerfil();
     updateDashboard();
 }
 
@@ -726,6 +806,88 @@ function renderPerformance() {
     renderPerfQuestoes(data);
     renderPerfMelhores(data);
     renderPerfPrioridades(data);
+}
+
+function renderPerfil() {
+    const alvo = document.getElementById('perfil-content');
+    if(!alvo) return;
+    const nome = nomeUsuario();
+    const email = emailUsuario();
+    const login = loginUsuario();
+    const avatar = avatarUsuario();
+    const nomeSeguro = escapeHtml(nome);
+    const emailSeguro = escapeHtml(email);
+    const loginSeguro = escapeHtml(login);
+    const avatarSeguro = escapeHtml(avatar);
+    const iniciais = nome
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(p => p[0]?.toUpperCase())
+        .join('') || 'P';
+    const sincronizado = cloudUser ? 'Sincronizacao ativa' : 'Acesso local';
+    const detalhe = cloudUser
+        ? 'Este perfil usa sua conta Google para carregar e salvar os dados no Supabase.'
+        : 'Entre com Google para sincronizar seus dados entre celular, tablet e computador.';
+
+    alvo.innerHTML = `
+        <div class="profile-grid">
+            <div class="stat-card profile-main-card">
+                <div class="profile-avatar">
+                    ${avatar ? `<img src="${avatarSeguro}" alt="Foto de perfil">` : `<span>${iniciais}</span>`}
+                </div>
+                <div>
+                    <small>Conta conectada</small>
+                    <h3>${nomeSeguro}</h3>
+                    <p>${detalhe}</p>
+                </div>
+            </div>
+            <div class="stat-card profile-info-card">
+                <div class="profile-info-row">
+                    <span>Nome</span>
+                    <strong>${nomeSeguro}</strong>
+                </div>
+                <div class="profile-info-row">
+                    <span>E-mail</span>
+                    <strong>${emailSeguro}</strong>
+                </div>
+                <div class="profile-info-row">
+                    <span>Login</span>
+                    <strong>${loginSeguro}</strong>
+                </div>
+                <div class="profile-info-row">
+                    <span>Status</span>
+                    <strong>${sincronizado}</strong>
+                </div>
+            </div>
+            <div class="stat-card profile-actions-card">
+                <h3>Acesso</h3>
+                <p class="meta-sub">Saia desta conta para entrar com outro Google neste dispositivo.</p>
+                <button class="btn btn-outline" onclick="sairGoogle()">
+                    <i class="fas fa-right-from-bracket"></i> SAIR DO LOGIN
+                </button>
+            </div>
+            <div class="stat-card profile-deadline-card">
+                <h3>Data do edital</h3>
+                <p class="meta-sub">Informe a data prevista de publicacao para o painel acompanhar a contagem.</p>
+                <label for="edital-publicacao">Publicacao do edital</label>
+                <input type="date" id="edital-publicacao" value="${escapeHtml(db.editalPublicacao || '')}">
+                <div class="deadline-preview">${escapeHtml(textoDataEdital() || 'Nenhuma data definida.')}</div>
+                <button class="btn" onclick="salvarDataEdital()">
+                    <i class="fas fa-calendar-check"></i> SALVAR DATA
+                </button>
+            </div>
+        </div>`;
+}
+
+function salvarDataEdital() {
+    const input = document.getElementById('edital-publicacao');
+    if(!input) return;
+    db.editalPublicacao = input.value || '';
+    save();
+    renderPerfil();
+    atualizarProgressoCiclo();
+    showToast('Data do edital salva', textoDataEdital() || 'A contagem do edital foi removida do painel.');
 }
 
 function getPerformanceData() {
@@ -2178,7 +2340,7 @@ function atualizarProgressoCiclo() {
     const p = total > 0 ? Math.min(100, Math.round((feito / total) * 100)) : 0;
     const horasSemana = Object.values(db.h).reduce((acc, h) => acc + (parseFloat(h) || 0), 0);
     const diasEstimados = horasSemana > 0 ? Math.ceil((restante / horasSemana) * 7) : 0;
-    const textoTempo = restante <= 0 ? "Edital finalizado" : `~${diasEstimados} dias restantes`;
+    const textoTempo = textoDataEdital() || (restante <= 0 ? "Edital finalizado" : `~${diasEstimados} dias restantes`);
 
     bar.style.width = p + "%";
     if(carro) carro.style.left = `calc(${p}% - ${p > 5 ? 18 : 0}px)`;
