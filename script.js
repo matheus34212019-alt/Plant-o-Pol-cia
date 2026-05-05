@@ -127,7 +127,7 @@ async function initSupabaseAuth() {
 
 function initFirebaseAuth() {
     if(!firebaseConfigurado()) {
-        setCloudStatus('Firebase ainda nao configurado. Use a chave local 123 por enquanto.');
+        setCloudStatus('Supabase nao configurado ou supabase-config.js nao carregado. Use a chave local 123 por enquanto.');
         return;
     }
     try {
@@ -327,13 +327,17 @@ function normalizarBanco() {
         item.extraTeoria = Math.max(0, parseFloat(item.extraTeoria || 0));
         if(!item.f) item.done.E = (item.hF || 0) >= item.h.E - 0.01;
         if(!item.sinalizado && !item.cicloConcluidoManual) {
-            item.f = false;
-            item.done = {E:false, Rev:false, Ex:false};
-            item.hF = 0;
-            item.lastInitialStudyDate = null;
-            item.lastInitialRevDate = null;
-            item.revCycle = null;
-            item.maintDone = false;
+            item.f = Boolean(item.f);
+            item.done = {
+                E: Boolean(item.done?.E),
+                Rev: Boolean(item.done?.Rev),
+                Ex: Boolean(item.done?.Ex)
+            };
+            item.hF = Math.min(item.hF, item.h.E);
+            item.lastInitialStudyDate = item.lastInitialStudyDate || null;
+            item.lastInitialRevDate = item.lastInitialRevDate || null;
+            item.revCycle = item.revCycle || null;
+            item.maintDone = Boolean(item.maintDone);
         }
     });
     db.ciclo = db.ciclo.filter(m => db.lista.some(x => x.m === m));
@@ -353,7 +357,10 @@ function checkAccess() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const supabaseOk = await initSupabaseAuth();
-    if(!supabaseOk) initFirebaseAuth();
+    if(!supabaseOk && firebaseConfigurado()) initFirebaseAuth();
+    if(!supabaseOk && !firebaseConfigurado()) {
+        setCloudStatus('Supabase nao configurado ou supabase-config.js nao carregado. Use a chave local 123 por enquanto.');
+    }
 });
 
 function init() {
