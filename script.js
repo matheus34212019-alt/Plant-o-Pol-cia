@@ -22,7 +22,7 @@ let cloudSaveTimer = null;
 let carregandoNuvem = false;
 
 const revisoesIntervalos = [3, 7, 21];
-const MAX_ESTUDO_DIA = 1.5;
+const MAX_ESTUDO_DIA = 2;
 const limitarPeso = valor => Math.min(5, Math.max(1, parseInt(valor || 1)));
 const safeId = texto => String(texto).replace(/[^a-z0-9]/gi, '-');
 const isExtraTask = task => task?.extra === true || task?.l === 'Extra';
@@ -222,7 +222,8 @@ async function carregarDadosDaNuvem() {
 }
 
 function agendarSalvamentoNuvem() {
-    if(carregandoNuvem || !cloudUser || !firebaseStore) return;
+    const nuvemDisponivel = (supabaseClient && cloudUser?.provider === 'supabase') || firebaseStore;
+    if(carregandoNuvem || !cloudUser || !nuvemDisponivel) return;
     clearTimeout(cloudSaveTimer);
     cloudSaveTimer = setTimeout(() => salvarDadosNaNuvem(false), 1200);
 }
