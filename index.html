@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PlantÃ£o v.128</title>
+    <title>Plant&atilde;o v.130</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,7 +12,7 @@
 <body>
     <div id="login-screen">
         <div class="login-card">
-            <h2 style="font-weight:800; margin-bottom:20px;">PLANTÃƒO</h2>
+            <h2 style="font-weight:800; margin-bottom:20px;">PLANT&Atilde;O</h2>
             <button class="btn google-btn" style="width:100%;" onclick="loginGoogle()"><i class="fab fa-google"></i> ENTRAR COM GOOGLE</button>
             <div id="cloud-login-status" class="login-status">Acesso protegido pelo Supabase. Entre com Google para continuar.</div>
             <div class="login-divider"><span>acesso aprovado pelo admin</span></div>
@@ -56,7 +56,7 @@
                     </select>
                 </div>
             </div>
-            <button class="btn" style="width:100%; margin-top: 25px;" onclick="salvarExtra()">INCLUIR NO PLANTÃƒO</button>
+            <button class="btn" style="width:100%; margin-top: 25px;" onclick="salvarExtra()">INCLUIR NO PLANT&Atilde;O</button>
         </div>
     </div>
 
@@ -95,10 +95,11 @@
     <div id="toast-area" class="toast-area"></div>
 
     <aside class="sidebar">
-        <div class="logo-box"><i class="fas fa-shield-halved"></i> PLANTÃƒO</div>
+        <div class="logo-box"><i class="fas fa-shield-halved"></i> PLANT&Atilde;O</div>
         <div class="nav-item active" onclick="showTab('diaria', this)"><i class="fas fa-calendar-day"></i><span>Painel Hoje</span></div>
         <div class="nav-item" onclick="showTab('semanal', this)"><i class="fas fa-calendar-week"></i><span>Cronograma</span></div>
         <div class="nav-item" onclick="showTab('performance', this)"><i class="fas fa-chart-pie"></i><span>Meu Desempenho</span></div>
+        <div id="ranking-nav" class="nav-item admin-only" style="display:none;" onclick="showTab('ranking', this)"><i class="fas fa-ranking-star"></i><span>Ranking</span></div>
         <div class="nav-item" onclick="showTab('perfil', this)"><i class="fas fa-user-circle"></i><span>Meu Perfil</span></div>
         <div class="nav-item" onclick="toggleSub()"><i class="fas fa-sliders"></i><span>Meu Plano</span><i class="fas fa-chevron-down" style="margin-left:auto;"></i></div>
         <div id="sub-plano" class="submenu">
@@ -141,7 +142,7 @@
                 </div>
                 <div class="nav-days">
                     <button id="btn-hoje" class="btn btn-outline btn-sm" onclick="navDay(0)" style="display:none;"><i class="fas fa-undo"></i> VOLTAR PARA HOJE</button>
-                    <button id="btn-amanha" class="btn btn-sm" onclick="navDay(1)">VER AMANHÃƒ <i class="fas fa-arrow-right"></i></button>
+                    <button id="btn-amanha" class="btn btn-sm" onclick="navDay(1)">VER AMANH&Atilde; <i class="fas fa-arrow-right"></i></button>
                 </div>
                 <div class="page-header">
                     <h1 id="view-title">MissÃ£o de Hoje ðŸš“</h1>
@@ -183,6 +184,19 @@
                 <div id="perf-questoes" class="perf-page"></div>
                 <div id="perf-melhores" class="perf-page"></div>
                 <div id="perf-prioridades" class="perf-page"></div>
+            </div>
+
+            <div id="ranking" class="page">
+                <div class="page-header">
+                    <div>
+                        <h2>Ranking dos Alunos</h2>
+                        <p class="meta-sub">Comparativo de horas estudadas, precisÃ£o e sequÃªncia de dias.</p>
+                    </div>
+                    <button class="btn btn-sm btn-outline" onclick="renderRankingAlunos()">
+                        <i class="fas fa-rotate"></i> ATUALIZAR
+                    </button>
+                </div>
+                <div id="ranking-content"></div>
             </div>
 
             <div id="perfil" class="page">
@@ -270,7 +284,7 @@
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script src="script.js?v=128"></script>
+    <script src="script.js?v=130"></script>
 </body>
 </html>
-<!-- deploy: v127-polished-ui-accents -->
+<!-- deploy: v130-text-auth-fix -->
