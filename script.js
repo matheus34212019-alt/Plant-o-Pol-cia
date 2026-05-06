@@ -167,6 +167,11 @@ function cloneDados(valor) {
     return JSON.parse(JSON.stringify(valor || {}));
 }
 
+function erroColunaInexistente(error, coluna) {
+    const texto = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`.toLowerCase();
+    return texto.includes(coluna.toLowerCase()) || texto.includes('column') || texto.includes('schema cache');
+}
+
 function escapeHtml(valor) {
     return String(valor ?? '').replace(/[&<>"']/g, c => ({
         '&': '&amp;',
@@ -233,9 +238,46 @@ async function verificarAcessoSupabase() {
             approved_by: email
         };
         try {
-            await supabaseClient.from(ACCESS_TABLE).upsert(adminProfile, { onConflict: 'email' });
-        } catch(e) {}
+            const { error } = await supabaseClient.from(ACCESS_TABLE).upsert(adminProfile, { onConflict: 'email' });
+            if(error) throw error;
+        } catch(e) {
+            try {
+                const { user_id, ...adminSemUserId } = adminProfile;
+                await supabaseClient.from(ACCESS_TABLE).upsert(adminSemUserId, { onConflict: 'email' });
+            } catch(err) {}
+        }
         return adminProfile;
+    }
+
+    const criarSolicitacaoPendente = async () => {
+        const pending = {
+            user_id: cloudUser.id,
+            email,
+            name,
+            role: 'aluno',
+            status: 'pending',
+            requested_at: agora
+        };
+        const { error } = await supabaseClient.from(ACCESS_TABLE).insert(pending);
+        if(error) {
+            if(erroColunaInexistente(error, 'user_id')) {
+                const { user_id, ...pendingSemUserId } = pending;
+                const retry = await supabaseClient.from(ACCESS_TABLE).insert(pendingSemUserId);
+                if(retry.error) throw retry.error;
+                return pendingSemUserId;
+            }
+            throw error;
+        }
+        return pending;
+    };
+
+    const atualizarRegistroExistente = async (data) => {
+        if(data.name === name && data.user_id === cloudUser.id) return data;
+        try {
+            const { error } = await supabaseClient.from(ACCESS_TABLE).update({ name, user_id: cloudUser.id }).eq('email', email);
+            if(error) throw error;
+        } catch(e) {}
+        return { ...data, name, user_id: cloudUser.id };
     }
 
     const { data, error } = await supabaseClient
@@ -246,24 +288,10 @@ async function verificarAcessoSupabase() {
     if(error) throw error;
 
     if(data) {
-        if(data.name !== name || data.user_id !== cloudUser.id) {
-            try {
-                await supabaseClient.from(ACCESS_TABLE).update({ name, user_id: cloudUser.id }).eq('email', email);
-            } catch(e) {}
-        }
-        return data;
+        return atualizarRegistroExistente(data);
     }
 
-    const pending = {
-        user_id: cloudUser.id,
-        email,
-        name,
-        role: 'aluno',
-        status: 'pending',
-        requested_at: agora
-    };
-    await supabaseClient.from(ACCESS_TABLE).insert(pending);
-    return pending;
+    return criarSolicitacaoPendente();
 }
 
 function bloquearAcessoPorAprovacao(profile) {
@@ -343,7 +371,10 @@ async function loginGoogle() {
             if(!supabaseClient) await initSupabaseAuth();
             const { error } = await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: window.location.href.split('#')[0].split('?')[0] }
+                options: {
+                    redirectTo: window.location.href.split('#')[0].split('?')[0],
+                    queryParams: { prompt: 'select_account' }
+                }
             });
             if(error) setCloudStatus('Nao foi possivel iniciar login Google no Supabase.');
             return;
