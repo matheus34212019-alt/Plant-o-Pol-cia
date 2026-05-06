@@ -17,6 +17,7 @@ let firebaseApp = null;
 let firebaseAuth = null;
 let firebaseStore = null;
 let supabaseClient = null;
+let supabaseAccessToken = null;
 let cloudUser = null;
 let cloudSaveTimer = null;
 let carregandoNuvem = false;
@@ -91,6 +92,30 @@ function firebaseConfigurado() {
 
 function supabaseConfigurado() {
     return Boolean(window.supabase && window.PLANTAO_SUPABASE_CONFIG && window.PLANTAO_SUPABASE_CONFIG.url && window.PLANTAO_SUPABASE_CONFIG.anonKey);
+}
+
+function criarClienteSupabase(accessToken = null) {
+    if(accessToken) supabaseAccessToken = accessToken;
+    const options = {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            flowType: 'implicit'
+        }
+    };
+    if(supabaseAccessToken) {
+        options.global = {
+            headers: {
+                Authorization: `Bearer ${supabaseAccessToken}`
+            }
+        };
+    }
+    return window.supabase.createClient(
+        window.PLANTAO_SUPABASE_CONFIG.url,
+        window.PLANTAO_SUPABASE_CONFIG.anonKey,
+        options
+    );
 }
 
 function setCloudStatus(texto) {
@@ -329,6 +354,7 @@ async function sessaoSupabasePeloHash(hashParams) {
     const refreshToken = hashParams.get('refresh_token');
     if(!accessToken) return null;
 
+    supabaseClient = criarClienteSupabase(accessToken);
     setCloudStatus('Login Google recebido. Preparando sua sessÃ£o...');
     if(refreshToken) {
         try {
@@ -341,9 +367,12 @@ async function sessaoSupabasePeloHash(hashParams) {
                 'Tempo esgotado ao salvar a sessÃ£o Supabase.'
             );
             if(error) throw error;
+            supabaseAccessToken = data?.session?.access_token || accessToken;
+            supabaseClient = criarClienteSupabase(supabaseAccessToken);
             if(data?.session?.user) return data.session;
         } catch(e) {
             setCloudStatus('SessÃ£o Supabase demorou; liberando pelo token Google validado...');
+            supabaseClient = criarClienteSupabase(accessToken);
         }
     }
 
@@ -515,18 +544,7 @@ async function entrarComSessaoSupabase(user) {
 async function initSupabaseAuth() {
     if(!supabaseConfigurado()) return false;
     try {
-        supabaseClient = window.supabase.createClient(
-            window.PLANTAO_SUPABASE_CONFIG.url,
-            window.PLANTAO_SUPABASE_CONFIG.anonKey,
-            {
-                auth: {
-                    persistSession: true,
-                    autoRefreshToken: true,
-                    detectSessionInUrl: true,
-                    flowType: 'implicit'
-                }
-            }
-        );
+        supabaseClient = criarClienteSupabase();
         setCloudStatus('Supabase conectado. Verificando login...');
         const url = new URL(window.location.href);
         const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''));
@@ -558,12 +576,16 @@ async function initSupabaseAuth() {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
         if(session?.user) {
+            supabaseAccessToken = session.access_token || supabaseAccessToken;
+            if(supabaseAccessToken) supabaseClient = criarClienteSupabase(supabaseAccessToken);
             await entrarComSessaoSupabase(session.user);
         } else {
             setCloudStatus('Entre com Google para sincronizar na nuvem.');
         }
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
             if(session?.user) {
+                supabaseAccessToken = session.access_token || supabaseAccessToken;
+                if(supabaseAccessToken) supabaseClient = criarClienteSupabase(supabaseAccessToken);
                 await entrarComSessaoSupabase(session.user);
             } else {
                 if(authProcessandoRetorno || event === 'INITIAL_SESSION') return;
@@ -632,6 +654,7 @@ async function sairGoogle() {
         setCloudStatus('SessÃ£o local encerrada. Entre novamente com Google.');
     } finally {
         cloudUser = null;
+        supabaseAccessToken = null;
         accessProfile = null;
         adminAccessList = [];
         adminStudentContext = null;
@@ -1352,6 +1375,7 @@ async function carregarSolicitacoesAcesso() {
             <div class="empty-state">
                 <strong>NÃ£o foi possÃ­vel carregar os alunos</strong>
                 <span>${escapeHtml(mensagemErroSupabase(e))}</span>
+                <span>SessÃ£o admin: ${escapeHtml(emailUsuario())} | token ${supabaseAccessToken ? 'ativo' : 'ausente'}</span>
                 <span>Rode novamente o SQL de acesso no Supabase e depois peÃ§a para o aluno sair e entrar com Google.</span>
                 <button class="btn btn-sm btn-outline" onclick="carregarSolicitacoesAcesso()">TENTAR NOVAMENTE</button>
             </div>`;
