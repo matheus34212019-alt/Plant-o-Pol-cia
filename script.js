@@ -20,7 +20,11 @@ let supabaseClient = null;
 let cloudUser = null;
 let cloudSaveTimer = null;
 let carregandoNuvem = false;
+let accessProfile = null;
+let adminAccessList = [];
 
+const ADMIN_EMAIL = 'matheus34212019@gmail.com';
+const ACCESS_TABLE = 'plantao_user_access';
 const revisoesIntervalos = [3, 7, 21];
 const MAX_ESTUDO_DIA = 2;
 const limitarPeso = valor => Math.min(5, Math.max(1, parseInt(valor || 1)));
@@ -116,12 +120,26 @@ function emailUsuario() {
 
 function loginUsuario() {
     if(!cloudUser) return 'local';
+    if(accessProfile?.role === 'admin') return 'admin';
+    if(accessProfile?.role === 'aluno') return 'aluno';
     return cloudUser.provider || cloudUser.appName || 'google';
 }
 
 function avatarUsuario() {
     const meta = cloudUser?.user_metadata || {};
     return cloudUser?.photoURL || meta.avatar_url || '';
+}
+
+function emailNormalizado() {
+    return String(emailUsuario()).trim().toLowerCase();
+}
+
+function usuarioAdmin() {
+    return emailNormalizado() === ADMIN_EMAIL || accessProfile?.role === 'admin';
+}
+
+function acessoAprovado() {
+    return accessProfile?.status === 'approved' || usuarioAdmin();
 }
 
 function escapeHtml(valor) {
@@ -172,6 +190,88 @@ function atualizarPersonalizacao() {
     if(welcome) welcome.innerText = `FORCA E HONRA, ${nomeUsuario().toUpperCase()}!`;
 }
 
+async function verificarAcessoSupabase() {
+    if(!supabaseClient || !cloudUser) return { status: 'local', role: 'local' };
+    const email = emailNormalizado();
+    const name = nomeUsuario();
+    const agora = new Date().toISOString();
+
+    if(email === ADMIN_EMAIL) {
+        const adminProfile = {
+            email,
+            name,
+            role: 'admin',
+            status: 'approved',
+            requested_at: agora,
+            approved_at: agora,
+            approved_by: email
+        };
+        try {
+            await supabaseClient.from(ACCESS_TABLE).upsert(adminProfile, { onConflict: 'email' });
+        } catch(e) {}
+        return adminProfile;
+    }
+
+    const { data, error } = await supabaseClient
+        .from(ACCESS_TABLE)
+        .select('*')
+        .eq('email', email)
+        .maybeSingle();
+    if(error) throw error;
+
+    if(data) {
+        if(data.name !== name) {
+            try {
+                await supabaseClient.from(ACCESS_TABLE).update({ name }).eq('email', email);
+            } catch(e) {}
+        }
+        return data;
+    }
+
+    const pending = {
+        email,
+        name,
+        role: 'aluno',
+        status: 'pending',
+        requested_at: agora
+    };
+    await supabaseClient.from(ACCESS_TABLE).insert(pending);
+    return pending;
+}
+
+function bloquearAcessoPorAprovacao(profile) {
+    accessProfile = profile;
+    const status = profile?.status || 'pending';
+    const texto = status === 'rejected'
+        ? 'Seu acesso foi recusado pelo administrador.'
+        : 'Seu acesso foi solicitado. Aguarde aprovacao do administrador.';
+    setCloudStatus(texto);
+    atualizarPersonalizacao();
+    mostrarTelaLogin();
+}
+
+async function entrarComSessaoSupabase(user) {
+    cloudUser = {...user, provider: 'supabase'};
+    setCloudStatus(`Conectado como ${cloudUser.email || 'Google'}. Verificando aprovacao...`);
+    try {
+        accessProfile = await verificarAcessoSupabase();
+    } catch(e) {
+        accessProfile = null;
+        setCloudStatus('Nao foi possivel verificar sua aprovacao. Confira a tabela de acessos no Supabase.');
+        mostrarTelaLogin();
+        return;
+    }
+    if(!acessoAprovado()) {
+        bloquearAcessoPorAprovacao(accessProfile);
+        return;
+    }
+    setCloudStatus(`Acesso liberado como ${loginUsuario()}.`);
+    await carregarDadosDaNuvem();
+    ocultarTelaLogin();
+    atualizarPersonalizacao();
+    init();
+}
+
 async function initSupabaseAuth() {
     if(!supabaseConfigurado()) return false;
     try {
@@ -182,22 +282,14 @@ async function initSupabaseAuth() {
         setCloudStatus('Supabase conectado. Entre com sua conta Google.');
         const { data } = await supabaseClient.auth.getSession();
         if(data?.session?.user) {
-            cloudUser = {...data.session.user, provider: 'supabase'};
-            setCloudStatus(`Conectado como ${cloudUser.email || 'Google'}`);
-            await carregarDadosDaNuvem();
-            ocultarTelaLogin();
-            atualizarPersonalizacao();
-            init();
+            await entrarComSessaoSupabase(data.session.user);
         }
         supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-            cloudUser = session?.user ? {...session.user, provider: 'supabase'} : null;
-            if(cloudUser) {
-                setCloudStatus(`Conectado como ${cloudUser.email || 'Google'}`);
-                await carregarDadosDaNuvem();
-                ocultarTelaLogin();
-                atualizarPersonalizacao();
-                init();
+            if(session?.user) {
+                await entrarComSessaoSupabase(session.user);
             } else {
+                cloudUser = null;
+                accessProfile = null;
                 setCloudStatus('Entre com Google para sincronizar na nuvem.');
                 atualizarPersonalizacao();
                 mostrarTelaLogin();
@@ -211,32 +303,11 @@ async function initSupabaseAuth() {
 }
 
 function initFirebaseAuth() {
-    if(!firebaseConfigurado()) {
-        setCloudStatus('Supabase nao configurado ou supabase-config.js nao carregado. Use a chave local 123 por enquanto.');
-        return;
-    }
-    try {
-        firebaseApp = firebase.apps.length ? firebase.app() : firebase.initializeApp(window.PLANTAO_FIREBASE_CONFIG);
-        firebaseAuth = firebase.auth();
-        firebaseStore = firebase.firestore();
-        setCloudStatus('Firebase conectado. Entre com sua conta Google.');
-        firebaseAuth.onAuthStateChanged(async user => {
-            cloudUser = user;
-            if(user) {
-                setCloudStatus(`Conectado como ${user.email || user.displayName || 'Google'}`);
-                await carregarDadosDaNuvem();
-                ocultarTelaLogin();
-                atualizarPersonalizacao();
-                init();
-            } else {
-                setCloudStatus('Entre com Google para sincronizar na nuvem.');
-                atualizarPersonalizacao();
-                mostrarTelaLogin();
-            }
-        });
-    } catch(e) {
-        setCloudStatus('Nao foi possivel iniciar o Firebase. Confira o firebase-config.js.');
-    }
+    firebaseApp = null;
+    firebaseAuth = null;
+    firebaseStore = null;
+    setCloudStatus('Firebase desativado. Este projeto usa Supabase com aprovacao do admin.');
+    return false;
 }
 
 async function loginGoogle() {
@@ -254,19 +325,7 @@ async function loginGoogle() {
             return;
         }
     }
-    if(!firebaseConfigurado()) {
-        setCloudStatus('Configure o Supabase primeiro. Por enquanto use a chave local 123.');
-        return;
-    }
-    try {
-        if(!firebaseAuth) initFirebaseAuth();
-        const provider = new firebase.auth.GoogleAuthProvider();
-        provider.addScope('profile');
-        provider.addScope('email');
-        await firebaseAuth.signInWithPopup(provider);
-    } catch(e) {
-        setCloudStatus('Login Google cancelado ou bloqueado pelo navegador.');
-    }
+    setCloudStatus('Supabase nao configurado. Configure o supabase-config.js para usar login aprovado.');
 }
 
 async function sairGoogle() {
@@ -278,6 +337,8 @@ async function sairGoogle() {
         setCloudStatus('Sessao local encerrada. Entre novamente com Google.');
     } finally {
         cloudUser = null;
+        accessProfile = null;
+        adminAccessList = [];
         atualizarPersonalizacao();
         renderPerfil();
         mostrarTelaLogin();
@@ -441,19 +502,13 @@ function normalizarBanco() {
 normalizarBanco();
 
 function checkAccess() {
-    if(document.getElementById('pass-input').value === "123") {
-        cloudUser = null;
-        ocultarTelaLogin();
-        atualizarPersonalizacao();
-        init();
-    }
+    setCloudStatus('Acesso local desativado. Entre com Google e aguarde aprovacao do admin.');
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
     const supabaseOk = await initSupabaseAuth();
-    if(!supabaseOk && firebaseConfigurado()) initFirebaseAuth();
-    if(!supabaseOk && !firebaseConfigurado()) {
-        setCloudStatus('Supabase nao configurado ou supabase-config.js nao carregado. Use a chave local 123 por enquanto.');
+    if(!supabaseOk) {
+        setCloudStatus('Supabase nao configurado ou supabase-config.js nao carregado. O acesso depende do login aprovado pelo admin.');
     }
 });
 
@@ -844,6 +899,22 @@ function renderPerfil() {
     const detalhe = cloudUser
         ? 'Este perfil usa sua conta Google para carregar e salvar os dados no Supabase.'
         : 'Entre com Google para sincronizar seus dados entre celular, tablet e computador.';
+    const statusAcesso = accessProfile?.status === 'approved' ? 'Aprovado' : (accessProfile?.status === 'pending' ? 'Pendente' : (accessProfile?.status === 'rejected' ? 'Recusado' : sincronizado));
+    const adminHtml = usuarioAdmin() ? `
+            <div class="stat-card admin-access-card">
+                <div class="admin-access-head">
+                    <div>
+                        <h3>Aprovar alunos</h3>
+                        <p class="meta-sub">Controle quem pode acessar o Plantao como aluno.</p>
+                    </div>
+                    <button class="btn btn-sm btn-outline" onclick="carregarSolicitacoesAcesso()">
+                        <i class="fas fa-rotate"></i> ATUALIZAR
+                    </button>
+                </div>
+                <div id="admin-access-list" class="admin-access-list">
+                    <div class="empty-state">Carregando solicitacoes...</div>
+                </div>
+            </div>` : '';
 
     alvo.innerHTML = `
         <div class="profile-grid">
@@ -872,7 +943,7 @@ function renderPerfil() {
                 </div>
                 <div class="profile-info-row">
                     <span>Status</span>
-                    <strong>${sincronizado}</strong>
+                    <strong>${statusAcesso}</strong>
                 </div>
             </div>
             <div class="stat-card profile-actions-card">
@@ -892,7 +963,80 @@ function renderPerfil() {
                     <i class="fas fa-calendar-check"></i> SALVAR DATA
                 </button>
             </div>
+            ${adminHtml}
         </div>`;
+    if(usuarioAdmin()) carregarSolicitacoesAcesso();
+}
+
+async function carregarSolicitacoesAcesso() {
+    const alvo = document.getElementById('admin-access-list');
+    if(!alvo || !supabaseClient || !usuarioAdmin()) return;
+    alvo.innerHTML = '<div class="empty-state">Carregando solicitacoes...</div>';
+    try {
+        const { data, error } = await supabaseClient
+            .from(ACCESS_TABLE)
+            .select('*')
+            .order('requested_at', { ascending: false });
+        if(error) throw error;
+        adminAccessList = data || [];
+        renderAdminAccessList();
+    } catch(e) {
+        alvo.innerHTML = '<div class="empty-state">Nao foi possivel carregar os alunos. Confira as regras do Supabase.</div>';
+    }
+}
+
+function renderAdminAccessList() {
+    const alvo = document.getElementById('admin-access-list');
+    if(!alvo) return;
+    const alunos = adminAccessList.filter(item => item.email !== ADMIN_EMAIL);
+    if(!alunos.length) {
+        alvo.innerHTML = '<div class="empty-state">Nenhuma solicitacao de aluno por enquanto.</div>';
+        return;
+    }
+    alvo.innerHTML = alunos.map(item => {
+        const email = escapeHtml(item.email || '');
+        const emailParam = encodeURIComponent(item.email || '');
+        const nome = escapeHtml(item.name || item.email || 'Aluno');
+        const status = escapeHtml(item.status || 'pending');
+        const role = escapeHtml(item.role || 'aluno');
+        const statusLabel = item.status === 'approved' ? 'Aprovado' : (item.status === 'rejected' ? 'Recusado' : 'Pendente');
+        const actions = item.status === 'approved'
+            ? `<button class="btn btn-sm btn-outline danger-btn" onclick="alterarAcessoAluno('${emailParam}', 'rejected')">REVOGAR</button>`
+            : `<button class="btn btn-sm" onclick="alterarAcessoAluno('${emailParam}', 'approved')">APROVAR</button>
+               <button class="btn btn-sm btn-outline danger-btn" onclick="alterarAcessoAluno('${emailParam}', 'rejected')">RECUSAR</button>`;
+        return `
+            <div class="admin-access-row">
+                <div>
+                    <b>${nome}</b>
+                    <small>${email}</small>
+                </div>
+                <span class="access-pill ${status}">${statusLabel} | ${role}</span>
+                <div class="admin-access-actions">${actions}</div>
+            </div>`;
+    }).join('');
+}
+
+async function alterarAcessoAluno(email, status) {
+    if(!supabaseClient || !usuarioAdmin()) return;
+    const cleanEmail = decodeURIComponent(String(email || '')).toLowerCase();
+    if(!cleanEmail || cleanEmail === ADMIN_EMAIL) return;
+    const payload = {
+        status,
+        role: 'aluno',
+        approved_at: status === 'approved' ? new Date().toISOString() : null,
+        approved_by: status === 'approved' ? ADMIN_EMAIL : null
+    };
+    try {
+        const { error } = await supabaseClient
+            .from(ACCESS_TABLE)
+            .update(payload)
+            .eq('email', cleanEmail);
+        if(error) throw error;
+        showToast(status === 'approved' ? 'Aluno aprovado' : 'Acesso atualizado', cleanEmail);
+        await carregarSolicitacoesAcesso();
+    } catch(e) {
+        showToast('Falha ao atualizar acesso', 'Confira as permissoes da tabela no Supabase.');
+    }
 }
 
 function salvarDataEdital() {
