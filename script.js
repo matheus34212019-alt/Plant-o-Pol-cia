@@ -172,6 +172,16 @@ function erroColunaInexistente(error, coluna) {
     return texto.includes(coluna.toLowerCase()) || texto.includes('column') || texto.includes('schema cache');
 }
 
+function mensagemErroSupabase(error) {
+    const partes = [
+        error?.message,
+        error?.details,
+        error?.hint,
+        error?.code ? `Codigo: ${error.code}` : ''
+    ].filter(Boolean);
+    return partes.join(' | ') || 'Erro desconhecido do Supabase.';
+}
+
 function escapeHtml(valor) {
     return String(valor ?? '').replace(/[&<>"']/g, c => ({
         '&': '&amp;',
@@ -312,7 +322,7 @@ async function entrarComSessaoSupabase(user) {
         accessProfile = await verificarAcessoSupabase();
     } catch(e) {
         accessProfile = null;
-        setCloudStatus('Não foi possível verificar sua aprovação. Confira a tabela de acessos no Supabase.');
+        setCloudStatus(`Não foi possível solicitar/verificar aprovação: ${mensagemErroSupabase(e)}`);
         mostrarTelaLogin();
         return;
     }
@@ -1078,24 +1088,36 @@ async function carregarSolicitacoesAcesso() {
     if(!alvo || !supabaseClient || !usuarioAdmin()) return;
     alvo.innerHTML = '<div class="empty-state">Carregando solicitações...</div>';
     try {
+        const sessionInfo = await supabaseClient.auth.getUser();
+        const adminEmailAtual = sessionInfo?.data?.user?.email || emailUsuario();
         const { data, error } = await supabaseClient
             .from(ACCESS_TABLE)
             .select('*')
             .order('requested_at', { ascending: false });
         if(error) throw error;
         adminAccessList = data || [];
-        renderAdminAccessList();
+        renderAdminAccessList(adminEmailAtual);
     } catch(e) {
-        alvo.innerHTML = '<div class="empty-state">Não foi possível carregar os alunos. Confira as regras do Supabase.</div>';
+        alvo.innerHTML = `
+            <div class="empty-state">
+                <strong>Não foi possível carregar os alunos</strong>
+                <span>${escapeHtml(mensagemErroSupabase(e))}</span>
+                <span>Rode novamente o SQL de acesso no Supabase e depois peça para o aluno sair e entrar com Google.</span>
+            </div>`;
     }
 }
 
-function renderAdminAccessList() {
+function renderAdminAccessList(adminEmailAtual = '') {
     const alvo = document.getElementById('admin-access-list');
     if(!alvo) return;
     const alunos = adminAccessList.filter(item => item.email !== ADMIN_EMAIL);
     if(!alunos.length) {
-        alvo.innerHTML = '<div class="empty-state">Nenhuma solicitacao de aluno por enquanto.</div>';
+        alvo.innerHTML = `
+            <div class="empty-state">
+                <strong>Nenhuma solicitação de aluno por enquanto</strong>
+                <span>Admin conectado: ${escapeHtml(adminEmailAtual || emailUsuario())}</span>
+                <span>Para aparecer aqui, o aluno precisa clicar em Entrar com Google. Se ele já testou, rode o SQL atualizado no Supabase.</span>
+            </div>`;
         return;
     }
     alvo.innerHTML = alunos.map(item => {
