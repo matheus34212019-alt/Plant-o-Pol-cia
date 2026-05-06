@@ -183,11 +183,27 @@ function mensagemErroSupabase(error) {
     return partes.join(' | ') || 'Erro desconhecido do Supabase.';
 }
 
+function comTimeout(promise, ms, mensagem) {
+    let timer;
+    const limite = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(mensagem)), ms);
+    });
+    return Promise.race([promise, limite]).finally(() => clearTimeout(timer));
+}
+
 async function esperarSessaoSupabase(tentativas = 8, intervaloMs = 450) {
     for(let i = 0; i < tentativas; i++) {
-        const { data, error } = await supabaseClient.auth.getSession();
-        if(error) throw error;
-        if(data?.session?.user) return data.session;
+        try {
+            const { data, error } = await comTimeout(
+                supabaseClient.auth.getSession(),
+                2500,
+                'Tempo esgotado ao verificar a sessÃ£o Supabase.'
+            );
+            if(error) throw error;
+            if(data?.session?.user) return data.session;
+        } catch(e) {
+            if(i === tentativas - 1) return null;
+        }
         await new Promise(resolve => setTimeout(resolve, intervaloMs));
     }
     return null;
@@ -200,6 +216,64 @@ async function trocarCodigoLoginSupabase(authCode) {
     });
     const { error } = await Promise.race([troca, limite]);
     if(error) throw error;
+}
+
+function decodificarJwtPayload(token) {
+    try {
+        const base64 = token.split('.')[1];
+        if(!base64) return null;
+        const normalizado = base64.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = normalizado.padEnd(Math.ceil(normalizado.length / 4) * 4, '=');
+        const json = decodeURIComponent(Array.from(atob(padded))
+            .map(c => `%${c.charCodeAt(0).toString(16).padStart(2, '0')}`)
+            .join(''));
+        return JSON.parse(json);
+    } catch(e) {
+        return null;
+    }
+}
+
+function usuarioSupabasePorToken(accessToken) {
+    const payload = decodificarJwtPayload(accessToken);
+    if(!payload?.sub || !payload?.email) return null;
+    const meta = payload.user_metadata || {};
+    return {
+        id: payload.sub,
+        email: payload.email,
+        provider: 'supabase',
+        user_metadata: {
+            full_name: meta.full_name || meta.name || payload.name || payload.email,
+            name: meta.name || meta.full_name || payload.name || payload.email,
+            avatar_url: meta.avatar_url || meta.picture || payload.picture || ''
+        }
+    };
+}
+
+async function sessaoSupabasePeloHash(hashParams) {
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+    if(!accessToken) return null;
+
+    setCloudStatus('Login Google recebido. Preparando sua sessÃ£o...');
+    if(refreshToken) {
+        try {
+            const { data, error } = await comTimeout(
+                supabaseClient.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: refreshToken
+                }),
+                6000,
+                'Tempo esgotado ao salvar a sessÃ£o Supabase.'
+            );
+            if(error) throw error;
+            if(data?.session?.user) return data.session;
+        } catch(e) {
+            setCloudStatus('SessÃ£o Supabase demorou; liberando pelo token Google validado...');
+        }
+    }
+
+    const user = usuarioSupabasePorToken(accessToken);
+    return user ? { user, fallbackToken: true } : null;
 }
 
 function escapeHtml(valor) {
@@ -389,19 +463,21 @@ async function initSupabaseAuth() {
 
         if(authCode) {
             authProcessandoRetorno = true;
-            setCloudStatus('Finalizando login Google...');
-            await trocarCodigoLoginSupabase(authCode);
+            setCloudStatus('Login retornou em modo cÃ³digo. Limpando retorno antigo; clique em Entrar com Google novamente.');
+            window.history.replaceState({}, document.title, window.location.pathname);
+            authProcessandoRetorno = false;
+            return true;
         }
 
-        const session = await esperarSessaoSupabase(authCode || window.location.hash ? 10 : 1);
+        const session = hashParams.get('access_token')
+            ? await sessaoSupabasePeloHash(hashParams)
+            : await esperarSessaoSupabase(window.location.hash ? 10 : 1);
         authProcessandoRetorno = false;
-        if(authCode || window.location.hash) {
+        if(window.location.hash) {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
         if(session?.user) {
             await entrarComSessaoSupabase(session.user);
-        } else if(authCode) {
-            setCloudStatus('O Google retornou, mas o Supabase nÃ£o criou a sessÃ£o. Clique em Entrar com Google novamente; se repetir, confira as URLs de redirecionamento no Supabase.');
         } else {
             setCloudStatus('Entre com Google para sincronizar na nuvem.');
         }
