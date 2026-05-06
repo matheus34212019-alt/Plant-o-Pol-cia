@@ -22,6 +22,8 @@ let cloudSaveTimer = null;
 let carregandoNuvem = false;
 let accessProfile = null;
 let adminAccessList = [];
+let adminStudentContext = null;
+let adminEditBackupReady = false;
 
 const ADMIN_EMAIL = 'matheus34212019@gmail.com';
 const ACCESS_TABLE = 'plantao_user_access';
@@ -142,6 +144,29 @@ function acessoAprovado() {
     return accessProfile?.status === 'approved' || usuarioAdmin();
 }
 
+function editandoAlunoComoAdmin() {
+    return usuarioAdmin() && Boolean(adminStudentContext);
+}
+
+function alvoDadosNuvem() {
+    if(editandoAlunoComoAdmin()) {
+        return {
+            user_id: adminStudentContext.user_id,
+            email: adminStudentContext.email,
+            name: adminStudentContext.name || adminStudentContext.email || 'Aluno'
+        };
+    }
+    return {
+        user_id: cloudUser?.id,
+        email: cloudUser?.email || null,
+        name: nomeUsuario()
+    };
+}
+
+function cloneDados(valor) {
+    return JSON.parse(JSON.stringify(valor || {}));
+}
+
 function escapeHtml(valor) {
     return String(valor ?? '').replace(/[&<>"']/g, c => ({
         '&': '&amp;',
@@ -198,6 +223,7 @@ async function verificarAcessoSupabase() {
 
     if(email === ADMIN_EMAIL) {
         const adminProfile = {
+            user_id: cloudUser.id,
             email,
             name,
             role: 'admin',
@@ -220,15 +246,16 @@ async function verificarAcessoSupabase() {
     if(error) throw error;
 
     if(data) {
-        if(data.name !== name) {
+        if(data.name !== name || data.user_id !== cloudUser.id) {
             try {
-                await supabaseClient.from(ACCESS_TABLE).update({ name }).eq('email', email);
+                await supabaseClient.from(ACCESS_TABLE).update({ name, user_id: cloudUser.id }).eq('email', email);
             } catch(e) {}
         }
         return data;
     }
 
     const pending = {
+        user_id: cloudUser.id,
         email,
         name,
         role: 'aluno',
@@ -339,6 +366,8 @@ async function sairGoogle() {
         cloudUser = null;
         accessProfile = null;
         adminAccessList = [];
+        adminStudentContext = null;
+        adminEditBackupReady = false;
         atualizarPersonalizacao();
         renderPerfil();
         mostrarTelaLogin();
@@ -397,41 +426,83 @@ async function salvarDadosNaNuvem(imediato) {
 }
 
 async function carregarDadosSupabase() {
-    if(!supabaseClient || !cloudUser) return;
+    if(!supabaseClient || !cloudUser) return false;
+    const alvo = alvoDadosNuvem();
+    if(!alvo.user_id) {
+        showToast('Aluno sem dados ainda', 'Esse aluno precisa entrar uma vez pelo Google antes de voce editar o perfil dele.');
+        return false;
+    }
     carregandoNuvem = true;
     try {
         const { data, error } = await supabaseClient
             .from('plantao_user_data')
             .select('data')
-            .eq('user_id', cloudUser.id)
+            .eq('user_id', alvo.user_id)
             .maybeSingle();
         if(error) throw error;
         if(data?.data) {
             db = data.data;
             localStorage.setItem('prf_v120', JSON.stringify(db));
             normalizarBanco();
-            showToast('Dados sincronizados', 'Seu planejamento foi carregado do Supabase.');
+            showToast('Dados sincronizados', editandoAlunoComoAdmin() ? `Perfil de ${alvo.email} carregado.` : 'Seu planejamento foi carregado do Supabase.');
+            return true;
         } else {
+            if(editandoAlunoComoAdmin()) {
+                showToast('Aluno sem planejamento', 'O aluno ainda nao tem dados salvos no Supabase.');
+                return false;
+            }
             await salvarDadosSupabase(true);
             showToast('Nuvem ativada', 'Seus dados locais foram salvos no Supabase.');
+            return true;
         }
     } catch(e) {
         showToast('Sincronizacao indisponivel', 'Confira a tabela e as regras do Supabase.');
+        return false;
     } finally {
         carregandoNuvem = false;
     }
 }
 
+async function garantirBackupEdicaoAdmin(alvo) {
+    if(!editandoAlunoComoAdmin() || adminEditBackupReady || !supabaseClient || !alvo?.user_id) return;
+    try {
+        const { data, error } = await supabaseClient
+            .from('plantao_user_data')
+            .select('data')
+            .eq('user_id', alvo.user_id)
+            .maybeSingle();
+        if(error) throw error;
+        const { error: backupError } = await supabaseClient
+            .from('plantao_admin_backups')
+            .insert({
+                admin_email: ADMIN_EMAIL,
+                student_user_id: alvo.user_id,
+                student_email: alvo.email || null,
+                before_data: cloneDados(data?.data || db),
+                note: 'Backup automatico antes de edicao pelo admin'
+            });
+        if(backupError) throw backupError;
+        adminEditBackupReady = true;
+        showToast('Backup do aluno criado', 'Uma copia dos dados anteriores foi salva antes da sua edicao.');
+    } catch(e) {
+        showToast('Backup nao confirmado', 'Confira a tabela plantao_admin_backups antes de editar este aluno.');
+        throw e;
+    }
+}
+
 async function salvarDadosSupabase(imediato) {
     if(!supabaseClient || !cloudUser) return;
+    const alvo = alvoDadosNuvem();
+    if(!alvo.user_id) return;
     if(!imediato) clearTimeout(cloudSaveTimer);
     try {
+        await garantirBackupEdicaoAdmin(alvo);
         const { error } = await supabaseClient
             .from('plantao_user_data')
             .upsert({
-                user_id: cloudUser.id,
+                user_id: alvo.user_id,
                 data: db,
-                email: cloudUser.email || null,
+                email: alvo.email || null,
                 updated_at: new Date().toISOString()
             }, { onConflict: 'user_id' });
         if(error) throw error;
@@ -514,6 +585,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function init() {
     atualizarPersonalizacao();
+    renderAdminStudentBanner();
     renderDiario(vDate);
     updateDashboard();
 }
@@ -533,6 +605,7 @@ function showTab(id, el) {
     if(id === 'lancamentos') renderLancamentos();
     if(id === 'performance') renderPerformance();
     if(id === 'perfil') renderPerfil();
+    renderAdminStudentBanner();
     updateDashboard();
 }
 
@@ -897,7 +970,7 @@ function renderPerfil() {
         .join('') || 'P';
     const sincronizado = cloudUser ? 'Sincronizacao ativa' : 'Acesso local';
     const detalhe = cloudUser
-        ? 'Este perfil usa sua conta Google para carregar e salvar os dados no Supabase.'
+        ? (editandoAlunoComoAdmin() ? `Voce esta editando os dados de ${adminStudentContext.email}.` : 'Este perfil usa sua conta Google para carregar e salvar os dados no Supabase.')
         : 'Entre com Google para sincronizar seus dados entre celular, tablet e computador.';
     const statusAcesso = accessProfile?.status === 'approved' ? 'Aprovado' : (accessProfile?.status === 'pending' ? 'Pendente' : (accessProfile?.status === 'rejected' ? 'Recusado' : sincronizado));
     const adminHtml = usuarioAdmin() ? `
@@ -905,7 +978,7 @@ function renderPerfil() {
                 <div class="admin-access-head">
                     <div>
                         <h3>Aprovar alunos</h3>
-                        <p class="meta-sub">Controle quem pode acessar o Plantao como aluno.</p>
+                        <p class="meta-sub">Controle quem pode acessar o Plantao como aluno e abra o perfil para fazer ajustes.</p>
                     </div>
                     <button class="btn btn-sm btn-outline" onclick="carregarSolicitacoesAcesso()">
                         <i class="fas fa-rotate"></i> ATUALIZAR
@@ -966,6 +1039,7 @@ function renderPerfil() {
             ${adminHtml}
         </div>`;
     if(usuarioAdmin()) carregarSolicitacoesAcesso();
+    renderAdminStudentBanner();
 }
 
 async function carregarSolicitacoesAcesso() {
@@ -1000,8 +1074,14 @@ function renderAdminAccessList() {
         const status = escapeHtml(item.status || 'pending');
         const role = escapeHtml(item.role || 'aluno');
         const statusLabel = item.status === 'approved' ? 'Aprovado' : (item.status === 'rejected' ? 'Recusado' : 'Pendente');
+        const editar = item.status === 'approved'
+            ? `<button class="btn btn-sm btn-outline" onclick="entrarPerfilAluno('${emailParam}')">EDITAR PERFIL</button>`
+            : '';
+        const restaurar = item.status === 'approved'
+            ? `<button class="btn btn-sm btn-outline danger-btn" onclick="restaurarBackupAluno('${emailParam}')">RESTAURAR BACKUP</button>`
+            : '';
         const actions = item.status === 'approved'
-            ? `<button class="btn btn-sm btn-outline danger-btn" onclick="alterarAcessoAluno('${emailParam}', 'rejected')">REVOGAR</button>`
+            ? `${editar}${restaurar}<button class="btn btn-sm btn-outline danger-btn" onclick="alterarAcessoAluno('${emailParam}', 'rejected')">REVOGAR</button>`
             : `<button class="btn btn-sm" onclick="alterarAcessoAluno('${emailParam}', 'approved')">APROVAR</button>
                <button class="btn btn-sm btn-outline danger-btn" onclick="alterarAcessoAluno('${emailParam}', 'rejected')">RECUSAR</button>`;
         return `
@@ -1014,6 +1094,110 @@ function renderAdminAccessList() {
                 <div class="admin-access-actions">${actions}</div>
             </div>`;
     }).join('');
+}
+
+function renderAdminStudentBanner() {
+    const banner = document.getElementById('admin-student-banner');
+    if(!banner) return;
+    if(!editandoAlunoComoAdmin()) {
+        banner.style.display = 'none';
+        banner.innerHTML = '';
+        return;
+    }
+    banner.style.display = 'flex';
+    banner.innerHTML = `
+        <div>
+            <strong>Editando perfil de aluno</strong>
+            <span>${escapeHtml(adminStudentContext.name || 'Aluno')} | ${escapeHtml(adminStudentContext.email || '')}</span>
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="voltarPerfilAdmin()">
+            <i class="fas fa-user-shield"></i> VOLTAR PARA ADMIN
+        </button>`;
+}
+
+async function entrarPerfilAluno(email) {
+    if(!supabaseClient || !usuarioAdmin()) return;
+    const cleanEmail = decodeURIComponent(String(email || '')).toLowerCase();
+    const aluno = adminAccessList.find(item => String(item.email || '').toLowerCase() === cleanEmail);
+    if(!aluno || aluno.status !== 'approved') {
+        showToast('Aluno nao aprovado', 'Aprove o aluno antes de abrir o perfil.');
+        return;
+    }
+    if(!aluno.user_id) {
+        showToast('Aluno sem login completo', 'Esse aluno precisa entrar pelo Google uma vez antes de voce editar os dados dele.');
+        return;
+    }
+    await salvarDadosSupabase(true);
+    adminStudentContext = {
+        user_id: aluno.user_id,
+        email: cleanEmail,
+        name: aluno.name || cleanEmail
+    };
+    adminEditBackupReady = false;
+    const carregou = await carregarDadosSupabase();
+    if(!carregou) {
+        adminStudentContext = null;
+        adminEditBackupReady = false;
+        await carregarDadosSupabase();
+        return;
+    }
+    renderAdminStudentBanner();
+    renderPerfil();
+    showTab('diaria', document.querySelector('.nav-item'));
+}
+
+async function voltarPerfilAdmin() {
+    if(!editandoAlunoComoAdmin()) return;
+    await salvarDadosSupabase(true);
+    adminStudentContext = null;
+    adminEditBackupReady = false;
+    await carregarDadosSupabase();
+    renderAdminStudentBanner();
+    renderPerfil();
+    showTab('perfil', document.querySelector(".nav-item[onclick*='perfil']"));
+    showToast('Perfil admin restaurado', 'Voce voltou para os seus dados.');
+}
+
+async function restaurarBackupAluno(email) {
+    if(!supabaseClient || !usuarioAdmin()) return;
+    const cleanEmail = decodeURIComponent(String(email || '')).toLowerCase();
+    const aluno = adminAccessList.find(item => String(item.email || '').toLowerCase() === cleanEmail);
+    if(!aluno?.user_id) {
+        showToast('Aluno sem registro', 'Nao encontrei o usuario do aluno para restaurar.');
+        return;
+    }
+    try {
+        const { data, error } = await supabaseClient
+            .from('plantao_admin_backups')
+            .select('before_data, created_at')
+            .eq('student_user_id', aluno.user_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        if(error) throw error;
+        if(!data?.before_data) {
+            showToast('Sem backup encontrado', 'Ainda nao existe backup salvo para este aluno.');
+            return;
+        }
+        const { error: saveError } = await supabaseClient
+            .from('plantao_user_data')
+            .upsert({
+                user_id: aluno.user_id,
+                data: data.before_data,
+                email: cleanEmail,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+        if(saveError) throw saveError;
+        if(editandoAlunoComoAdmin() && adminStudentContext.user_id === aluno.user_id) {
+            db = cloneDados(data.before_data);
+            localStorage.setItem('prf_v120', JSON.stringify(db));
+            normalizarBanco();
+            init();
+        }
+        showToast('Backup restaurado', `Dados de ${cleanEmail} voltaram para o ultimo backup.`);
+    } catch(e) {
+        showToast('Falha ao restaurar backup', 'Confira as permissoes da tabela plantao_admin_backups.');
+    }
 }
 
 async function alterarAcessoAluno(email, status) {
