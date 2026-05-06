@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plantão v.125</title>
+    <title>Plantão v.127</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,10 +14,8 @@
         <div class="login-card">
             <h2 style="font-weight:800; margin-bottom:20px;">PLANTÃO</h2>
             <button class="btn google-btn" style="width:100%;" onclick="loginGoogle()"><i class="fab fa-google"></i> ENTRAR COM GOOGLE</button>
-            <div id="cloud-login-status" class="login-status">Modo local disponivel enquanto o Supabase nao estiver conectado.</div>
-            <div class="login-divider"><span>ou acesso local</span></div>
-            <input type="password" id="pass-input" placeholder="Chave de Acesso" style="text-align:center; letter-spacing: 5px;">
-            <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="checkAccess()">ENTRAR NO SISTEMA</button>
+            <div id="cloud-login-status" class="login-status">Acesso protegido pelo Supabase. Entre com Google para continuar.</div>
+            <div class="login-divider"><span>acesso aprovado pelo admin</span></div>
         </div>
     </div>
 
@@ -109,7 +107,7 @@
             <div class="sub-link" onclick="showTab('config-h')">Horas Diárias</div>
             <div class="sub-link" onclick="showTab('sinalizar')">Sinalizar Base</div>
             <div class="sub-link" onclick="showTab('fluxo')">Ajustar Fluxos</div>
-            <div class="sub-link" onclick="showTab('replanejar')">Replanejar Horarios</div>
+            <div class="sub-link" onclick="showTab('replanejar')">Replanejar Horários</div>
             <div class="sub-link" onclick="showTab('backup')">Backup dos Dados</div>
             <div class="sub-link" onclick="showTab('lancamentos')">Lançamentos</div>
         </div>
@@ -126,6 +124,7 @@
                 <div class="stat-card"><small>Horas Acumuladas</small><div id="horas-hoje" class="stat-val">0.0h</div></div>
                 <div class="stat-card"><small>Precisão de Tiro</small><div id="precisao-dia" class="stat-val" style="color:#10b981">0%</div></div>
             </div>
+            <div id="admin-student-banner" class="admin-student-banner" style="display:none;"></div>
 
             <div id="diaria" class="page active">
                 <div class="welcome-box">
@@ -243,8 +242,8 @@
             <div id="replanejar" class="page">
                 <div class="page-header">
                     <div>
-                        <h2>Replanejar Horarios</h2>
-                        <p class="meta-sub">Use quando voce perdeu o dia e quer recomecar o planejamento amanha.</p>
+                        <h2>Replanejar Horários</h2>
+                        <p class="meta-sub">Use quando você perdeu o dia e quer recomeçar o planejamento amanhã.</p>
                     </div>
                 </div>
                 <div id="replanejar-content"></div>
@@ -253,7 +252,7 @@
                 <div class="page-header">
                     <div>
                         <h2>Backup dos Dados</h2>
-                        <p class="meta-sub">Guarde uma copia criptografada do seu edital, ciclo, cronograma e desempenho.</p>
+                        <p class="meta-sub">Guarde uma cópia criptografada do seu edital, ciclo, cronograma e desempenho.</p>
                     </div>
                 </div>
                 <div id="backup-content"></div>
@@ -274,4 +273,4 @@
     <script src="script.js"></script>
 </body>
 </html>
-<!-- deploy: v125-profile-entry -->
+<!-- deploy: v127-polished-ui-accents -->
