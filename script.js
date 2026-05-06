@@ -24,6 +24,7 @@ let accessProfile = null;
 let adminAccessList = [];
 let adminStudentContext = null;
 let adminEditBackupReady = false;
+let authProcessandoRetorno = false;
 
 const ADMIN_EMAIL = 'matheus34212019@gmail.com';
 const ACCESS_TABLE = 'plantao_user_access';
@@ -342,17 +343,43 @@ async function initSupabaseAuth() {
     try {
         supabaseClient = window.supabase.createClient(
             window.PLANTAO_SUPABASE_CONFIG.url,
-            window.PLANTAO_SUPABASE_CONFIG.anonKey
+            window.PLANTAO_SUPABASE_CONFIG.anonKey,
+            {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true
+                }
+            }
         );
-        setCloudStatus('Supabase conectado. Entre com sua conta Google.');
-        const { data } = await supabaseClient.auth.getSession();
+        setCloudStatus('Supabase conectado. Verificando login...');
+        const url = new URL(window.location.href);
+        if(url.searchParams.has('code')) {
+            authProcessandoRetorno = true;
+            setCloudStatus('Finalizando login Google...');
+            try {
+                await supabaseClient.auth.exchangeCodeForSession(window.location.href);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } catch(e) {}
+        }
+
+        let { data } = await supabaseClient.auth.getSession();
+        if(!data?.session?.user && authProcessandoRetorno) {
+            await new Promise(resolve => setTimeout(resolve, 900));
+            const retry = await supabaseClient.auth.getSession();
+            data = retry.data;
+        }
+        authProcessandoRetorno = false;
         if(data?.session?.user) {
             await entrarComSessaoSupabase(data.session.user);
+        } else {
+            setCloudStatus('Entre com Google para sincronizar na nuvem.');
         }
         supabaseClient.auth.onAuthStateChange(async (_event, session) => {
             if(session?.user) {
                 await entrarComSessaoSupabase(session.user);
             } else {
+                if(authProcessandoRetorno) return;
                 cloudUser = null;
                 accessProfile = null;
                 setCloudStatus('Entre com Google para sincronizar na nuvem.');
