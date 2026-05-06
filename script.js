@@ -193,7 +193,7 @@ function parseDataISO(valor) {
 
 function formatarDataBR(valor) {
     const data = parseDataISO(valor);
-    if(!data) return 'Nao definida';
+    if(!data) return 'Não definida';
     return data.toLocaleDateString('pt-BR');
 }
 
@@ -210,7 +210,7 @@ function textoDataEdital() {
     if(dias === null) return '';
     const data = formatarDataBR(db.editalPublicacao);
     if(dias > 1) return `Edital em ${dias} dias (${data})`;
-    if(dias === 1) return `Edital amanha (${data})`;
+    if(dias === 1) return `Edital amanhã (${data})`;
     if(dias === 0) return `Edital hoje (${data})`;
     return `Edital publicado em ${data}`;
 }
@@ -299,7 +299,7 @@ function bloquearAcessoPorAprovacao(profile) {
     const status = profile?.status || 'pending';
     const texto = status === 'rejected'
         ? 'Seu acesso foi recusado pelo administrador.'
-        : 'Seu acesso foi solicitado. Aguarde aprovacao do administrador.';
+        : 'Seu acesso foi solicitado. Aguarde aprovação do administrador.';
     setCloudStatus(texto);
     atualizarPersonalizacao();
     mostrarTelaLogin();
@@ -307,12 +307,12 @@ function bloquearAcessoPorAprovacao(profile) {
 
 async function entrarComSessaoSupabase(user) {
     cloudUser = {...user, provider: 'supabase'};
-    setCloudStatus(`Conectado como ${cloudUser.email || 'Google'}. Verificando aprovacao...`);
+    setCloudStatus(`Conectado como ${cloudUser.email || 'Google'}. Verificando aprovação...`);
     try {
         accessProfile = await verificarAcessoSupabase();
     } catch(e) {
         accessProfile = null;
-        setCloudStatus('Nao foi possivel verificar sua aprovacao. Confira a tabela de acessos no Supabase.');
+        setCloudStatus('Não foi possível verificar sua aprovação. Confira a tabela de acessos no Supabase.');
         mostrarTelaLogin();
         return;
     }
@@ -352,7 +352,7 @@ async function initSupabaseAuth() {
         });
         return true;
     } catch(e) {
-        setCloudStatus('Nao foi possivel iniciar o Supabase. Confira o supabase-config.js.');
+        setCloudStatus('Não foi possível iniciar o Supabase. Confira o supabase-config.js.');
         return false;
     }
 }
@@ -361,7 +361,7 @@ function initFirebaseAuth() {
     firebaseApp = null;
     firebaseAuth = null;
     firebaseStore = null;
-    setCloudStatus('Firebase desativado. Este projeto usa Supabase com aprovacao do admin.');
+    setCloudStatus('Firebase desativado. Este projeto usa Supabase com aprovação do admin.');
     return false;
 }
 
@@ -376,14 +376,14 @@ async function loginGoogle() {
                     queryParams: { prompt: 'select_account' }
                 }
             });
-            if(error) setCloudStatus('Nao foi possivel iniciar login Google no Supabase.');
+            if(error) setCloudStatus('Não foi possível iniciar login Google no Supabase.');
             return;
         } catch(e) {
             setCloudStatus('Login Google cancelado ou bloqueado pelo navegador.');
             return;
         }
     }
-    setCloudStatus('Supabase nao configurado. Configure o supabase-config.js para usar login aprovado.');
+    setCloudStatus('Supabase não configurado. Configure o supabase-config.js para usar login aprovado.');
 }
 
 async function sairGoogle() {
@@ -392,7 +392,7 @@ async function sairGoogle() {
         if(supabaseClient) await supabaseClient.auth.signOut();
         if(firebaseAuth) await firebaseAuth.signOut();
     } catch(e) {
-        setCloudStatus('Sessao local encerrada. Entre novamente com Google.');
+        setCloudStatus('Sessão local encerrada. Entre novamente com Google.');
     } finally {
         cloudUser = null;
         accessProfile = null;
@@ -427,7 +427,7 @@ async function carregarDadosDaNuvem() {
             showToast('Nuvem ativada', 'Seus dados locais foram salvos na sua conta Google.');
         }
     } catch(e) {
-        showToast('Sincronizacao indisponivel', 'O site continuara usando a copia local neste dispositivo.');
+        showToast('Sincronização indisponível', 'O site continuará usando a cópia local neste dispositivo.');
     } finally {
         carregandoNuvem = false;
     }
@@ -452,7 +452,7 @@ async function salvarDadosNaNuvem(imediato) {
             email: cloudUser.email || null
         }, { merge: true });
     } catch(e) {
-        showToast('Falha ao salvar na nuvem', 'A copia local continua preservada no navegador.');
+        showToast('Falha ao salvar na nuvem', 'A cópia local continua preservada no navegador.');
     }
 }
 
@@ -460,7 +460,7 @@ async function carregarDadosSupabase() {
     if(!supabaseClient || !cloudUser) return false;
     const alvo = alvoDadosNuvem();
     if(!alvo.user_id) {
-        showToast('Aluno sem dados ainda', 'Esse aluno precisa entrar uma vez pelo Google antes de voce editar o perfil dele.');
+        showToast('Aluno sem dados ainda', 'Esse aluno precisa entrar uma vez pelo Google antes de você editar o perfil dele.');
         return false;
     }
     carregandoNuvem = true;
@@ -479,7 +479,7 @@ async function carregarDadosSupabase() {
             return true;
         } else {
             if(editandoAlunoComoAdmin()) {
-                showToast('Aluno sem planejamento', 'O aluno ainda nao tem dados salvos no Supabase.');
+                showToast('Aluno sem planejamento', 'O aluno ainda não tem dados salvos no Supabase.');
                 return false;
             }
             await salvarDadosSupabase(true);
@@ -487,7 +487,7 @@ async function carregarDadosSupabase() {
             return true;
         }
     } catch(e) {
-        showToast('Sincronizacao indisponivel', 'Confira a tabela e as regras do Supabase.');
+        showToast('Sincronização indisponível', 'Confira a tabela e as regras do Supabase.');
         return false;
     } finally {
         carregandoNuvem = false;
@@ -510,13 +510,13 @@ async function garantirBackupEdicaoAdmin(alvo) {
                 student_user_id: alvo.user_id,
                 student_email: alvo.email || null,
                 before_data: cloneDados(data?.data || db),
-                note: 'Backup automatico antes de edicao pelo admin'
+                note: 'Backup automático antes de edição pelo admin'
             });
         if(backupError) throw backupError;
         adminEditBackupReady = true;
-        showToast('Backup do aluno criado', 'Uma copia dos dados anteriores foi salva antes da sua edicao.');
+        showToast('Backup do aluno criado', 'Uma cópia dos dados anteriores foi salva antes da sua edição.');
     } catch(e) {
-        showToast('Backup nao confirmado', 'Confira a tabela plantao_admin_backups antes de editar este aluno.');
+        showToast('Backup não confirmado', 'Confira a tabela plantao_admin_backups antes de editar este aluno.');
         throw e;
     }
 }
@@ -538,7 +538,7 @@ async function salvarDadosSupabase(imediato) {
             }, { onConflict: 'user_id' });
         if(error) throw error;
     } catch(e) {
-        showToast('Falha ao salvar na nuvem', 'A copia local continua preservada no navegador.');
+        showToast('Falha ao salvar na nuvem', 'A cópia local continua preservada no navegador.');
     }
 }
 
@@ -604,13 +604,13 @@ function normalizarBanco() {
 normalizarBanco();
 
 function checkAccess() {
-    setCloudStatus('Acesso local desativado. Entre com Google e aguarde aprovacao do admin.');
+    setCloudStatus('Acesso local desativado. Entre com Google e aguarde aprovação do admin.');
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
     const supabaseOk = await initSupabaseAuth();
     if(!supabaseOk) {
-        setCloudStatus('Supabase nao configurado ou supabase-config.js nao carregado. O acesso depende do login aprovado pelo admin.');
+        setCloudStatus('Supabase não configurado ou supabase-config.js não carregado. O acesso depende do login aprovado pelo admin.');
     }
 });
 
@@ -717,7 +717,7 @@ function renderDiario(date) {
     const atrasoHtml = atrasos.length ? `
         <div class="stat-card atraso-box">
             <h3>Atividades em atraso</h3>
-            <p>Voce tem atividade(s) anterior(es) nao finalizada(s). Deseja replanejar os atrasos?</p>
+            <p>Você tem atividade(s) anterior(es) não finalizada(s). Deseja replanejar os atrasos?</p>
             <button class="btn btn-sm btn-outline" onclick="replanejarAgora()">REPLANEJAR ATRASOS</button>
         </div>
         ${atrasos.map(({task, dia}) => renderTaskCard(task, dia, `atraso-${dia}-${task.itemId || task.m}`, true)).join('')}
@@ -730,7 +730,7 @@ function renderDiario(date) {
         <div class="empty-state replan-empty">
             <i class="fas fa-calendar-minus"></i>
             <strong>Dia pausado</strong>
-            <span>Hoje ficou vazio e o planejamento recomeca amanha.</span>
+            <span>Hoje ficou vazio e o planejamento recomeça amanhã.</span>
             <button class="btn btn-sm btn-outline" onclick="showTab('replanejar')">VER REPLANEJAMENTO</button>
         </div>` : '';
 
@@ -752,7 +752,7 @@ function renderMissaoCumpridaCard(ehHoje) {
             <div class="mission-complete-icon"><i class="fas fa-check"></i></div>
             <div>
                 <h3>Missao cumprida</h3>
-                <p>Parabens, voce concluiu todas as atividades planejadas para este dia.</p>
+                <p>Parabéns, você concluiu todas as atividades planejadas para este dia.</p>
             </div>
             <button class="btn btn-sm" onclick="navDay(1)">
                 <i class="fas fa-arrow-right"></i> ${ehHoje ? 'ADIANTAR AMANHA' : 'VER PROXIMO DIA'}
@@ -820,7 +820,7 @@ function fecharModais() {
 function abrirModalExtra() {
     const selectMat = document.getElementById('extra-mat');
     const materiasUnicas = [...new Set(db.lista.map(x => x.m))];
-    selectMat.innerHTML = '<option value="">Selecione a Materia</option>' + materiasUnicas.map(m => `<option value="${m}">${m}</option>`).join('');
+    selectMat.innerHTML = '<option value="">Selecione a Matéria</option>' + materiasUnicas.map(m => `<option value="${m}">${m}</option>`).join('');
     document.getElementById('modal-extra').style.display = 'flex';
 }
 
@@ -882,7 +882,7 @@ function aplicarTempoExtraTeoria(destino) {
     teoriaPendente = null;
     fecharModais();
     save();
-    showToast("Tempo extra planejado", destino === 'hoje' ? "O reforco foi tentado no dia atual." : "Os proximos dias foram recalculados sem alterar dias anteriores.");
+    showToast("Tempo extra planejado", destino === 'hoje' ? "O reforço foi tentado no dia atual." : "Os próximos dias foram recalculados sem alterar dias anteriores.");
     updateDashboard();
     renderDiarioSemRecalcular(vDate);
 }
@@ -894,7 +894,7 @@ function inserirTeoriaExtraNoDia(item, diaKey, horas) {
     const total = tarefasPlanejadas(tasks).reduce((acc, t) => acc + (parseFloat(t.h) || 0), 0);
     const livre = Math.max(0, limite - total);
     if(livre <= 0.01) {
-        showToast("Sem espaco hoje", "A teoria extra entrara no proximo dia disponivel do cronograma.");
+        showToast("Sem espaço hoje", "A teoria extra entrará no próximo dia disponível do cronograma.");
         return;
     }
     const horasHoje = Math.min(livre, horas);
@@ -999,9 +999,9 @@ function renderPerfil() {
         .slice(0, 2)
         .map(p => p[0]?.toUpperCase())
         .join('') || 'P';
-    const sincronizado = cloudUser ? 'Sincronizacao ativa' : 'Acesso local';
+    const sincronizado = cloudUser ? 'Sincronização ativa' : 'Acesso local';
     const detalhe = cloudUser
-        ? (editandoAlunoComoAdmin() ? `Voce esta editando os dados de ${adminStudentContext.email}.` : 'Este perfil usa sua conta Google para carregar e salvar os dados no Supabase.')
+        ? (editandoAlunoComoAdmin() ? `Você está editando os dados de ${adminStudentContext.email}.` : 'Este perfil usa sua conta Google para carregar e salvar os dados no Supabase.')
         : 'Entre com Google para sincronizar seus dados entre celular, tablet e computador.';
     const statusAcesso = accessProfile?.status === 'approved' ? 'Aprovado' : (accessProfile?.status === 'pending' ? 'Pendente' : (accessProfile?.status === 'rejected' ? 'Recusado' : sincronizado));
     const adminHtml = usuarioAdmin() ? `
@@ -1016,7 +1016,7 @@ function renderPerfil() {
                     </button>
                 </div>
                 <div id="admin-access-list" class="admin-access-list">
-                    <div class="empty-state">Carregando solicitacoes...</div>
+                    <div class="empty-state">Carregando solicitações...</div>
                 </div>
             </div>` : '';
 
@@ -1059,8 +1059,8 @@ function renderPerfil() {
             </div>
             <div class="stat-card profile-deadline-card">
                 <h3>Data do edital</h3>
-                <p class="meta-sub">Informe a data prevista de publicacao para o painel acompanhar a contagem.</p>
-                <label for="edital-publicacao">Publicacao do edital</label>
+                <p class="meta-sub">Informe a data prevista de publicação para o painel acompanhar a contagem.</p>
+                <label for="edital-publicacao">Publicação do edital</label>
                 <input type="date" id="edital-publicacao" value="${escapeHtml(db.editalPublicacao || '')}">
                 <div class="deadline-preview">${escapeHtml(textoDataEdital() || 'Nenhuma data definida.')}</div>
                 <button class="btn" onclick="salvarDataEdital()">
@@ -1076,7 +1076,7 @@ function renderPerfil() {
 async function carregarSolicitacoesAcesso() {
     const alvo = document.getElementById('admin-access-list');
     if(!alvo || !supabaseClient || !usuarioAdmin()) return;
-    alvo.innerHTML = '<div class="empty-state">Carregando solicitacoes...</div>';
+    alvo.innerHTML = '<div class="empty-state">Carregando solicitações...</div>';
     try {
         const { data, error } = await supabaseClient
             .from(ACCESS_TABLE)
@@ -1086,7 +1086,7 @@ async function carregarSolicitacoesAcesso() {
         adminAccessList = data || [];
         renderAdminAccessList();
     } catch(e) {
-        alvo.innerHTML = '<div class="empty-state">Nao foi possivel carregar os alunos. Confira as regras do Supabase.</div>';
+        alvo.innerHTML = '<div class="empty-state">Não foi possível carregar os alunos. Confira as regras do Supabase.</div>';
     }
 }
 
@@ -1151,11 +1151,11 @@ async function entrarPerfilAluno(email) {
     const cleanEmail = decodeURIComponent(String(email || '')).toLowerCase();
     const aluno = adminAccessList.find(item => String(item.email || '').toLowerCase() === cleanEmail);
     if(!aluno || aluno.status !== 'approved') {
-        showToast('Aluno nao aprovado', 'Aprove o aluno antes de abrir o perfil.');
+        showToast('Aluno não aprovado', 'Aprove o aluno antes de abrir o perfil.');
         return;
     }
     if(!aluno.user_id) {
-        showToast('Aluno sem login completo', 'Esse aluno precisa entrar pelo Google uma vez antes de voce editar os dados dele.');
+        showToast('Aluno sem login completo', 'Esse aluno precisa entrar pelo Google uma vez antes de você editar os dados dele.');
         return;
     }
     await salvarDadosSupabase(true);
@@ -1186,7 +1186,7 @@ async function voltarPerfilAdmin() {
     renderAdminStudentBanner();
     renderPerfil();
     showTab('perfil', document.querySelector(".nav-item[onclick*='perfil']"));
-    showToast('Perfil admin restaurado', 'Voce voltou para os seus dados.');
+    showToast('Perfil admin restaurado', 'Você voltou para os seus dados.');
 }
 
 async function restaurarBackupAluno(email) {
@@ -1194,7 +1194,7 @@ async function restaurarBackupAluno(email) {
     const cleanEmail = decodeURIComponent(String(email || '')).toLowerCase();
     const aluno = adminAccessList.find(item => String(item.email || '').toLowerCase() === cleanEmail);
     if(!aluno?.user_id) {
-        showToast('Aluno sem registro', 'Nao encontrei o usuario do aluno para restaurar.');
+        showToast('Aluno sem registro', 'Não encontrei o usuário do aluno para restaurar.');
         return;
     }
     try {
@@ -1207,7 +1207,7 @@ async function restaurarBackupAluno(email) {
             .maybeSingle();
         if(error) throw error;
         if(!data?.before_data) {
-            showToast('Sem backup encontrado', 'Ainda nao existe backup salvo para este aluno.');
+            showToast('Sem backup encontrado', 'Ainda não existe backup salvo para este aluno.');
             return;
         }
         const { error: saveError } = await supabaseClient
@@ -1227,7 +1227,7 @@ async function restaurarBackupAluno(email) {
         }
         showToast('Backup restaurado', `Dados de ${cleanEmail} voltaram para o ultimo backup.`);
     } catch(e) {
-        showToast('Falha ao restaurar backup', 'Confira as permissoes da tabela plantao_admin_backups.');
+        showToast('Falha ao restaurar backup', 'Confira as permissões da tabela plantao_admin_backups.');
     }
 }
 
@@ -1250,7 +1250,7 @@ async function alterarAcessoAluno(email, status) {
         showToast(status === 'approved' ? 'Aluno aprovado' : 'Acesso atualizado', cleanEmail);
         await carregarSolicitacoesAcesso();
     } catch(e) {
-        showToast('Falha ao atualizar acesso', 'Confira as permissoes da tabela no Supabase.');
+        showToast('Falha ao atualizar acesso', 'Confira as permissões da tabela no Supabase.');
     }
 }
 
@@ -1557,7 +1557,7 @@ function renderReplanejamento() {
             <div class="stat-card replan-card ${pausado ? 'active' : ''}">
                 <div class="replan-icon"><i class="fas fa-calendar-plus"></i></div>
                 <div>
-                    <h3>Comecar a semana amanha</h3>
+                    <h3>Começar a semana amanhã</h3>
                     <p class="meta-sub">Esvazia o dia de hoje e recalcula o cronograma a partir de ${amanhaKey}, respeitando suas horas cadastradas.</p>
                 </div>
                 <div class="replan-status">
@@ -1573,7 +1573,7 @@ function renderReplanejamento() {
                 <h3>O que acontece</h3>
                 <div class="replan-steps">
                     <div><i class="fas fa-check"></i><span>Hoje fica sem cards planejados.</span></div>
-                    <div><i class="fas fa-check"></i><span>As atividades nao concluidas voltam para a fila.</span></div>
+                    <div><i class="fas fa-check"></i><span>As atividades não concluídas voltam para a fila.</span></div>
                     <div><i class="fas fa-check"></i><span>Amanha assume o inicio do ciclo, sem marcar nada como estudado.</span></div>
                     <div><i class="fas fa-check"></i><span>Domingo a sabado continuam respeitando os limites diarios.</span></div>
                 </div>
@@ -1589,7 +1589,7 @@ function replanejarComecarAmanha() {
     db.metaFixa[hojeKey] = [];
     limparPlanejamentoFuturo(hojeKey);
     save();
-    showToast("Dia pausado", "Hoje ficou vazio e o cronograma recomeca amanha.");
+    showToast("Dia pausado", "Hoje ficou vazio e o cronograma recomeça amanhã.");
     renderReplanejamento();
     renderDiario(vDate);
     updateDashboard();
@@ -1613,14 +1613,14 @@ function renderBackup() {
     if(!content) return;
     const totalAssuntos = db.lista.length;
     const totalLancamentos = listarLancamentos().length;
-    const ultimaCopia = db.ultimoBackup ? new Date(db.ultimoBackup).toLocaleString() : 'Nenhuma copia registrada';
+    const ultimaCopia = db.ultimoBackup ? new Date(db.ultimoBackup).toLocaleString() : 'Nenhuma cópia registrada';
 
     content.innerHTML = `
         <div class="backup-grid">
             <div class="stat-card backup-card">
                 <div class="backup-icon"><i class="fas fa-lock"></i></div>
                 <h3>Exportar backup seguro</h3>
-                <p class="meta-sub">Crie um arquivo criptografado. Guarde a senha, porque sem ela nao sera possivel restaurar.</p>
+                <p class="meta-sub">Crie um arquivo criptografado. Guarde a senha, porque sem ela não será possível restaurar.</p>
                 <label for="backup-pass">Senha do backup</label>
                 <input type="password" id="backup-pass" placeholder="Digite uma senha forte">
                 <button class="btn" onclick="exportarBackupSeguro()"><i class="fas fa-download"></i> BAIXAR BACKUP SEGURO</button>
@@ -1672,7 +1672,7 @@ async function gerarChaveBackup(senha, salt) {
 
 async function exportarBackupSeguro() {
     try {
-        if(!crypto?.subtle) return showToast('Criptografia indisponivel', 'Abra o site no Chrome ou Edge atualizado para usar backup seguro.');
+        if(!crypto?.subtle) return showToast('Criptografia indisponível', 'Abra o site no Chrome ou Edge atualizado para usar backup seguro.');
         const pass = document.getElementById('backup-pass').value;
         if(!pass || pass.length < 6) return showToast('Senha curta', 'Use pelo menos 6 caracteres para proteger o backup.');
 
@@ -1712,13 +1712,13 @@ async function exportarBackupSeguro() {
         renderBackup();
         showToast('Backup criado', 'Arquivo criptografado baixado com sucesso.');
     } catch(e) {
-        showToast('Erro no backup', 'Nao foi possivel gerar o arquivo seguro.');
+        showToast('Erro no backup', 'Não foi possível gerar o arquivo seguro.');
     }
 }
 
 async function restaurarBackupSeguro() {
     try {
-        if(!crypto?.subtle) return showToast('Criptografia indisponivel', 'Abra o site no Chrome ou Edge atualizado para restaurar backup seguro.');
+        if(!crypto?.subtle) return showToast('Criptografia indisponível', 'Abra o site no Chrome ou Edge atualizado para restaurar backup seguro.');
         const file = document.getElementById('restore-file').files[0];
         const pass = document.getElementById('restore-pass').value;
         if(!file) return showToast('Selecione o arquivo', 'Escolha o backup criptografado para restaurar.');
@@ -1727,7 +1727,7 @@ async function restaurarBackupSeguro() {
         const raw = await file.text();
         const backup = JSON.parse(raw);
         if(backup.type !== 'encrypted-backup' || !backup.salt || !backup.iv || !backup.data) {
-            return showToast('Arquivo invalido', 'Este arquivo nao parece ser um backup seguro do sistema.');
+            return showToast('Arquivo inválido', 'Este arquivo não parece ser um backup seguro do sistema.');
         }
 
         const key = await gerarChaveBackup(pass, base64ToBytes(backup.salt));
@@ -1738,7 +1738,7 @@ async function restaurarBackupSeguro() {
         );
         const payload = JSON.parse(textDecoder.decode(decrypted));
         if(payload.app !== 'plantao-policia' || !payload.data) {
-            return showToast('Backup invalido', 'O conteudo restaurado nao pertence a este sistema.');
+            return showToast('Backup inválido', 'O conteúdo restaurado não pertence a este sistema.');
         }
 
         db = payload.data;
@@ -2332,7 +2332,7 @@ function impEdital() {
     const peso = limitarPeso(pesoEl.value);
     pesoEl.value = peso;
     if(!m || !txt) {
-        showToast("Preencha a materia", "Informe a materia e pelo menos um assunto.");
+        showToast("Preencha a matéria", "Informe a matéria e pelo menos um assunto.");
         return;
     }
 
@@ -2491,11 +2491,11 @@ function renderFluxo() {
                     <div class="flow-row flow-row-inner">
                         <div class="flow-info">
                             <b>Ajuste geral</b>
-                            <small style="display:block; color:var(--text-sec); margin-top:4px;">O peso vale para todos os assuntos desta materia.</small>
+                            <small style="display:block; color:var(--text-sec); margin-top:4px;">O peso vale para todos os assuntos desta matéria.</small>
                         </div>
                     <div class="flow-grid">
                         <div>
-                            <label>Horas de estudo da materia</label>
+                            <label>Horas de estudo da matéria</label>
                             <input type="number" id="fluxo-h-${safeId(m)}" min="0.5" step="0.5" value="${item.h.E}">
                         </div>
                         <div>
@@ -2568,12 +2568,12 @@ function saveC() {
     save();
     renderCiclo();
     updateDashboard();
-    showToast("Ciclo ativado", `${db.ciclo.length} materia(s) em giro no planejamento.`);
+    showToast("Ciclo ativado", `${db.ciclo.length} matéria(s) em giro no planejamento.`);
 }
 
 function removerMateria(materia) {
     materia = decodeURIComponent(materia);
-    if(!confirm(`Remover ${materia} do site? Isso apaga os assuntos dessa materia e refaz o planejamento.`)) return;
+    if(!confirm(`Remover ${materia} do site? Isso apaga os assuntos dessa matéria e refaz o planejamento.`)) return;
     db.lista = db.lista.filter(x => x.m !== materia);
     db.ciclo = db.ciclo.filter(x => x !== materia);
     Object.keys(db.metaFixa).forEach(dia => {
