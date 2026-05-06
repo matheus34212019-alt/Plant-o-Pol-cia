@@ -98,6 +98,53 @@ function setCloudStatus(texto) {
     if(el) el.innerText = texto;
 }
 
+function garantirRankingInterface() {
+    if(!document.getElementById('ranking-nav')) {
+        const perfilNav = document.querySelector(".nav-item[onclick*='perfil']");
+        if(perfilNav) {
+            perfilNav.insertAdjacentHTML('beforebegin', `
+                <div id="ranking-nav" class="nav-item admin-only" style="display:none;" onclick="showTab('ranking', this)">
+                    <i class="fas fa-ranking-star"></i><span>Ranking</span>
+                </div>`);
+        }
+    }
+    if(!document.getElementById('ranking')) {
+        const perfilPage = document.getElementById('perfil');
+        if(perfilPage) {
+            perfilPage.insertAdjacentHTML('beforebegin', `
+                <div id="ranking" class="page">
+                    <div class="page-header">
+                        <div>
+                            <h2>Ranking dos Alunos</h2>
+                            <p class="meta-sub">Comparativo de horas estudadas, precisÃ£o e sequÃªncia de dias.</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="renderRankingAlunos()">
+                            <i class="fas fa-rotate"></i> ATUALIZAR
+                        </button>
+                    </div>
+                    <div id="ranking-content"></div>
+                </div>`);
+        }
+    }
+    if(!document.getElementById('ranking-inline-style')) {
+        const style = document.createElement('style');
+        style.id = 'ranking-inline-style';
+        style.textContent = `
+            .ranking-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:start}
+            .ranking-card{display:grid;gap:10px}
+            .ranking-card-head .meta-sub{margin-bottom:0}
+            .ranking-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:13px 0;border-top:1px solid var(--border)}
+            .ranking-row:first-of-type{border-top:0}
+            .ranking-pos{width:30px;height:30px;border-radius:999px;display:grid;place-items:center;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.28);color:#bae6fd;font-weight:900}
+            .ranking-row b{color:#f8fafc;display:block}
+            .ranking-row small{display:block;color:var(--text-sec);margin-top:4px;font-weight:700;overflow-wrap:anywhere}
+            .ranking-row strong{color:var(--accent);white-space:nowrap;font-weight:900}
+            @media (max-width:820px){.ranking-grid{grid-template-columns:1fr}.ranking-row{grid-template-columns:auto 1fr}.ranking-row strong{grid-column:2}}
+        `;
+        document.head.appendChild(style);
+    }
+}
+
 function mostrarTelaLogin() {
     const tela = document.getElementById('login-screen');
     if(tela) tela.style.display = 'flex';
@@ -111,6 +158,7 @@ function ocultarTelaLogin() {
 }
 
 function nomeUsuario() {
+    if(db?.perfilNome) return String(db.perfilNome).trim() || 'Matheus';
     if(!cloudUser) return 'Matheus';
     const meta = cloudUser.user_metadata || {};
     const nome = cloudUser.displayName || meta.full_name || meta.name || cloudUser.email || 'Matheus';
@@ -162,6 +210,33 @@ function alvoDadosNuvem() {
         email: cloudUser?.email || null,
         name: nomeUsuario()
     };
+}
+
+function preferenciasKey() {
+    const alvo = alvoDadosNuvem();
+    const id = alvo.user_id || cloudUser?.id || emailNormalizado() || 'local';
+    return `plantao_prefs_${id}`;
+}
+
+function salvarPreferenciasLocais() {
+    try {
+        const prefs = {
+            perfilNome: db.perfilNome || '',
+            editalPublicacao: db.editalPublicacao || '',
+            updatedAt: new Date().toISOString()
+        };
+        localStorage.setItem(preferenciasKey(), JSON.stringify(prefs));
+    } catch(e) {}
+}
+
+function aplicarPreferenciasLocais() {
+    try {
+        const raw = localStorage.getItem(preferenciasKey());
+        if(!raw) return;
+        const prefs = JSON.parse(raw);
+        if(prefs?.perfilNome && !db.perfilNome) db.perfilNome = prefs.perfilNome;
+        if(prefs?.editalPublicacao && !db.editalPublicacao) db.editalPublicacao = prefs.editalPublicacao;
+    } catch(e) {}
 }
 
 function cloneDados(valor) {
@@ -320,8 +395,14 @@ function textoDataEdital() {
 }
 
 function atualizarPersonalizacao() {
+    garantirRankingInterface();
     const welcome = document.getElementById('welcome-title');
-    if(welcome) welcome.innerText = `FORCA E HONRA, ${nomeUsuario().toUpperCase()}!`;
+    if(welcome) welcome.innerText = `FORÃ‡A E HONRA, ${nomeUsuario().toUpperCase()}!`;
+    document.querySelectorAll('[data-student-name]').forEach(el => {
+        el.innerText = nomeUsuario();
+    });
+    const rankingNav = document.getElementById('ranking-nav');
+    if(rankingNav) rankingNav.style.display = usuarioAdmin() ? 'flex' : 'none';
 }
 
 async function verificarAcessoSupabase() {
@@ -533,8 +614,20 @@ async function loginGoogle() {
 async function sairGoogle() {
     try {
         clearTimeout(cloudSaveTimer);
-        if(supabaseClient) await supabaseClient.auth.signOut();
-        if(firebaseAuth) await firebaseAuth.signOut();
+        if(supabaseClient) {
+            try {
+                await comTimeout(supabaseClient.auth.signOut({ scope: 'local' }), 3500, 'Tempo esgotado ao sair.');
+            } catch(e) {}
+        }
+        if(firebaseAuth) {
+            try { await firebaseAuth.signOut(); } catch(e) {}
+        }
+        Object.keys(localStorage).forEach(key => {
+            if(key.startsWith('sb-') || key.includes('supabase.auth.token')) localStorage.removeItem(key);
+        });
+        Object.keys(sessionStorage).forEach(key => {
+            if(key.startsWith('sb-') || key.includes('supabase.auth.token')) sessionStorage.removeItem(key);
+        });
     } catch(e) {
         setCloudStatus('SessÃ£o local encerrada. Entre novamente com Google.');
     } finally {
@@ -546,6 +639,8 @@ async function sairGoogle() {
         atualizarPersonalizacao();
         renderPerfil();
         mostrarTelaLogin();
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setCloudStatus('VocÃª saiu do login. Entre novamente com Google.');
     }
 }
 
@@ -619,6 +714,8 @@ async function carregarDadosSupabase() {
             db = data.data;
             localStorage.setItem('prf_v120', JSON.stringify(db));
             normalizarBanco();
+            aplicarPreferenciasLocais();
+            localStorage.setItem('prf_v120', JSON.stringify(db));
             showToast('Dados sincronizados', editandoAlunoComoAdmin() ? `Perfil de ${alvo.email} carregado.` : 'Seu planejamento foi carregado do Supabase.');
             return true;
         } else {
@@ -626,6 +723,7 @@ async function carregarDadosSupabase() {
                 showToast('Aluno sem planejamento', 'O aluno ainda nÃ£o tem dados salvos no Supabase.');
                 return false;
             }
+            aplicarPreferenciasLocais();
             await salvarDadosSupabase(true);
             showToast('Nuvem ativada', 'Seus dados locais foram salvos no Supabase.');
             return true;
@@ -696,6 +794,7 @@ function normalizarBanco() {
     if(!Array.isArray(db.lista)) db.lista = [];
     if(!Array.isArray(db.ciclo)) db.ciclo = [];
     if(!Array.isArray(db.diasPausados)) db.diasPausados = [];
+    db.perfilNome = String(db.perfilNome || '').trim();
     if(!/^\d{4}-\d{2}-\d{2}$/.test(db.editalPublicacao || '')) db.editalPublicacao = '';
     for(let i=0; i<7; i++) db.h[i] = Math.max(0, parseFloat(db.h[i] || 0));
     db.lista.forEach((item, idx) => {
@@ -752,6 +851,7 @@ function checkAccess() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    garantirRankingInterface();
     const supabaseOk = await initSupabaseAuth();
     if(!supabaseOk) {
         setCloudStatus('Supabase nÃ£o configurado ou supabase-config.js nÃ£o carregado. O acesso depende do login aprovado pelo admin.');
@@ -779,6 +879,7 @@ function showTab(id, el) {
     if(id === 'backup') renderBackup();
     if(id === 'lancamentos') renderLancamentos();
     if(id === 'performance') renderPerformance();
+    if(id === 'ranking') renderRankingAlunos();
     if(id === 'perfil') renderPerfil();
     renderAdminStudentBanner();
     updateDashboard();
@@ -1153,7 +1254,7 @@ function renderPerfil() {
                 <div class="admin-access-head">
                     <div>
                         <h3>Aprovar alunos</h3>
-                        <p class="meta-sub">Controle quem pode acessar o Plantao como aluno e abra o perfil para fazer ajustes.</p>
+                        <p class="meta-sub">Controle quem pode acessar o PlantÃ£o como aluno e abra o perfil para fazer ajustes.</p>
                     </div>
                     <button class="btn btn-sm btn-outline" onclick="carregarSolicitacoesAcesso()">
                         <i class="fas fa-rotate"></i> ATUALIZAR
@@ -1195,6 +1296,15 @@ function renderPerfil() {
                 </div>
             </div>
             <div class="stat-card profile-actions-card">
+                <h3>Nome na plataforma</h3>
+                <p class="meta-sub">Esse nome aparece no painel, no ranking e nas Ã¡reas de acompanhamento.</p>
+                <label for="perfil-nome-aluno">Nome exibido</label>
+                <input type="text" id="perfil-nome-aluno" value="${nomeSeguro}" maxlength="80" placeholder="Nome do aluno">
+                <button class="btn" onclick="salvarNomePerfil()">
+                    <i class="fas fa-user-check"></i> SALVAR NOME
+                </button>
+            </div>
+            <div class="stat-card profile-actions-card">
                 <h3>Acesso</h3>
                 <p class="meta-sub">Saia desta conta para entrar com outro Google neste dispositivo.</p>
                 <button class="btn btn-outline" onclick="sairGoogle()">
@@ -1222,12 +1332,18 @@ async function carregarSolicitacoesAcesso() {
     if(!alvo || !supabaseClient || !usuarioAdmin()) return;
     alvo.innerHTML = '<div class="empty-state">Carregando solicitaÃ§Ãµes...</div>';
     try {
-        const sessionInfo = await supabaseClient.auth.getUser();
-        const adminEmailAtual = sessionInfo?.data?.user?.email || emailUsuario();
-        const { data, error } = await supabaseClient
-            .from(ACCESS_TABLE)
-            .select('*')
-            .order('requested_at', { ascending: false });
+        const adminEmailAtual = emailUsuario();
+        try {
+            await verificarAcessoSupabase();
+        } catch(e) {}
+        const { data, error } = await comTimeout(
+            supabaseClient
+                .from(ACCESS_TABLE)
+                .select('*')
+                .order('requested_at', { ascending: false }),
+            8000,
+            'Tempo esgotado ao carregar solicitaÃ§Ãµes.'
+        );
         if(error) throw error;
         adminAccessList = data || [];
         renderAdminAccessList(adminEmailAtual);
@@ -1237,6 +1353,7 @@ async function carregarSolicitacoesAcesso() {
                 <strong>NÃ£o foi possÃ­vel carregar os alunos</strong>
                 <span>${escapeHtml(mensagemErroSupabase(e))}</span>
                 <span>Rode novamente o SQL de acesso no Supabase e depois peÃ§a para o aluno sair e entrar com Google.</span>
+                <button class="btn btn-sm btn-outline" onclick="carregarSolicitacoesAcesso()">TENTAR NOVAMENTE</button>
             </div>`;
     }
 }
@@ -1381,7 +1498,7 @@ async function restaurarBackupAluno(email) {
             normalizarBanco();
             init();
         }
-        showToast('Backup restaurado', `Dados de ${cleanEmail} voltaram para o ultimo backup.`);
+        showToast('Backup restaurado', `Dados de ${cleanEmail} voltaram para o Ãºltimo backup.`);
     } catch(e) {
         showToast('Falha ao restaurar backup', 'Confira as permissÃµes da tabela plantao_admin_backups.');
     }
@@ -1410,11 +1527,39 @@ async function alterarAcessoAluno(email, status) {
     }
 }
 
+async function salvarNomePerfil() {
+    const input = document.getElementById('perfil-nome-aluno');
+    if(!input) return;
+    const nome = input.value.trim();
+    if(nome.length < 2) {
+        showToast('Nome nÃ£o salvo', 'Informe pelo menos 2 letras.');
+        return;
+    }
+    db.perfilNome = nome;
+    salvarPreferenciasLocais();
+    save();
+    atualizarPersonalizacao();
+    renderPerfil();
+    try {
+        const alvo = alvoDadosNuvem();
+        if(supabaseClient && alvo.email) {
+            await supabaseClient
+                .from(ACCESS_TABLE)
+                .update({ name: nome, user_id: alvo.user_id || null })
+                .eq('email', String(alvo.email).toLowerCase());
+        }
+        await salvarDadosSupabase(true);
+    } catch(e) {}
+    showToast('Nome atualizado', `${nome} serÃ¡ usado na plataforma.`);
+}
+
 function salvarDataEdital() {
     const input = document.getElementById('edital-publicacao');
     if(!input) return;
     db.editalPublicacao = input.value || '';
+    salvarPreferenciasLocais();
     save();
+    salvarDadosSupabase(true);
     renderPerfil();
     atualizarProgressoCiclo();
     showToast('Data do edital salva', textoDataEdital() || 'A contagem do edital foi removida do painel.');
@@ -1603,6 +1748,117 @@ function renderPrioridadeRow(item) {
             <span>${pct}% prioridade</span>
             <div class="mini-bar"><div style="width:${pct}%"></div></div>
         </div>`;
+}
+
+function listarLancamentosBanco(banco) {
+    const lista = [];
+    Object.keys(banco?.metaFixa || {}).forEach(dia => {
+        (banco.metaFixa[dia] || []).forEach(task => {
+            if(task.c && !isExtraTask(task)) lista.push({ dia, task });
+        });
+    });
+    return lista;
+}
+
+function calcularStreakBanco(banco) {
+    let streak = 0;
+    const d = new Date();
+    while(true) {
+        const k = dateKey(d);
+        const tarefas = tarefasPlanejadas(banco?.metaFixa?.[k] || []);
+        if(tarefas.length && tarefas.every(t => t.c)) {
+            streak++;
+            d.setDate(d.getDate() - 1);
+        } else {
+            break;
+        }
+    }
+    return streak;
+}
+
+function resumoRankingAluno(aluno, dados) {
+    const banco = dados || {};
+    const lancamentos = listarLancamentosBanco(banco);
+    const total = lancamentos.reduce((acc, { task }) => {
+        acc.horas += parseFloat(task.h) || 0;
+        if(task.perf) {
+            acc.questoes += parseInt(task.perf.t) || 0;
+            acc.acertos += parseInt(task.perf.a) || 0;
+        }
+        return acc;
+    }, { horas: 0, questoes: 0, acertos: 0 });
+    return {
+        nome: banco.perfilNome || aluno.name || aluno.email || 'Aluno',
+        email: aluno.email || '',
+        horas: total.horas,
+        questoes: total.questoes,
+        acertos: total.acertos,
+        taxa: total.questoes ? Math.round((total.acertos / total.questoes) * 100) : 0,
+        streak: calcularStreakBanco(banco)
+    };
+}
+
+function rankingLista(titulo, subtitulo, alunos, criterio, unidade) {
+    const ordenados = [...alunos].sort((a, b) => b[criterio] - a[criterio] || a.nome.localeCompare(b.nome));
+    return `
+        <div class="stat-card ranking-card">
+            <div class="ranking-card-head">
+                <h3>${titulo}</h3>
+                <p class="meta-sub">${subtitulo}</p>
+            </div>
+            ${ordenados.length ? ordenados.map((aluno, idx) => `
+                <div class="ranking-row">
+                    <span class="ranking-pos">${idx + 1}</span>
+                    <div>
+                        <b>${escapeHtml(aluno.nome)}</b>
+                        <small>${escapeHtml(aluno.email)} | ${aluno.horas.toFixed(1)}h | ${aluno.questoes} questÃµes | ${aluno.taxa}%</small>
+                    </div>
+                    <strong>${criterio === 'horas' ? aluno[criterio].toFixed(1) : aluno[criterio]}${unidade}</strong>
+                </div>`).join('') : perfEmpty('Ainda nÃ£o hÃ¡ alunos com dados para ranquear.')}
+        </div>`;
+}
+
+async function renderRankingAlunos() {
+    const alvo = document.getElementById('ranking-content');
+    if(!alvo) return;
+    if(!usuarioAdmin()) {
+        alvo.innerHTML = perfEmpty('O ranking fica disponÃ­vel somente para o admin.');
+        return;
+    }
+    alvo.innerHTML = '<div class="empty-state">Carregando ranking dos alunos...</div>';
+    try {
+        if(!adminAccessList.length) await carregarSolicitacoesAcesso();
+        const alunos = adminAccessList.filter(item => item.email !== ADMIN_EMAIL && item.status === 'approved' && item.user_id);
+        if(!alunos.length) {
+            alvo.innerHTML = perfEmpty('Aprove alunos e aguarde eles salvarem atividades para montar o ranking.');
+            return;
+        }
+        const ids = alunos.map(a => a.user_id);
+        const { data, error } = await comTimeout(
+            supabaseClient
+                .from('plantao_user_data')
+                .select('user_id,email,data')
+                .in('user_id', ids),
+            9000,
+            'Tempo esgotado ao carregar dados dos alunos.'
+        );
+        if(error) throw error;
+        const dadosPorId = new Map((data || []).map(item => [item.user_id, item.data || {}]));
+        const ranking = alunos.map(aluno => resumoRankingAluno(aluno, dadosPorId.get(aluno.user_id)));
+        alvo.innerHTML = `
+            <div class="ranking-grid">
+                ${rankingLista('Horas estudadas', 'Soma de atividades concluÃ­das.', ranking, 'horas', 'h')}
+                ${rankingLista('PrecisÃ£o de acertos', 'Percentual geral de acertos em questÃµes.', ranking.filter(a => a.questoes > 0), 'taxa', '%')}
+                ${rankingLista('Dias sem falhar', 'SequÃªncia atual de dias com todas as metas concluÃ­das.', ranking, 'streak', ' dias')}
+            </div>`;
+    } catch(e) {
+        alvo.innerHTML = `
+            <div class="empty-state">
+                <strong>NÃ£o foi possÃ­vel carregar o ranking</strong>
+                <span>${escapeHtml(mensagemErroSupabase(e))}</span>
+                <span>Confira se o SQL do Supabase permite o admin ler plantao_user_data.</span>
+            </div>`;
+    }
 }
 
 function removerLancamento(dia, idx) {
@@ -2520,7 +2776,7 @@ function impEdital() {
     assEl.value = '';
     horasEl.value = '1.5';
     pesoEl.value = '1';
-    showToast("Materia salva", `${m} entrou no edital com ${assuntos.length} assunto(s).`);
+    showToast("MatÃ©ria salva", `${m} entrou no edital com ${assuntos.length} assunto(s).`);
 }
 
 function renderTree() {
@@ -2664,7 +2920,7 @@ function renderFluxo() {
                             <input type="number" id="fluxo-p-${safeId(m)}" min="1" max="5" step="1" value="${item.peso}">
                         </div>
                     </div>
-                    <button class="btn btn-sm" onclick="salvarFluxoMateria('${encodeURIComponent(m)}')">SALVAR MATERIA</button>
+                    <button class="btn btn-sm" onclick="salvarFluxoMateria('${encodeURIComponent(m)}')">SALVAR MATÃ‰RIA</button>
                     </div>
                     <div class="subject-flow-list">
                         <div class="subject-flow-head">
