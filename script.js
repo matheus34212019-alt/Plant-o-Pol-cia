@@ -1506,18 +1506,23 @@ function renderDiarioSemRecalcular(date) {
 }
 
 function calcCebraspe() {
-    const t = parseInt(document.getElementById('ex-total').value) || 0;
-    const a = parseInt(document.getElementById('ex-acertos').value) || 0;
-    const liq = a - (t - a);
-    const perc = t > 0 ? Math.round((liq / t) * 100) : 0;
-    document.getElementById('cebraspe-feedback').innerHTML = `Liquido: ${liq} | Aproveitamento: ${perc}%`;
+    const total = Math.max(0, parseInt(document.getElementById('ex-total').value) || 0);
+    const acertosInformados = Math.max(0, parseInt(document.getElementById('ex-acertos').value) || 0);
+    const acertos = total > 0 ? Math.min(acertosInformados, total) : acertosInformados;
+    const perc = total > 0 ? Math.round((acertos / total) * 100) : 0;
+    const aviso = acertosInformados > total && total > 0 ? '<br><small>Acertos ajustados ao total de questões.</small>' : '';
+    document.getElementById('cebraspe-feedback').innerHTML = total
+        ? `Acertos: ${acertos}/${total} | Aproveitamento: ${perc}%${aviso}`
+        : 'Informe as questões e os acertos.';
 }
 
 function confirmarExercicio() {
     const t = db.metaFixa[exPendente.dK][exPendente.idx];
+    const total = Math.max(0, parseInt(document.getElementById('ex-total').value) || 0);
+    const acertosInformados = Math.max(0, parseInt(document.getElementById('ex-acertos').value) || 0);
     t.perf = {
-        t: parseInt(document.getElementById('ex-total').value) || 0,
-        a: parseInt(document.getElementById('ex-acertos').value) || 0
+        t: total,
+        a: total > 0 ? Math.min(acertosInformados, total) : acertosInformados
     };
     concluirTask(t, exPendente.dK);
     exPendente = null;
