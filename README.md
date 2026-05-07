@@ -28,3 +28,4 @@ Para ativar login Google e dados na nuvem, siga o passo a passo em `SUPABASE_SET
 O site funciona localmente enquanto `firebase-config.js` estiver com `null`.
 
 O Firebase continua suportado como alternativa em `FIREBASE_SETUP.md`.
+
