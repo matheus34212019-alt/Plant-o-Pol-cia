@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plant&atilde;o v.138</title>
+    <title>Plant&atilde;o v.139</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="styles.css?v=138">
+    <link rel="stylesheet" href="styles.css?v=139">
 </head>
 <body>
     <div id="login-screen">
@@ -20,7 +20,13 @@
                 <button class="btn btn-outline" style="width:100%;" onclick="entrarEmailSenha()">
                     <i class="fas fa-right-to-bracket"></i> ENTRAR COM E-MAIL
                 </button>
+                <button class="btn btn-outline" id="update-password-btn" style="width:100%; display:none;" onclick="salvarNovaSenhaEmail()">
+                    <i class="fas fa-key"></i> SALVAR NOVA SENHA
+                </button>
             </div>
+            <button class="btn btn-link" type="button" onclick="enviarRecuperacaoSenha()">
+                Criar ou recuperar senha
+            </button>
             <button class="btn btn-link" type="button" onclick="mostrarCadastroAluno(true)">
                 Solicitar cadastro de aluno
             </button>
@@ -297,7 +303,7 @@
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script src="script.js?v=138"></script>
+    <script src="script.js?v=139"></script>
 </body>
 </html>
-<!-- deploy: v138-desempenho-por-assunto -->
+<!-- deploy: v139-login-email-recuperacao-senha -->
