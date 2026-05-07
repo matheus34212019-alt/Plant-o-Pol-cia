@@ -26,6 +26,7 @@ let adminAccessList = [];
 let adminStudentContext = null;
 let adminEditBackupReady = false;
 let authProcessandoRetorno = false;
+let modoRecuperacaoSenha = false;
 
 const ADMIN_EMAIL = 'matheus34212019@gmail.com';
 const ACCESS_TABLE = 'plantao_user_access';
@@ -368,6 +369,11 @@ function criarClienteSupabase(accessToken = null) {
 function setCloudStatus(texto) {
     const el = document.getElementById('cloud-login-status');
     if(el) el.innerText = corrigirMojibakeValor(texto);
+}
+
+function atualizarBotaoNovaSenha() {
+    const btn = document.getElementById('update-password-btn');
+    if(btn) btn.style.display = modoRecuperacaoSenha ? 'inline-flex' : 'none';
 }
 
 function garantirRankingInterface() {
@@ -826,6 +832,7 @@ async function initSupabaseAuth() {
         const url = new URL(window.location.href);
         const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''));
         const authCode = url.searchParams.get('code');
+        const authType = hashParams.get('type') || url.searchParams.get('type');
         const authError = url.searchParams.get('error_description')
             || hashParams.get('error_description')
             || url.searchParams.get('error')
@@ -855,6 +862,14 @@ async function initSupabaseAuth() {
         if(session?.user) {
             supabaseAccessToken = session.access_token || supabaseAccessToken;
             if(supabaseAccessToken) supabaseClient = criarClienteSupabase(supabaseAccessToken);
+            if(authType === 'recovery') {
+                modoRecuperacaoSenha = true;
+                cloudUser = {...session.user, provider: 'supabase'};
+                mostrarTelaLogin();
+                atualizarBotaoNovaSenha();
+                setCloudStatus('Digite sua nova senha no campo Senha e clique em Salvar nova senha.');
+                return true;
+            }
             await entrarComSessaoSupabase(session.user);
         } else {
             setCloudStatus('Entre com Google para sincronizar na nuvem.');
@@ -1024,10 +1039,59 @@ async function entrarEmailSenha() {
         if(supabaseAccessToken) supabaseClient = criarClienteSupabase(supabaseAccessToken);
         if(data?.user) await entrarComSessaoSupabase(data.user);
     } catch(e) {
-        setCloudStatus(`Não foi possível entrar: ${mensagemErroSupabase(e)}`);
+        const msg = mensagemErroSupabase(e);
+        if(email === ADMIN_EMAIL) {
+            setCloudStatus(`Não foi possível entrar como admin: ${msg}. Se a senha ainda não foi criada, clique em Criar ou recuperar senha.`);
+            return;
+        }
+        setCloudStatus(`Não foi possível entrar: ${msg}`);
     }
 }
 
+async function enviarRecuperacaoSenha() {
+    if(!supabaseConfigurado()) {
+        setCloudStatus('Supabase não configurado. Configure o supabase-config.js para recuperar senha.');
+        return;
+    }
+    const email = String(document.getElementById('login-email')?.value || '').trim().toLowerCase();
+    if(!email) {
+        setCloudStatus('Digite seu e-mail no campo E-mail antes de recuperar a senha.');
+        return;
+    }
+    try {
+        if(!supabaseClient) supabaseClient = criarClienteSupabase();
+        const redirectTo = `${window.location.origin}${window.location.pathname}`;
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+        if(error) throw error;
+        setCloudStatus('Enviamos um link para seu e-mail. Abra o link, digite a nova senha aqui e clique em Salvar nova senha.');
+    } catch(e) {
+        setCloudStatus(`Não foi possível enviar recuperação de senha: ${mensagemErroSupabase(e)}`);
+    }
+}
+
+async function salvarNovaSenhaEmail() {
+    if(!supabaseConfigurado()) {
+        setCloudStatus('Supabase não configurado. Configure o supabase-config.js para salvar senha.');
+        return;
+    }
+    if(!supabaseClient) supabaseClient = criarClienteSupabase();
+    const senha = document.getElementById('login-senha')?.value || '';
+    if(!senha || senha.length < 6) {
+        setCloudStatus('Digite uma nova senha com pelo menos 6 caracteres.');
+        return;
+    }
+    try {
+        setCloudStatus('Salvando nova senha...');
+        const { data, error } = await supabaseClient.auth.updateUser({ password: senha });
+        if(error) throw error;
+        modoRecuperacaoSenha = false;
+        atualizarBotaoNovaSenha();
+        setCloudStatus('Senha salva. Entrando na plataforma...');
+        if(data?.user) await entrarComSessaoSupabase(data.user);
+    } catch(e) {
+        setCloudStatus(`Não foi possível salvar a nova senha: ${mensagemErroSupabase(e)}`);
+    }
+}
 async function sairGoogle() {
     try {
         clearTimeout(cloudSaveTimer);
@@ -1054,6 +1118,8 @@ async function sairGoogle() {
         adminAccessList = [];
         adminStudentContext = null;
         adminEditBackupReady = false;
+        modoRecuperacaoSenha = false;
+        atualizarBotaoNovaSenha();
         atualizarPersonalizacao();
         renderPerfil();
         mostrarTelaLogin();
