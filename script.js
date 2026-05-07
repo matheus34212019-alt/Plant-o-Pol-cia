@@ -721,15 +721,11 @@ async function verificarAcessoSupabase() {
             approved_at: agora,
             approved_by: email
         };
-        try {
-            const { error } = await supabaseClient.from(ACCESS_TABLE).upsert(adminProfile, { onConflict: 'email' });
-            if(error) throw error;
-        } catch(e) {
-            try {
-                const { user_id, ...adminSemUserId } = adminProfile;
-                await supabaseClient.from(ACCESS_TABLE).upsert(adminSemUserId, { onConflict: 'email' });
-            } catch(err) {}
-        }
+        supabaseClient.from(ACCESS_TABLE).upsert(adminProfile, { onConflict: 'email' }).then(({ error }) => {
+            if(!error) return;
+            const { user_id, ...adminSemUserId } = adminProfile;
+            return supabaseClient.from(ACCESS_TABLE).upsert(adminSemUserId, { onConflict: 'email' });
+        }).catch(() => {});
         return adminProfile;
     }
 
@@ -777,11 +773,15 @@ async function verificarAcessoSupabase() {
         return { ...data, name, user_id: cloudUser.id, phone: data.phone || phone, contest: data.contest || contest, age: data.age || age };
     }
 
-    const { data, error } = await supabaseClient
-        .from(ACCESS_TABLE)
-        .select('*')
-        .eq('email', email)
-        .maybeSingle();
+    const { data, error } = await comTimeout(
+        supabaseClient
+            .from(ACCESS_TABLE)
+            .select('*')
+            .eq('email', email)
+            .maybeSingle(),
+        8000,
+        'Tempo esgotado ao verificar aprovação.'
+    );
     if(error) throw error;
 
     if(data) {
