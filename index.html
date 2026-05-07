@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plant&atilde;o v.135</title>
+    <title>Plant&atilde;o v.138</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=138">
 </head>
 <body>
     <div id="login-screen">
@@ -132,7 +132,6 @@
             <div class="sub-link" onclick="showTab('sinalizar')">Sinalizar Base</div>
             <div class="sub-link" onclick="showTab('fluxo')">Ajustar Fluxos</div>
             <div class="sub-link" onclick="showTab('replanejar')">Replanejar Horários</div>
-            <div class="sub-link" onclick="showTab('backup')">Backup dos Dados</div>
             <div class="sub-link" onclick="showTab('lancamentos')">Lançamentos</div>
         </div>
     </aside>
@@ -285,15 +284,6 @@
                 </div>
                 <div id="replanejar-content"></div>
             </div>
-            <div id="backup" class="page">
-                <div class="page-header">
-                    <div>
-                        <h2>Backup dos Dados</h2>
-                        <p class="meta-sub">Guarde uma cópia criptografada do seu edital, ciclo, cronograma e desempenho.</p>
-                    </div>
-                </div>
-                <div id="backup-content"></div>
-            </div>
             <div id="lancamentos" class="page">
                 <div class="page-header">
                     <div>
@@ -307,7 +297,7 @@
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script src="script.js?v=135"></script>
+    <script src="script.js?v=138"></script>
 </body>
 </html>
-<!-- deploy: v135-cadastro-alunos -->
+<!-- deploy: v138-desempenho-por-assunto -->
