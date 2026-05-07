@@ -27,6 +27,7 @@ let adminStudentContext = null;
 let adminEditBackupReady = false;
 let authProcessandoRetorno = false;
 let modoRecuperacaoSenha = false;
+const OAUTH_LOGIN_FLAG = 'plantao_login_google_em_andamento';
 
 const ADMIN_EMAIL = 'matheus34212019@gmail.com';
 const ACCESS_TABLE = 'plantao_user_access';
@@ -346,9 +347,9 @@ function criarClienteSupabase(accessToken = null) {
     if(accessToken) supabaseAccessToken = accessToken;
     const options = {
         auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
             flowType: 'implicit'
         }
     };
@@ -374,6 +375,22 @@ function setCloudStatus(texto) {
 function atualizarBotaoNovaSenha() {
     const btn = document.getElementById('update-password-btn');
     if(btn) btn.style.display = modoRecuperacaoSenha ? 'inline-flex' : 'none';
+}
+
+async function limparSessaoSupabaseSilenciosa() {
+    try { await supabaseClient?.auth?.signOut({ scope: 'local' }); } catch(e) {}
+    supabaseAccessToken = null;
+    cloudUser = null;
+    accessProfile = null;
+    try {
+        sessionStorage.removeItem(OAUTH_LOGIN_FLAG);
+        Object.keys(localStorage).forEach(key => {
+            if(key.startsWith('sb-') || key.includes('supabase.auth.token')) localStorage.removeItem(key);
+        });
+        Object.keys(sessionStorage).forEach(key => {
+            if(key.startsWith('sb-') || key.includes('supabase.auth.token')) sessionStorage.removeItem(key);
+        });
+    } catch(e) {}
 }
 
 function garantirRankingInterface() {
@@ -818,10 +835,14 @@ async function entrarComSessaoSupabase(user) {
         return;
     }
     setCloudStatus(`Acesso liberado como ${loginUsuario()}.`);
-    await carregarDadosDaNuvem();
     ocultarTelaLogin();
     atualizarPersonalizacao();
     init();
+    comTimeout(carregarDadosDaNuvem(), 7000, 'Tempo esgotado ao carregar dados da nuvem.').then(() => {
+        init();
+    }).catch(() => {
+        showToast('Nuvem lenta', 'A plataforma foi aberta com os dados locais e tentará sincronizar depois.');
+    });
 }
 
 async function initSupabaseAuth() {
@@ -852,9 +873,9 @@ async function initSupabaseAuth() {
             return true;
         }
 
-        const session = hashParams.get('access_token')
-            ? await sessaoSupabasePeloHash(hashParams)
-            : await esperarSessaoSupabase(window.location.hash ? 10 : 1);
+        const veioDeCliqueGoogle = sessionStorage.getItem(OAUTH_LOGIN_FLAG) === '1';
+        const temTokenNaUrl = hashParams.get('access_token');
+        const session = temTokenNaUrl ? await sessaoSupabasePeloHash(hashParams) : null;
         authProcessandoRetorno = false;
         if(window.location.hash) {
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -870,20 +891,26 @@ async function initSupabaseAuth() {
                 setCloudStatus('Digite sua nova senha no campo Senha e clique em Salvar nova senha.');
                 return true;
             }
+            if(!veioDeCliqueGoogle && !temTokenNaUrl) {
+                await limparSessaoSupabaseSilenciosa();
+                setCloudStatus('Entre com Google ou e-mail para continuar.');
+                mostrarTelaLogin();
+                return true;
+            }
+            sessionStorage.removeItem(OAUTH_LOGIN_FLAG);
             await entrarComSessaoSupabase(session.user);
         } else {
-            setCloudStatus('Entre com Google para sincronizar na nuvem.');
+            await limparSessaoSupabaseSilenciosa();
+            setCloudStatus('Entre com Google ou e-mail para continuar.');
+            mostrarTelaLogin();
         }
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
-            if(session?.user) {
-                supabaseAccessToken = session.access_token || supabaseAccessToken;
-                if(supabaseAccessToken) supabaseClient = criarClienteSupabase(supabaseAccessToken);
-                await entrarComSessaoSupabase(session.user);
-            } else {
-                if(authProcessandoRetorno || event === 'INITIAL_SESSION') return;
+            if(event === 'INITIAL_SESSION') return;
+            if(authProcessandoRetorno) return;
+            if(event === 'SIGNED_OUT') {
                 cloudUser = null;
                 accessProfile = null;
-                setCloudStatus('Entre com Google para sincronizar na nuvem.');
+                setCloudStatus('Entre com Google ou e-mail para continuar.');
                 atualizarPersonalizacao();
                 mostrarTelaLogin();
             }
@@ -908,6 +935,7 @@ async function loginGoogle() {
         try {
             if(!supabaseClient) await initSupabaseAuth();
             const cleanRedirect = `${window.location.origin}${window.location.pathname}`;
+            sessionStorage.setItem(OAUTH_LOGIN_FLAG, '1');
             const { error } = await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
@@ -1188,11 +1216,15 @@ async function carregarDadosSupabase() {
     }
     carregandoNuvem = true;
     try {
-        const { data, error } = await supabaseClient
-            .from('plantao_user_data')
-            .select('data')
-            .eq('user_id', alvo.user_id)
-            .maybeSingle();
+        const { data, error } = await comTimeout(
+            supabaseClient
+                .from('plantao_user_data')
+                .select('data')
+                .eq('user_id', alvo.user_id)
+                .maybeSingle(),
+            6500,
+            'Tempo esgotado ao carregar dados do Supabase.'
+        );
         if(error) throw error;
         if(data?.data) {
             db = data.data;
