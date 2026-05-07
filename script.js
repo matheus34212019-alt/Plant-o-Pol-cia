@@ -89,6 +89,9 @@ function corrigirMojibakeValor(valor) {
     ortografia.forEach(([de, para]) => {
         texto = texto.split(de).join(para);
     });
+    perdidos.forEach(([de, para]) => {
+        texto = texto.split(de).join(para);
+    });
     return texto;
 }
 
@@ -134,6 +137,25 @@ function tentarDecodificarMojibake(texto) {
 function corrigirMojibakeValor(valor) {
     if(typeof valor !== 'string') return valor;
     let texto = tentarDecodificarMojibake(valor);
+    const perdidos = [
+        ['PLANT�O', 'PLANTÃO'], ['Plant�o', 'Plantão'], ['plant�o', 'plantão'],
+        ['MISS�O', 'MISSÃO'], ['Miss�o', 'Missão'], ['miss�o', 'missão'],
+        ['QUEST�ES', 'QUESTÕES'], ['Quest�es', 'Questões'], ['quest�es', 'questões'],
+        ['REVIS�O', 'REVISÃO'], ['Revis�o', 'Revisão'], ['revis�o', 'revisão'],
+        ['EXERC�CIOS', 'EXERCÍCIOS'], ['Exerc�cios', 'Exercícios'], ['exerc�cios', 'exercícios'],
+        ['MAT�RIA', 'MATÉRIA'], ['Mat�ria', 'Matéria'], ['mat�ria', 'matéria'],
+        ['MAT�RIAS', 'MATÉRIAS'], ['Mat�rias', 'Matérias'], ['mat�rias', 'matérias'],
+        ['LAN�AMENTOS', 'LANÇAMENTOS'], ['Lan�amentos', 'Lançamentos'], ['lan�amentos', 'lançamentos'],
+        ['DI�RIAS', 'DIÁRIAS'], ['Di�rias', 'Diárias'], ['di�rias', 'diárias'],
+        ['HOR�RIOS', 'HORÁRIOS'], ['Hor�rios', 'Horários'], ['hor�rios', 'horários'],
+        ['PRECIS�O', 'PRECISÃO'], ['Precis�o', 'Precisão'], ['precis�o', 'precisão'],
+        ['PUBLICA��O', 'PUBLICAÇÃO'], ['Publica��o', 'Publicação'], ['publica��o', 'publicação'],
+        ['APROVA��O', 'APROVAÇÃO'], ['Aprova��o', 'Aprovação'], ['aprova��o', 'aprovação'],
+        ['SINCRONIZA��O', 'SINCRONIZAÇÃO'], ['Sincroniza��o', 'Sincronização'], ['sincroniza��o', 'sincronização']
+    ];
+    perdidos.forEach(([de, para]) => {
+        texto = texto.split(de).join(para);
+    });
     const trocas = [
         ['ÃƒÆ’', 'Ãƒ'],
         ['ÃƒÂ¡', 'á'], ['ÃƒÃ ', 'à'], ['ÃƒÂ¢', 'â'], ['ÃƒÂ£', 'ã'], ['ÃƒÂ©', 'é'], ['ÃƒÂª', 'ê'],
@@ -198,6 +220,9 @@ function corrigirMojibakeValor(valor) {
         ['PORTUGUES', 'PORTUGUÊS'], ['Portugues', 'Português']
     ];
     ortografia.forEach(([de, para]) => {
+        texto = texto.split(de).join(para);
+    });
+    perdidos.forEach(([de, para]) => {
         texto = texto.split(de).join(para);
     });
     return texto;
