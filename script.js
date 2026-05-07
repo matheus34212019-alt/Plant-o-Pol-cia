@@ -458,7 +458,7 @@ function emailNormalizado() {
 }
 
 function usuarioAdmin() {
-    return emailNormalizado() === ADMIN_EMAIL || accessProfile?.role === 'admin';
+    return emailNormalizado() === ADMIN_EMAIL;
 }
 
 function acessoAprovado() {
@@ -677,15 +677,31 @@ function atualizarPersonalizacao() {
     document.querySelectorAll('[data-student-name]').forEach(el => {
         el.innerText = nomeUsuario();
     });
-    const rankingNav = document.getElementById('ranking-nav');
-    if(rankingNav) rankingNav.style.display = usuarioAdmin() ? 'flex' : 'none';
+    atualizarVisibilidadeAdmin();
     corrigirTextosDaTela();
+}
+
+function atualizarVisibilidadeAdmin() {
+    const admin = usuarioAdmin();
+    document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = admin ? (el.dataset.adminDisplay || 'flex') : 'none';
+    });
+    if(!admin) {
+        adminAccessList = [];
+        adminStudentContext = null;
+        adminEditBackupReady = false;
+    }
+    renderAdminStudentBanner();
 }
 
 async function verificarAcessoSupabase() {
     if(!supabaseClient || !cloudUser) return { status: 'local', role: 'local' };
     const email = emailNormalizado();
     const name = nomeUsuario();
+    const meta = cloudUser.user_metadata || {};
+    const phone = meta.phone || meta.telefone || '';
+    const contest = meta.contest || meta.concurso || '';
+    const age = parseInt(meta.age || meta.idade || '0', 10) || null;
     const agora = new Date().toISOString();
 
     if(email === ADMIN_EMAIL) {
@@ -716,6 +732,9 @@ async function verificarAcessoSupabase() {
             user_id: cloudUser.id,
             email,
             name,
+            phone,
+            contest,
+            age,
             role: 'aluno',
             status: 'pending',
             requested_at: agora
@@ -728,6 +747,12 @@ async function verificarAcessoSupabase() {
                 if(retry.error) throw retry.error;
                 return pendingSemUserId;
             }
+            if(erroColunaInexistente(error, 'phone') || erroColunaInexistente(error, 'contest') || erroColunaInexistente(error, 'age')) {
+                const { phone, contest, age, ...pendingBasico } = pending;
+                const retry = await supabaseClient.from(ACCESS_TABLE).insert(pendingBasico);
+                if(retry.error) throw retry.error;
+                return pendingBasico;
+            }
             throw error;
         }
         return pending;
@@ -736,10 +761,14 @@ async function verificarAcessoSupabase() {
     const atualizarRegistroExistente = async (data) => {
         if(data.name === name && data.user_id === cloudUser.id) return data;
         try {
-            const { error } = await supabaseClient.from(ACCESS_TABLE).update({ name, user_id: cloudUser.id }).eq('email', email);
+            const updatePayload = { name, user_id: cloudUser.id };
+            if(phone && !data.phone) updatePayload.phone = phone;
+            if(contest && !data.contest) updatePayload.contest = contest;
+            if(age && !data.age) updatePayload.age = age;
+            const { error } = await supabaseClient.from(ACCESS_TABLE).update(updatePayload).eq('email', email);
             if(error) throw error;
         } catch(e) {}
-        return { ...data, name, user_id: cloudUser.id };
+        return { ...data, name, user_id: cloudUser.id, phone: data.phone || phone, contest: data.contest || contest, age: data.age || age };
     }
 
     const { data, error } = await supabaseClient
@@ -879,6 +908,124 @@ async function loginGoogle() {
         }
     }
     setCloudStatus('Supabase não configurado. Configure o supabase-config.js para usar login aprovado.');
+}
+
+function mostrarCadastroAluno(mostrar) {
+    const box = document.getElementById('cadastro-aluno-box');
+    if(box) box.style.display = mostrar ? 'grid' : 'none';
+    setCloudStatus(mostrar ? 'Preencha o cadastro. O acesso só entra após aprovação do admin.' : 'Entre com Google ou e-mail para continuar.');
+}
+
+function dadosCadastroAluno() {
+    const nome = document.getElementById('cadastro-nome')?.value.trim() || '';
+    const telefone = document.getElementById('cadastro-telefone')?.value.trim() || '';
+    const concurso = document.getElementById('cadastro-concurso')?.value.trim() || '';
+    const idade = parseInt(document.getElementById('cadastro-idade')?.value || '0', 10);
+    const email = String(document.getElementById('cadastro-email')?.value || '').trim().toLowerCase();
+    const senha = document.getElementById('cadastro-senha')?.value || '';
+    return { nome, telefone, concurso, idade, email, senha };
+}
+
+function limparCadastroAluno() {
+    ['cadastro-nome', 'cadastro-telefone', 'cadastro-concurso', 'cadastro-idade', 'cadastro-email', 'cadastro-senha'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.value = '';
+    });
+}
+
+async function registrarSolicitacaoCadastro({ userId, email, nome, telefone, concurso, idade }) {
+    const payload = {
+        user_id: userId || null,
+        email,
+        name: nome,
+        phone: telefone,
+        contest: concurso,
+        age: idade || null,
+        role: 'aluno',
+        status: 'pending',
+        requested_at: new Date().toISOString()
+    };
+    const enviar = async dados => {
+        const { error } = await supabaseClient.from(ACCESS_TABLE).upsert(dados, { onConflict: 'email' });
+        if(error) throw error;
+    };
+    try {
+        await enviar(payload);
+    } catch(e) {
+        if(erroColunaInexistente(e, 'phone') || erroColunaInexistente(e, 'contest') || erroColunaInexistente(e, 'age')) {
+            const { phone, contest, age, ...fallback } = payload;
+            await enviar(fallback);
+            return;
+        }
+        throw e;
+    }
+}
+
+async function cadastrarAluno() {
+    if(!supabaseConfigurado()) {
+        setCloudStatus('Supabase não configurado. Configure o supabase-config.js antes de cadastrar alunos.');
+        return;
+    }
+    const dados = dadosCadastroAluno();
+    if(dados.nome.length < 5 || !dados.telefone || !dados.concurso || !dados.idade || !dados.email || dados.senha.length < 6) {
+        setCloudStatus('Preencha nome completo, telefone, concurso, idade, e-mail e senha com pelo menos 6 caracteres.');
+        return;
+    }
+    try {
+        if(!supabaseClient) supabaseClient = criarClienteSupabase();
+        setCloudStatus('Criando cadastro e enviando para aprovação...');
+        const { data, error } = await supabaseClient.auth.signUp({
+            email: dados.email,
+            password: dados.senha,
+            options: {
+                data: {
+                    full_name: dados.nome,
+                    phone: dados.telefone,
+                    contest: dados.concurso,
+                    age: dados.idade
+                }
+            }
+        });
+        if(error) throw error;
+        await registrarSolicitacaoCadastro({
+            userId: data?.user?.id,
+            email: dados.email,
+            nome: dados.nome,
+            telefone: dados.telefone,
+            concurso: dados.concurso,
+            idade: dados.idade
+        });
+        limparCadastroAluno();
+        mostrarCadastroAluno(false);
+        try { await supabaseClient.auth.signOut({ scope: 'local' }); } catch(e) {}
+        setCloudStatus('Cadastro enviado. Aguarde aprovação do administrador para entrar.');
+    } catch(e) {
+        setCloudStatus(`Não foi possível cadastrar: ${mensagemErroSupabase(e)}`);
+    }
+}
+
+async function entrarEmailSenha() {
+    if(!supabaseConfigurado()) {
+        setCloudStatus('Supabase não configurado. Configure o supabase-config.js para entrar.');
+        return;
+    }
+    const email = String(document.getElementById('login-email')?.value || '').trim().toLowerCase();
+    const senha = document.getElementById('login-senha')?.value || '';
+    if(!email || !senha) {
+        setCloudStatus('Informe e-mail e senha.');
+        return;
+    }
+    try {
+        if(!supabaseClient) supabaseClient = criarClienteSupabase();
+        setCloudStatus('Entrando com e-mail e senha...');
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
+        if(error) throw error;
+        supabaseAccessToken = data?.session?.access_token || supabaseAccessToken;
+        if(supabaseAccessToken) supabaseClient = criarClienteSupabase(supabaseAccessToken);
+        if(data?.user) await entrarComSessaoSupabase(data.user);
+    } catch(e) {
+        setCloudStatus(`Não foi possível entrar: ${mensagemErroSupabase(e)}`);
+    }
 }
 
 async function sairGoogle() {
@@ -1161,6 +1308,13 @@ function init() {
 }
 
 function showTab(id, el) {
+    const paginasAdmin = ['ranking'];
+    if(id === 'backup') id = 'perfil';
+    if(paginasAdmin.includes(id) && !usuarioAdmin()) {
+        showToast('Acesso restrito', 'Esta área aparece somente para administradores.');
+        id = 'diaria';
+        el = document.querySelector(".nav-item[onclick*='diaria']");
+    }
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById(id).classList.add('active');
@@ -1171,11 +1325,11 @@ function showTab(id, el) {
     if(id === 'sinalizar') renderTree();
     if(id === 'fluxo') renderFluxo();
     if(id === 'replanejar') renderReplanejamento();
-    if(id === 'backup') renderBackup();
     if(id === 'lancamentos') renderLancamentos();
     if(id === 'performance') renderPerformance();
     if(id === 'ranking') renderRankingAlunos();
     if(id === 'perfil') renderPerfil();
+    atualizarVisibilidadeAdmin();
     renderAdminStudentBanner();
     updateDashboard();
     corrigirTextosDaTela();
@@ -1672,6 +1826,9 @@ function renderAdminAccessList(adminEmailAtual = '') {
         const email = escapeHtml(item.email || '');
         const emailParam = encodeURIComponent(item.email || '');
         const nome = escapeHtml(item.name || item.email || 'Aluno');
+        const telefone = escapeHtml(item.phone || 'Sem telefone');
+        const concurso = escapeHtml(item.contest || 'Concurso não informado');
+        const idade = item.age ? `${escapeHtml(item.age)} anos` : 'Idade não informada';
         const status = escapeHtml(item.status || 'pending');
         const role = escapeHtml(item.role || 'aluno');
         const statusLabel = item.status === 'approved' ? 'Aprovado' : (item.status === 'rejected' ? 'Recusado' : 'Pendente');
@@ -1682,14 +1839,18 @@ function renderAdminAccessList(adminEmailAtual = '') {
             ? `<button class="btn btn-sm btn-outline danger-btn" onclick="restaurarBackupAluno('${emailParam}')">RESTAURAR BACKUP</button>`
             : '';
         const actions = item.status === 'approved'
-            ? `${editar}${restaurar}<button class="btn btn-sm btn-outline danger-btn" onclick="alterarAcessoAluno('${emailParam}', 'rejected')">REVOGAR</button>`
+            ? `${editar}${restaurar}<button class="btn btn-sm btn-outline danger-btn" onclick="alterarAcessoAluno('${emailParam}', 'rejected')">REVOGAR</button>
+               <button class="btn btn-sm btn-outline danger-btn" onclick="excluirAlunoPlataforma('${emailParam}')">EXCLUIR</button>`
             : `<button class="btn btn-sm" onclick="alterarAcessoAluno('${emailParam}', 'approved')">APROVAR</button>
-               <button class="btn btn-sm btn-outline danger-btn" onclick="alterarAcessoAluno('${emailParam}', 'rejected')">RECUSAR</button>`;
+               <button class="btn btn-sm btn-outline danger-btn" onclick="alterarAcessoAluno('${emailParam}', 'rejected')">RECUSAR</button>
+               <button class="btn btn-sm btn-outline danger-btn" onclick="excluirAlunoPlataforma('${emailParam}')">EXCLUIR</button>`;
         return `
             <div class="admin-access-row">
                 <div>
                     <b>${nome}</b>
                     <small>${email}</small>
+                    <small>${telefone} | ${idade}</small>
+                    <small>${concurso}</small>
                 </div>
                 <span class="access-pill ${status}">${statusLabel} | ${role}</span>
                 <div class="admin-access-actions">${actions}</div>
@@ -1821,6 +1982,35 @@ async function alterarAcessoAluno(email, status) {
         await carregarSolicitacoesAcesso();
     } catch(e) {
         showToast('Falha ao atualizar acesso', 'Confira as permissões da tabela no Supabase.');
+    }
+}
+
+async function excluirAlunoPlataforma(email) {
+    if(!supabaseClient || !usuarioAdmin()) return;
+    const cleanEmail = decodeURIComponent(String(email || '')).toLowerCase();
+    if(!cleanEmail || cleanEmail === ADMIN_EMAIL) return;
+    const aluno = adminAccessList.find(item => String(item.email || '').toLowerCase() === cleanEmail);
+    if(!confirm(`Excluir ${cleanEmail} da plataforma? Os dados de planejamento deste aluno também serão removidos.`)) return;
+    try {
+        if(aluno?.user_id) {
+            const { error: dataError } = await supabaseClient
+                .from('plantao_user_data')
+                .delete()
+                .eq('user_id', aluno.user_id);
+            if(dataError) throw dataError;
+        }
+        const { error } = await supabaseClient
+            .from(ACCESS_TABLE)
+            .delete()
+            .eq('email', cleanEmail);
+        if(error) throw error;
+        if(editandoAlunoComoAdmin() && adminStudentContext?.email === cleanEmail) {
+            await voltarPerfilAdmin();
+        }
+        showToast('Aluno excluído', `${cleanEmail} foi removido da plataforma.`);
+        await carregarSolicitacoesAcesso();
+    } catch(e) {
+        showToast('Falha ao excluir aluno', 'Confira as permissões de exclusão no SQL do Supabase.');
     }
 }
 
@@ -1978,8 +2168,13 @@ function renderPerfQuestoes(data) {
                 ${materiasComQuestoes.length ? materiasComQuestoes.map(m => perfQuestionRow(m.nome, m.questoes, m.acertos)).join('') : perfEmpty('Registre exercícios para ver questões por matéria.')}
             </div>
             <div class="stat-card">
-                <h3>Precisão por assunto</h3>
+                <h3>Melhores assuntos</h3>
                 ${renderRankList(data.assuntos.filter(x => x.questoes > 0).sort((a,b) => taxa(b) - taxa(a)).slice(0,8), 'taxa')}
+            </div>
+            <div class="stat-card perf-subject-card">
+                <h3>Desempenho por assunto</h3>
+                <p class="meta-sub">Cada assunto aparece dentro da sua matéria com questões feitas, acertos e precisão.</p>
+                ${renderAssuntosQuestoesPorMateria(data)}
             </div>
         </div>`;
 }
@@ -1992,6 +2187,38 @@ function perfQuestionRow(nome, questoes, acertos) {
             <strong>${pct}%</strong>
             <div class="mini-bar"><div style="width:${pct}%"></div></div>
         </div>`;
+}
+
+function renderAssuntosQuestoesPorMateria(data) {
+    const assuntos = data.assuntos
+        .filter(x => x.questoes > 0)
+        .sort((a,b) => String(a.materia).localeCompare(String(b.materia), 'pt-BR') || taxa(b) - taxa(a) || String(a.assunto).localeCompare(String(b.assunto), 'pt-BR'));
+    if(!assuntos.length) return perfEmpty('Registre exercícios para ver seu desempenho por assunto.');
+
+    const porMateria = assuntos.reduce((acc, item) => {
+        const materia = item.materia || 'Matéria não informada';
+        if(!acc[materia]) acc[materia] = [];
+        acc[materia].push(item);
+        return acc;
+    }, {});
+
+    return Object.entries(porMateria).map(([materia, itens]) => {
+        const total = itens.reduce((acc, item) => {
+            acc.questoes += item.questoes;
+            acc.acertos += item.acertos;
+            return acc;
+        }, { questoes: 0, acertos: 0 });
+        return `
+            <div class="perf-subject-group">
+                <div class="perf-subject-head">
+                    <div>
+                        <b>${escapeHtml(materia)}</b>
+                        <small>${total.acertos}/${total.questoes} acertos | ${taxa(total)}%</small>
+                    </div>
+                </div>
+                ${itens.map(item => perfQuestionRow(escapeHtml(item.assunto || 'Assunto não informado'), item.questoes, item.acertos)).join('')}
+            </div>`;
+    }).join('');
 }
 
 function renderPerfMelhores(data) {
@@ -2714,7 +2941,7 @@ function montarCicloPonderado() {
 }
 
 function criarTask(item, tipo, horas, dataKey) {
-    const labels = { E: 'Estudo', Rev: 'Revisao', Ex: 'Exercicios' };
+    const labels = { E: 'Estudo', Rev: 'Revisão', Ex: 'Exercícios' };
     const ciclo = item.f && item.revCycle ? ` - Ciclo ${String(item.revCycle.cycle || 1).padStart(2, '0')}` : '';
     return { itemId: item.id, m: item.m, a: item.a, l: `${labels[tipo]}${ciclo}`, k: tipo, h: horas, c: false, data: dataKey };
 }
