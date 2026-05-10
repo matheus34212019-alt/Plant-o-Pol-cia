@@ -1,7 +1,7 @@
 (function plannerFix() {
     const APP_NAME = 'PLANTÃO';
     const STORAGE_KEY = 'prf_v120';
-    const MAX_STUDY_DAY = 2;
+    const MAX_STUDY_PER_DAY = 2;
 
     const pad = n => String(n).padStart(2, '0');
     const cleanDate = value => {
@@ -23,52 +23,102 @@
         return d;
     };
     const getDb = () => (typeof db !== 'undefined' ? db : window.db);
-    const taskKey = task => `${fixText(task?.m || '')}|${fixText(task?.a || '')}|${task?.k || task?.l || ''}`.toLowerCase();
-    const isExtra = task => task?.extra === true || task?.l === 'Extra';
-    const isFakeAtraso = task => /^ATRASO[_\s-]/i.test(String(task?.l || '')) || /^ATRASO[_\s-]/i.test(String(task?.k || ''));
-    const isDone = task => task?.c === true;
-    const isStudy = task => task?.k === 'E' || !task?.k || /estudo|atraso/i.test(String(task?.l || ''));
-    const hours = task => {
-        if (typeof task?.h === 'number') return Math.max(0.5, task.h || 1);
-        if (task?.h && typeof task.h === 'object') return Math.max(0.5, parseFloat(task.h[task.k] || task.h.E || 1));
-        return Math.max(0.5, parseFloat(task?.h) || 1);
-    };
-    const capacity = date => Math.max(0, parseFloat(getDb()?.h?.[cleanDate(date).getDay()]) || 0);
+
+    function badScore(text) {
+        return (String(text).match(/[ÃÂ�]/g) || []).length;
+    }
+
+    function decodeIfNeeded(value) {
+        if (typeof value !== 'string') return value;
+        let text = value;
+        if (!/[ÃÂ�]/.test(text)) return text;
+        try {
+            const decoded = decodeURIComponent(escape(text));
+            if (decoded && badScore(decoded) < badScore(text)) text = decoded;
+        } catch (error) {}
+        return text;
+    }
 
     function fixText(value) {
         if (typeof value !== 'string') return value;
-        return value
-            .replace(/PLANT.?O/gi, APP_NAME)
-            .replace(/Plant.?o/g, APP_NAME)
-            .replace(/Portugu.{1,3}s/gi, 'PORTUGUÊS')
-            .replace(/Racioc.{1,3}nio L.{1,3}gico/gi, 'RACIOCÍNIO LÓGICO')
-            .replace(/Compreens.{1,3}o/gi, 'Compreensão')
-            .replace(/interpreta.{1,3}o/gi, 'interpretação')
-            .replace(/mat.{1,3}ria/gi, 'matéria')
-            .replace(/mat.{1,3}rias/gi, 'matérias')
-            .replace(/Revis.{1,3}o/gi, 'Revisão')
-            .replace(/Quest.{1,3}es/gi, 'Questões')
-            .replace(/Exerc.{1,3}cios/gi, 'Exercícios')
-            .replace(/Lan.{1,3}amentos/gi, 'Lançamentos')
-            .replace(/Hor.{1,3}rios/gi, 'Horários')
-            .replace(/Di.{1,3}rias/gi, 'Diárias')
-            .replace(/Amanh.?/gi, 'Amanhã')
-            .replace(/Voc.?/gi, 'Você')
-            .replace(/n.?o/gi, match => match === match.toUpperCase() ? 'NÃO' : 'não')
-            .replace(/Administra.{1,3}o p.{1,3}blica/gi, 'Administração pública');
+        let text = decodeIfNeeded(value);
+        const pairs = [
+            [/PLANT(?:ÃO|AO|ÃƒO|ÃƒÃO|�O|.?O)/gi, APP_NAME],
+            [/RACIOC(?:Í|I|ÃƒÂ?|�)?NIO L(?:Ó|O|ÃƒÂ?|�)?GICO/gi, 'RACIOCÍNIO LÓGICO'],
+            [/Portugu(?:ê|e|Ãª|�)s/gi, 'PORTUGUÊS'],
+            [/Compreens(?:ã|a|Ã£|�)o/gi, 'Compreensão'],
+            [/interpreta(?:çã|cao|Ã§Ã£|�)o/gi, 'interpretação'],
+            [/mat(?:é|e|Ã©|�)ria/gi, 'matéria'],
+            [/mat(?:é|e|Ã©|�)rias/gi, 'matérias'],
+            [/Revis(?:ã|a|Ã£|�)o/gi, 'Revisão'],
+            [/Quest(?:õ|o|Ãµ|�)es/gi, 'Questões'],
+            [/Exerc(?:í|i|Ã­|�)cios/gi, 'Exercícios'],
+            [/Lan(?:ç|c|Ã§|�)amentos/gi, 'Lançamentos'],
+            [/Hor(?:á|a|Ã¡|�)rios/gi, 'Horários'],
+            [/Di(?:á|a|Ã¡|�)rias/gi, 'Diárias'],
+            [/Amanh(?:ã|a|Ã£|�)/gi, 'Amanhã'],
+            [/Voc(?:ê|e|Ãª|�)/gi, 'Você'],
+            [/Administra(?:çã|cao|Ã§Ã£|�)o p(?:ú|u|Ãº|�)blica/gi, 'Administração pública'],
+            [/Precis(?:ã|a|Ã£|�)o/gi, 'Precisão'],
+            [/Persegui(?:çã|cao|Ã§Ã£|�)o/gi, 'Perseguição'],
+            [/Miss(?:ã|a|Ã£|�)o/gi, 'Missão'],
+            [/Sequ(?:ê|e|Ãª|�)ncia/gi, 'Sequência'],
+            [/conclu(?:í|i|Ã­|�)das/gi, 'concluídas'],
+            [/j(?:á|a|Ã¡|�) dominados/gi, 'já dominados'],
+            [/amanh(?:ã|a|Ã£|�)/gi, 'amanhã'],
+            [/recome(?:ç|c|Ã§|�)a/gi, 'recomeça'],
+            [/lan(?:ç|c|Ã§|�)ados/gi, 'lançados']
+        ];
+        pairs.forEach(([pattern, replacement]) => { text = text.replace(pattern, replacement); });
+        text = text.replace(/\bN(?:Ã|A|�)?O\b/g, 'NÃO').replace(/\bn(?:ã|a|Ã|�)?o\b/g, 'não');
+        text = text.replace(/ATRASO\s*-\s*/gi, '');
+        return text;
+    }
+
+    function taskKey(task) {
+        return `${fixText(task?.m || '')}|${fixText(task?.a || '')}|${task?.k || task?.l || ''}`.toLowerCase();
+    }
+
+    function isExtra(task) {
+        return task?.extra === true || task?.l === 'Extra' || task?.k === 'Extra';
+    }
+
+    function hasAtrasoText(task) {
+        if (!task || typeof task !== 'object') return false;
+        return ['l', 'k', 'm', 'a', 'origemAtraso'].some(key => /ATRASO/i.test(String(task[key] || '')));
+    }
+
+    function isDone(task) {
+        return task?.c === true;
+    }
+
+    function isStudy(task) {
+        return task?.k === 'E' || task?.l === 'Estudo' || !task?.k;
+    }
+
+    function hours(task) {
+        if (typeof task?.h === 'number') return Math.max(0.5, task.h || 1);
+        if (task?.h && typeof task.h === 'object') return Math.max(0.5, parseFloat(task.h[task.k] || task.h.E || 1));
+        return Math.max(0.5, parseFloat(task?.h) || 1);
+    }
+
+    function capacity(date) {
+        const data = getDb();
+        return Math.max(0, parseFloat(data?.h?.[cleanDate(date).getDay()]) || 0);
     }
 
     function normalizeTask(task) {
         if (!task || typeof task !== 'object') return task;
+        const wasAtraso = hasAtrasoText(task) || task.atraso === true;
         if (typeof task.m === 'string') task.m = fixText(task.m).toUpperCase();
         if (typeof task.a === 'string') task.a = fixText(task.a);
         if (typeof task.l === 'string') task.l = fixText(task.l);
-        if (isFakeAtraso(task)) {
-            task.origemAtraso = task.origemAtraso || String(task.l || task.k).replace(/^ATRASO[_\s-]*/i, '').trim();
+        if (typeof task.k === 'string') task.k = fixText(task.k);
+        if (wasAtraso) {
+            task.origemAtraso = task.origemAtraso || 'replanejado';
             task.l = 'Estudo';
             task.k = 'E';
             task.atraso = false;
-            task.replanejado = true;
         }
         return task;
     }
@@ -98,11 +148,11 @@
     function canPlace(dayTasks, date, task) {
         if (isExtra(task)) return true;
         const max = capacity(date);
+        if (max <= 0) return false;
         const used = dayTasks.filter(t => !isExtra(t)).reduce((sum, t) => sum + hours(t), 0);
         const studies = dayTasks.filter(t => !isExtra(t) && isStudy(t)).length;
-        if (max <= 0) return false;
         if (used + hours(task) > max) return false;
-        if (isStudy(task) && studies >= MAX_STUDY_DAY) return false;
+        if (isStudy(task) && studies >= MAX_STUDY_PER_DAY) return false;
         return true;
     }
 
@@ -128,22 +178,52 @@
         if (typeof save === 'function') save();
     }
 
-    function replanejarCorrigido() {
-        const data = normalizeData();
+    function needsReplan(task, key, todayKey) {
+        return !isExtra(task) && !isDone(task) && (
+            key < todayKey ||
+            task?.replanejado === true ||
+            task?.atraso === true ||
+            hasAtrasoText(task)
+        );
+    }
+
+    function redraw(today) {
+        if (typeof vDate !== 'undefined') vDate = today;
+        if (typeof renderSemanal === 'function') renderSemanal();
+        if (typeof renderDiario === 'function') renderDiario(today);
+        if (typeof updateDashboard === 'function') updateDashboard();
+        if (typeof renderReplanejar === 'function') renderReplanejar();
+        setTimeout(fixVisibleText, 0);
+    }
+
+    function replanejarCorrigido(options = {}) {
+        const data = getDb();
         if (!data) return;
+        data.metaFixa = data.metaFixa || {};
         const today = cleanDate(new Date());
         const todayKey = dateKey(today);
         const queue = [];
         const keepByDay = {};
 
-        Object.keys(data.metaFixa || {}).sort().forEach(key => {
-            const remaining = [];
-            (data.metaFixa[key] || []).forEach(task => {
-                const shouldMove = !isExtra(task) && !isDone(task) && (key < todayKey || isFakeAtraso(task) || task.replanejado === true);
-                if (shouldMove) queue.push({ ...normalizeTask(task), c: false, replanejado: true, origemAtraso: task.origemAtraso || (key < todayKey ? key : undefined) });
-                else remaining.push(task);
+        Object.keys(data.metaFixa).sort().forEach(key => {
+            (data.metaFixa[key] || []).forEach(rawTask => {
+                const move = needsReplan(rawTask, key, todayKey);
+                const task = normalizeTask({ ...rawTask });
+                if (move) {
+                    queue.push({
+                        ...task,
+                        c: false,
+                        l: 'Estudo',
+                        k: 'E',
+                        atraso: false,
+                        replanejado: false,
+                        origemAtraso: rawTask.origemAtraso || (key < todayKey ? key : 'replanejado')
+                    });
+                } else {
+                    if (!keepByDay[key]) keepByDay[key] = [];
+                    keepByDay[key].push(task);
+                }
             });
-            if (remaining.length) keepByDay[key] = remaining;
         });
 
         data.metaFixa = keepByDay;
@@ -157,14 +237,11 @@
         uniqueQueue.forEach(task => placeTask(task, today));
         normalizeData();
         saveNow();
+        redraw(today);
 
-        if (typeof vDate !== 'undefined') vDate = today;
-        if (typeof renderSemanal === 'function') renderSemanal();
-        if (typeof renderDiario === 'function') renderDiario(today);
-        if (typeof updateDashboard === 'function') updateDashboard();
-        if (typeof renderReplanejar === 'function') renderReplanejar();
-        if (typeof showToast === 'function') showToast('Replanejamento feito', `${uniqueQueue.length} atividade(s) realocada(s) respeitando sua meta diária.`);
-        fixVisibleText();
+        if (!options.silent && typeof showToast === 'function') {
+            showToast('Replanejamento feito', `${uniqueQueue.length} atividade(s) realocada(s) respeitando sua meta diária.`);
+        }
     }
 
     function fixVisibleText(root = document.body) {
@@ -173,6 +250,12 @@
         document.querySelectorAll('.logo-box').forEach(el => {
             const icon = el.querySelector('i')?.outerHTML || '<i class="fas fa-shield-halved"></i>';
             el.innerHTML = `${icon} ${APP_NAME}`;
+        });
+        document.querySelectorAll('h2, h3, h1, span, p, small, button, label, option, div').forEach(el => {
+            if (el.childNodes.length === 1 && el.firstChild?.nodeType === Node.TEXT_NODE) {
+                const fixed = fixText(el.textContent);
+                if (fixed !== el.textContent) el.textContent = fixed;
+            }
         });
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
         const nodes = [];
@@ -184,11 +267,15 @@
     }
 
     function boot() {
-        normalizeData();
-        window.replanejarAgora = replanejarCorrigido;
-        fixVisibleText();
-        setTimeout(() => { window.replanejarAgora = replanejarCorrigido; fixVisibleText(); }, 700);
-        setTimeout(() => { window.replanejarAgora = replanejarCorrigido; fixVisibleText(); }, 1800);
+        window.replanejarAgora = () => replanejarCorrigido({ silent: false });
+        const run = () => {
+            window.replanejarAgora = () => replanejarCorrigido({ silent: false });
+            replanejarCorrigido({ silent: true });
+            fixVisibleText();
+        };
+        setTimeout(run, 250);
+        setTimeout(run, 1000);
+        setTimeout(run, 2500);
     }
 
     if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', boot);
