@@ -1,10 +1,10 @@
-let db = JSON.parse(localStorage.getItem('prf_v120')) || {
+﻿let db = JSON.parse(localStorage.getItem('prf_v120')) || {
     lista: [
-        { m: "PORTUGUÊS", a: "Compreensão e interpretação de textos", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 },
-        { m: "RACIOCÍNIO LÓGICO", a: "Proposições e conectivos", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 },
-        { m: "DIREITO PENAL", a: "Crimes contra a administração pública", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 }
+        { m: "PORTUGUÃŠS", a: "CompreensÃ£o e interpretaÃ§Ã£o de textos", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 },
+        { m: "RACIOCÃNIO LÃ“GICO", a: "ProposiÃ§Ãµes e conectivos", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 },
+        { m: "DIREITO PENAL", a: "Crimes contra a administraÃ§Ã£o pÃºblica", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 }
     ],
-    ciclo: ["PORTUGUÊS", "RACIOCÍNIO LÓGICO", "DIREITO PENAL"],
+    ciclo: ["PORTUGUÃŠS", "RACIOCÃNIO LÃ“GICO", "DIREITO PENAL"],
     h: {1:4, 2:4, 3:4, 4:4, 5:4, 6:4, 0:4},
     metaFixa: {}
 };
@@ -43,14 +43,14 @@ const textDecoder = new TextDecoder();
 function corrigirMojibakeValor(valor) {
     if(typeof valor !== 'string') return valor;
     const trocas = [
-        ['Ãƒ', 'Ã'],
-        ['Ã¡', 'á'], ['Ãà', 'à'], ['Ã¢', 'â'], ['Ã£', 'ã'], ['Ã©', 'é'], ['Ãª', 'ê'],
-        ['Ã­', 'í'], ['Ã³', 'ó'], ['Ã´', 'ô'], ['Ãµ', 'õ'], ['Ãº', 'ú'], ['Ã§', 'ç'],
-        ['ÃÁ', 'Á'], ['ÃÉ', 'É'], ['ÃÍ', 'Í'], ['ÃÓ', 'Ó'], ['ÃÚ', 'Ú'], ['Ã‡', 'Ç'],
-        ['Ã‡', 'Ç'], ['Ã“', 'Ó'], ['Ã‰', 'É'], ['ÃŠ', 'Ê'], ['Ãš', 'Ú'],
-        ['Âº', 'º'], ['Âª', 'ª'], ['Â·', '·'], ['Â', ''],
-        ['â€“', '-'], ['â€”', '-'], ['â€˜', "'"], ['â€™', "'"], ['â€œ', '"'], ['â€', '"'],
-        ['ðŸš“', '']
+        ['ÃƒÆ’', 'Ãƒ'],
+        ['ÃƒÂ¡', 'Ã¡'], ['ÃƒÃ ', 'Ã '], ['ÃƒÂ¢', 'Ã¢'], ['ÃƒÂ£', 'Ã£'], ['ÃƒÂ©', 'Ã©'], ['ÃƒÂª', 'Ãª'],
+        ['ÃƒÂ­', 'Ã­'], ['ÃƒÂ³', 'Ã³'], ['ÃƒÂ´', 'Ã´'], ['ÃƒÂµ', 'Ãµ'], ['ÃƒÂº', 'Ãº'], ['ÃƒÂ§', 'Ã§'],
+        ['ÃƒÃ', 'Ã'], ['ÃƒÃ‰', 'Ã‰'], ['ÃƒÃ', 'Ã'], ['ÃƒÃ“', 'Ã“'], ['ÃƒÃš', 'Ãš'], ['Ãƒâ€¡', 'Ã‡'],
+        ['Ãƒâ€¡', 'Ã‡'], ['Ãƒâ€œ', 'Ã“'], ['Ãƒâ€°', 'Ã‰'], ['ÃƒÅ ', 'ÃŠ'], ['ÃƒÅ¡', 'Ãš'],
+        ['Ã‚Âº', 'Âº'], ['Ã‚Âª', 'Âª'], ['Ã‚Â·', 'Â·'], ['Ã‚', ''],
+        ['Ã¢â‚¬â€œ', '-'], ['Ã¢â‚¬â€', '-'], ['Ã¢â‚¬Ëœ', "'"], ['Ã¢â‚¬â„¢', "'"], ['Ã¢â‚¬Å“', '"'], ['Ã¢â‚¬Â', '"'],
+        ['Ã°Å¸Å¡â€œ', '']
     ];
     let texto = valor;
     for(let i = 0; i < 3; i++) {
@@ -59,34 +59,34 @@ function corrigirMojibakeValor(valor) {
         });
     }
     const ortografia = [
-        ['PLANTAO', 'PLANTÃO'], ['Plantao', 'Plantão'], ['plantao', 'plantão'],
-        ['MISSAO', 'MISSÃO'], ['Missao', 'Missão'], ['missao', 'missão'],
-        ['FORCA', 'FORÇA'], ['Forca', 'Força'], ['forca', 'força'],
-        ['AMANHA', 'AMANHÃ'], ['Amanha', 'Amanhã'], ['amanha', 'amanhã'],
-        ['PROXIMO', 'PRÓXIMO'], ['Proximo', 'Próximo'], ['proximo', 'próximo'],
-        ['PROXIMOS', 'PRÓXIMOS'], ['Proximos', 'Próximos'], ['proximos', 'próximos'],
-        ['LANCAMENTO', 'LANÇAMENTO'], ['Lancamento', 'Lançamento'], ['lancamento', 'lançamento'],
-        ['LANCAMENTOS', 'LANÇAMENTOS'], ['Lancamentos', 'Lançamentos'], ['lancamentos', 'lançamentos'],
-        ['DIARIAS', 'DIÁRIAS'], ['Diarias', 'Diárias'], ['diarias', 'diárias'],
-        ['DIARIA', 'DIÁRIA'], ['Diaria', 'Diária'], ['diaria', 'diária'],
-        ['HORARIA', 'HORÁRIA'], ['Horaria', 'Horária'], ['horaria', 'horária'],
-        ['ULTIMO', 'ÚLTIMO'], ['Ultimo', 'Último'], ['ultimo', 'último'],
-        ['CODIGO', 'CÓDIGO'], ['Codigo', 'Código'], ['codigo', 'código'],
-        ['ESTA ATIVO', 'ESTÁ ATIVO'], ['Esta ativo', 'Está ativo'], ['esta ativo', 'está ativo'],
-        ['ESTA PAUSADO', 'ESTÁ PAUSADO'], ['Esta pausado', 'Está pausado'], ['esta pausado', 'está pausado'],
-        ['ENTRARA', 'ENTRARÁ'], ['Entrara', 'Entrará'], ['entrara', 'entrará'],
-        ['INICIO', 'INÍCIO'], ['Inicio', 'Início'], ['inicio', 'início'],
-        ['COPIA', 'CÓPIA'], ['Copia', 'Cópia'], ['copia', 'cópia'],
-        ['ADMINISTRACAO PUBLICA', 'ADMINISTRAÇÃO PÚBLICA'],
-        ['Administracao publica', 'Administração pública'],
-        ['administracao publica', 'administração pública'],
-        ['COMPREENSÃO E INTERPRETACAO', 'COMPREENSÃO E INTERPRETAÇÃO'],
-        ['Compreensao e interpretacao', 'Compreensão e interpretação'],
-        ['compreensao e interpretacao', 'compreensão e interpretação'],
-        ['PROPOSICOES', 'PROPOSIÇÕES'], ['Proposicoes', 'Proposições'], ['proposicoes', 'proposições'],
-        ['RACIOCINIO LOGICO', 'RACIOCÍNIO LÓGICO'],
-        ['Raciocinio Logico', 'Raciocínio Lógico'],
-        ['PORTUGUES', 'PORTUGUÊS'], ['Portugues', 'Português']
+        ['PLANTAO', 'PLANTÃƒO'], ['Plantao', 'PlantÃ£o'], ['plantao', 'plantÃ£o'],
+        ['MISSAO', 'MISSÃƒO'], ['Missao', 'MissÃ£o'], ['missao', 'missÃ£o'],
+        ['FORCA', 'FORÃ‡A'], ['Forca', 'ForÃ§a'], ['forca', 'forÃ§a'],
+        ['AMANHA', 'AMANHÃƒ'], ['Amanha', 'AmanhÃ£'], ['amanha', 'amanhÃ£'],
+        ['PROXIMO', 'PRÃ“XIMO'], ['Proximo', 'PrÃ³ximo'], ['proximo', 'prÃ³ximo'],
+        ['PROXIMOS', 'PRÃ“XIMOS'], ['Proximos', 'PrÃ³ximos'], ['proximos', 'prÃ³ximos'],
+        ['LANCAMENTO', 'LANÃ‡AMENTO'], ['Lancamento', 'LanÃ§amento'], ['lancamento', 'lanÃ§amento'],
+        ['LANCAMENTOS', 'LANÃ‡AMENTOS'], ['Lancamentos', 'LanÃ§amentos'], ['lancamentos', 'lanÃ§amentos'],
+        ['DIARIAS', 'DIÃRIAS'], ['Diarias', 'DiÃ¡rias'], ['diarias', 'diÃ¡rias'],
+        ['DIARIA', 'DIÃRIA'], ['Diaria', 'DiÃ¡ria'], ['diaria', 'diÃ¡ria'],
+        ['HORARIA', 'HORÃRIA'], ['Horaria', 'HorÃ¡ria'], ['horaria', 'horÃ¡ria'],
+        ['ULTIMO', 'ÃšLTIMO'], ['Ultimo', 'Ãšltimo'], ['ultimo', 'Ãºltimo'],
+        ['CODIGO', 'CÃ“DIGO'], ['Codigo', 'CÃ³digo'], ['codigo', 'cÃ³digo'],
+        ['ESTA ATIVO', 'ESTÃ ATIVO'], ['Esta ativo', 'EstÃ¡ ativo'], ['esta ativo', 'estÃ¡ ativo'],
+        ['ESTA PAUSADO', 'ESTÃ PAUSADO'], ['Esta pausado', 'EstÃ¡ pausado'], ['esta pausado', 'estÃ¡ pausado'],
+        ['ENTRARA', 'ENTRARÃ'], ['Entrara', 'EntrarÃ¡'], ['entrara', 'entrarÃ¡'],
+        ['INICIO', 'INÃCIO'], ['Inicio', 'InÃ­cio'], ['inicio', 'inÃ­cio'],
+        ['COPIA', 'CÃ“PIA'], ['Copia', 'CÃ³pia'], ['copia', 'cÃ³pia'],
+        ['ADMINISTRACAO PUBLICA', 'ADMINISTRAÃ‡ÃƒO PÃšBLICA'],
+        ['Administracao publica', 'AdministraÃ§Ã£o pÃºblica'],
+        ['administracao publica', 'administraÃ§Ã£o pÃºblica'],
+        ['COMPREENSÃƒO E INTERPRETACAO', 'COMPREENSÃƒO E INTERPRETAÃ‡ÃƒO'],
+        ['Compreensao e interpretacao', 'CompreensÃ£o e interpretaÃ§Ã£o'],
+        ['compreensao e interpretacao', 'compreensÃ£o e interpretaÃ§Ã£o'],
+        ['PROPOSICOES', 'PROPOSIÃ‡Ã•ES'], ['Proposicoes', 'ProposiÃ§Ãµes'], ['proposicoes', 'proposiÃ§Ãµes'],
+        ['RACIOCINIO LOGICO', 'RACIOCÃNIO LÃ“GICO'],
+        ['Raciocinio Logico', 'RaciocÃ­nio LÃ³gico'],
+        ['PORTUGUES', 'PORTUGUÃŠS'], ['Portugues', 'PortuguÃªs']
     ];
     ortografia.forEach(([de, para]) => {
         texto = texto.split(de).join(para);
@@ -98,15 +98,15 @@ function corrigirMojibakeValor(valor) {
 }
 
 function pontuarMojibake(texto) {
-    return ((String(texto).match(/[ÃÂ�]|â€|ðŸ|Å|Æ|¤|¢/g) || []).length);
+    return ((String(texto).match(/[ÃƒÃ‚ï¿½]|Ã¢â‚¬|Ã°Å¸|Ã…|Ã†|Â¤|Â¢/g) || []).length);
 }
 
 function byteCp1252(ch) {
     const mapa = {
-        '€': 0x80, '‚': 0x82, 'ƒ': 0x83, '„': 0x84, '…': 0x85, '†': 0x86, '‡': 0x87,
-        'ˆ': 0x88, '‰': 0x89, 'Š': 0x8A, '‹': 0x8B, 'Œ': 0x8C, 'Ž': 0x8E,
-        '‘': 0x91, '’': 0x92, '“': 0x93, '”': 0x94, '•': 0x95, '–': 0x96, '—': 0x97,
-        '˜': 0x98, '™': 0x99, 'š': 0x9A, '›': 0x9B, 'œ': 0x9C, 'ž': 0x9E, 'Ÿ': 0x9F
+        'â‚¬': 0x80, 'â€š': 0x82, 'Æ’': 0x83, 'â€ž': 0x84, 'â€¦': 0x85, 'â€ ': 0x86, 'â€¡': 0x87,
+        'Ë†': 0x88, 'â€°': 0x89, 'Å ': 0x8A, 'â€¹': 0x8B, 'Å’': 0x8C, 'Å½': 0x8E,
+        'â€˜': 0x91, 'â€™': 0x92, 'â€œ': 0x93, 'â€': 0x94, 'â€¢': 0x95, 'â€“': 0x96, 'â€”': 0x97,
+        'Ëœ': 0x98, 'â„¢': 0x99, 'Å¡': 0x9A, 'â€º': 0x9B, 'Å“': 0x9C, 'Å¾': 0x9E, 'Å¸': 0x9F
     };
     const code = ch.charCodeAt(0);
     if(code <= 255) return code;
@@ -114,7 +114,7 @@ function byteCp1252(ch) {
 }
 
 function tentarDecodificarMojibake(texto) {
-    if(!/[ÃÂ�]|â€|ðŸ|Å|Æ|¤|¢/.test(texto)) return texto;
+    if(!/[ÃƒÃ‚ï¿½]|Ã¢â‚¬|Ã°Å¸|Ã…|Ã†|Â¤|Â¢/.test(texto)) return texto;
     let atual = texto;
     for(let tentativa = 0; tentativa < 3; tentativa++) {
         const bytes = [];
@@ -140,36 +140,36 @@ function corrigirMojibakeValor(valor) {
     if(typeof valor !== 'string') return valor;
     let texto = tentarDecodificarMojibake(valor);
     const perdidos = [
-        ['PLANT�O', 'PLANTÃO'], ['Plant�o', 'Plantão'], ['plant�o', 'plantão'],
-        ['MISS�O', 'MISSÃO'], ['Miss�o', 'Missão'], ['miss�o', 'missão'],
-        ['QUEST�ES', 'QUESTÕES'], ['Quest�es', 'Questões'], ['quest�es', 'questões'],
-        ['REVIS�O', 'REVISÃO'], ['Revis�o', 'Revisão'], ['revis�o', 'revisão'],
-        ['EXERC�CIOS', 'EXERCÍCIOS'], ['Exerc�cios', 'Exercícios'], ['exerc�cios', 'exercícios'],
-        ['MAT�RIA', 'MATÉRIA'], ['Mat�ria', 'Matéria'], ['mat�ria', 'matéria'],
-        ['MAT�RIAS', 'MATÉRIAS'], ['Mat�rias', 'Matérias'], ['mat�rias', 'matérias'],
-        ['LAN�AMENTOS', 'LANÇAMENTOS'], ['Lan�amentos', 'Lançamentos'], ['lan�amentos', 'lançamentos'],
-        ['DI�RIAS', 'DIÁRIAS'], ['Di�rias', 'Diárias'], ['di�rias', 'diárias'],
-        ['HOR�RIOS', 'HORÁRIOS'], ['Hor�rios', 'Horários'], ['hor�rios', 'horários'],
-        ['PRECIS�O', 'PRECISÃO'], ['Precis�o', 'Precisão'], ['precis�o', 'precisão'],
-        ['PUBLICA��O', 'PUBLICAÇÃO'], ['Publica��o', 'Publicação'], ['publica��o', 'publicação'],
-        ['APROVA��O', 'APROVAÇÃO'], ['Aprova��o', 'Aprovação'], ['aprova��o', 'aprovação'],
-        ['SINCRONIZA��O', 'SINCRONIZAÇÃO'], ['Sincroniza��o', 'Sincronização'], ['sincroniza��o', 'sincronização']
+        ['PLANTï¿½O', 'PLANTÃƒO'], ['Plantï¿½o', 'PlantÃ£o'], ['plantï¿½o', 'plantÃ£o'],
+        ['MISSï¿½O', 'MISSÃƒO'], ['Missï¿½o', 'MissÃ£o'], ['missï¿½o', 'missÃ£o'],
+        ['QUESTï¿½ES', 'QUESTÃ•ES'], ['Questï¿½es', 'QuestÃµes'], ['questï¿½es', 'questÃµes'],
+        ['REVISï¿½O', 'REVISÃƒO'], ['Revisï¿½o', 'RevisÃ£o'], ['revisï¿½o', 'revisÃ£o'],
+        ['EXERCï¿½CIOS', 'EXERCÃCIOS'], ['Exercï¿½cios', 'ExercÃ­cios'], ['exercï¿½cios', 'exercÃ­cios'],
+        ['MATï¿½RIA', 'MATÃ‰RIA'], ['Matï¿½ria', 'MatÃ©ria'], ['matï¿½ria', 'matÃ©ria'],
+        ['MATï¿½RIAS', 'MATÃ‰RIAS'], ['Matï¿½rias', 'MatÃ©rias'], ['matï¿½rias', 'matÃ©rias'],
+        ['LANï¿½AMENTOS', 'LANÃ‡AMENTOS'], ['Lanï¿½amentos', 'LanÃ§amentos'], ['lanï¿½amentos', 'lanÃ§amentos'],
+        ['DIï¿½RIAS', 'DIÃRIAS'], ['Diï¿½rias', 'DiÃ¡rias'], ['diï¿½rias', 'diÃ¡rias'],
+        ['HORï¿½RIOS', 'HORÃRIOS'], ['Horï¿½rios', 'HorÃ¡rios'], ['horï¿½rios', 'horÃ¡rios'],
+        ['PRECISï¿½O', 'PRECISÃƒO'], ['Precisï¿½o', 'PrecisÃ£o'], ['precisï¿½o', 'precisÃ£o'],
+        ['PUBLICAï¿½ï¿½O', 'PUBLICAÃ‡ÃƒO'], ['Publicaï¿½ï¿½o', 'PublicaÃ§Ã£o'], ['publicaï¿½ï¿½o', 'publicaÃ§Ã£o'],
+        ['APROVAï¿½ï¿½O', 'APROVAÃ‡ÃƒO'], ['Aprovaï¿½ï¿½o', 'AprovaÃ§Ã£o'], ['aprovaï¿½ï¿½o', 'aprovaÃ§Ã£o'],
+        ['SINCRONIZAï¿½ï¿½O', 'SINCRONIZAÃ‡ÃƒO'], ['Sincronizaï¿½ï¿½o', 'SincronizaÃ§Ã£o'], ['sincronizaï¿½ï¿½o', 'sincronizaÃ§Ã£o']
     ];
     perdidos.forEach(([de, para]) => {
         texto = texto.split(de).join(para);
     });
     const trocas = [
-        ['ÃƒÆ’', 'Ãƒ'],
-        ['ÃƒÂ¡', 'á'], ['ÃƒÃ ', 'à'], ['ÃƒÂ¢', 'â'], ['ÃƒÂ£', 'ã'], ['ÃƒÂ©', 'é'], ['ÃƒÂª', 'ê'],
-        ['ÃƒÂ­', 'í'], ['ÃƒÂ³', 'ó'], ['ÃƒÂ´', 'ô'], ['ÃƒÂµ', 'õ'], ['ÃƒÂº', 'ú'], ['ÃƒÂ§', 'ç'],
-        ['ÃƒÃ', 'Á'], ['ÃƒÃ‰', 'É'], ['ÃƒÃ', 'Í'], ['ÃƒÃ“', 'Ó'], ['ÃƒÃš', 'Ú'], ['Ãƒâ€¡', 'Ç'],
-        ['Ãƒâ€œ', 'Ó'], ['Ãƒâ€°', 'É'], ['ÃƒÅ ', 'Ê'], ['ÃƒÅ¡', 'Ú'],
-        ['Ã¡', 'á'], ['Ã ', 'à'], ['Ã¢', 'â'], ['Ã£', 'ã'], ['Ã©', 'é'], ['Ãª', 'ê'],
-        ['Ã­', 'í'], ['Ã³', 'ó'], ['Ã´', 'ô'], ['Ãµ', 'õ'], ['Ãº', 'ú'], ['Ã§', 'ç'],
-        ['Ã', 'Á'], ['Ã‰', 'É'], ['Ã', 'Í'], ['Ã“', 'Ó'], ['Ãš', 'Ú'], ['Ã‡', 'Ç'],
-        ['Âº', 'º'], ['Âª', 'ª'], ['Â·', '·'], ['Â', ''],
-        ['â€“', '-'], ['â€”', '-'], ['â€˜', "'"], ['â€™', "'"], ['â€œ', '"'], ['â€', '"'],
-        ['ðŸš“', '']
+        ['ÃƒÆ’Ã†â€™', 'ÃƒÆ’'],
+        ['ÃƒÆ’Ã‚Â¡', 'Ã¡'], ['ÃƒÆ’ÃƒÂ ', 'Ã '], ['ÃƒÆ’Ã‚Â¢', 'Ã¢'], ['ÃƒÆ’Ã‚Â£', 'Ã£'], ['ÃƒÆ’Ã‚Â©', 'Ã©'], ['ÃƒÆ’Ã‚Âª', 'Ãª'],
+        ['ÃƒÆ’Ã‚Â­', 'Ã­'], ['ÃƒÆ’Ã‚Â³', 'Ã³'], ['ÃƒÆ’Ã‚Â´', 'Ã´'], ['ÃƒÆ’Ã‚Âµ', 'Ãµ'], ['ÃƒÆ’Ã‚Âº', 'Ãº'], ['ÃƒÆ’Ã‚Â§', 'Ã§'],
+        ['ÃƒÆ’ÃƒÂ', 'Ã'], ['ÃƒÆ’Ãƒâ€°', 'Ã‰'], ['ÃƒÆ’ÃƒÂ', 'Ã'], ['ÃƒÆ’Ãƒâ€œ', 'Ã“'], ['ÃƒÆ’ÃƒÅ¡', 'Ãš'], ['ÃƒÆ’Ã¢â‚¬Â¡', 'Ã‡'],
+        ['ÃƒÆ’Ã¢â‚¬Å“', 'Ã“'], ['ÃƒÆ’Ã¢â‚¬Â°', 'Ã‰'], ['ÃƒÆ’Ã…Â ', 'ÃŠ'], ['ÃƒÆ’Ã…Â¡', 'Ãš'],
+        ['ÃƒÂ¡', 'Ã¡'], ['ÃƒÂ ', 'Ã '], ['ÃƒÂ¢', 'Ã¢'], ['ÃƒÂ£', 'Ã£'], ['ÃƒÂ©', 'Ã©'], ['ÃƒÂª', 'Ãª'],
+        ['ÃƒÂ­', 'Ã­'], ['ÃƒÂ³', 'Ã³'], ['ÃƒÂ´', 'Ã´'], ['ÃƒÂµ', 'Ãµ'], ['ÃƒÂº', 'Ãº'], ['ÃƒÂ§', 'Ã§'],
+        ['ÃƒÂ', 'Ã'], ['Ãƒâ€°', 'Ã‰'], ['ÃƒÂ', 'Ã'], ['Ãƒâ€œ', 'Ã“'], ['ÃƒÅ¡', 'Ãš'], ['Ãƒâ€¡', 'Ã‡'],
+        ['Ã‚Âº', 'Âº'], ['Ã‚Âª', 'Âª'], ['Ã‚Â·', 'Â·'], ['Ã‚', ''],
+        ['Ã¢â‚¬â€œ', '-'], ['Ã¢â‚¬â€', '-'], ['Ã¢â‚¬Ëœ', "'"], ['Ã¢â‚¬â„¢', "'"], ['Ã¢â‚¬Å“', '"'], ['Ã¢â‚¬Â', '"'],
+        ['Ã°Å¸Å¡â€œ', '']
     ];
     for(let i = 0; i < 3; i++) {
         texto = tentarDecodificarMojibake(texto);
@@ -178,48 +178,48 @@ function corrigirMojibakeValor(valor) {
         });
     }
     const ortografia = [
-        ['PLANTAO', 'PLANTÃO'], ['Plantao', 'Plantão'], ['plantao', 'plantão'],
-        ['MISSAO', 'MISSÃO'], ['Missao', 'Missão'], ['missao', 'missão'],
-        ['FORCA', 'FORÇA'], ['Forca', 'Força'], ['forca', 'força'],
-        ['AMANHA', 'AMANHÃ'], ['Amanha', 'Amanhã'], ['amanha', 'amanhã'],
-        ['PROXIMO', 'PRÓXIMO'], ['Proximo', 'Próximo'], ['proximo', 'próximo'],
-        ['PROXIMOS', 'PRÓXIMOS'], ['Proximos', 'Próximos'], ['proximos', 'próximos'],
-        ['REVISAO', 'REVISÃO'], ['Revisao', 'Revisão'], ['revisao', 'revisão'],
-        ['EXERCICIOS', 'EXERCÍCIOS'], ['Exercicios', 'Exercícios'], ['exercicios', 'exercícios'],
-        ['QUESTOES', 'QUESTÕES'], ['Questoes', 'Questões'], ['questoes', 'questões'],
-        ['LANCAMENTO', 'LANÇAMENTO'], ['Lancamento', 'Lançamento'], ['lancamento', 'lançamento'],
-        ['LANCAMENTOS', 'LANÇAMENTOS'], ['Lancamentos', 'Lançamentos'], ['lancamentos', 'lançamentos'],
-        ['DISTRIBUICAO', 'DISTRIBUIÇÃO'], ['Distribuicao', 'Distribuição'], ['distribuicao', 'distribuição'],
-        ['MATERIA', 'MATÉRIA'], ['Materia', 'Matéria'], ['materia', 'matéria'],
-        ['MATERIAS', 'MATÉRIAS'], ['Materias', 'Matérias'], ['materias', 'matérias'],
-        ['PRECISAO', 'PRECISÃO'], ['Precisao', 'Precisão'], ['precisao', 'precisão'],
-        ['SEQUENCIA', 'SEQUÊNCIA'], ['Sequencia', 'Sequência'], ['sequencia', 'sequência'],
-        ['DIARIAS', 'DIÁRIAS'], ['Diarias', 'Diárias'], ['diarias', 'diárias'],
-        ['DIARIA', 'DIÁRIA'], ['Diaria', 'Diária'], ['diaria', 'diária'],
-        ['HORARIA', 'HORÁRIA'], ['Horaria', 'Horária'], ['horaria', 'horária'],
-        ['HORARIOS', 'HORÁRIOS'], ['Horarios', 'Horários'], ['horarios', 'horários'],
-        ['ULTIMO', 'ÚLTIMO'], ['Ultimo', 'Último'], ['ultimo', 'último'],
-        ['CODIGO', 'CÓDIGO'], ['Codigo', 'Código'], ['codigo', 'código'],
-        ['ESTA ATIVO', 'ESTÁ ATIVO'], ['Esta ativo', 'Está ativo'], ['esta ativo', 'está ativo'],
-        ['ESTA PAUSADO', 'ESTÁ PAUSADO'], ['Esta pausado', 'Está pausado'], ['esta pausado', 'está pausado'],
-        ['ENTRARA', 'ENTRARÁ'], ['Entrara', 'Entrará'], ['entrara', 'entrará'],
-        ['INICIO', 'INÍCIO'], ['Inicio', 'Início'], ['inicio', 'início'],
-        ['COPIA', 'CÓPIA'], ['Copia', 'Cópia'], ['copia', 'cópia'],
-        ['NAO', 'NÃO'], ['Nao', 'Não'], ['nao', 'não'],
-        ['VOCE', 'VOCÊ'], ['Voce', 'Você'], ['voce', 'você'],
-        ['PUBLICACAO', 'PUBLICAÇÃO'], ['Publicacao', 'Publicação'], ['publicacao', 'publicação'],
-        ['APROVACAO', 'APROVAÇÃO'], ['Aprovacao', 'Aprovação'], ['aprovacao', 'aprovação'],
-        ['SINCRONIZACAO', 'SINCRONIZAÇÃO'], ['Sincronizacao', 'Sincronização'], ['sincronizacao', 'sincronização'],
-        ['ADMINISTRACAO PUBLICA', 'ADMINISTRAÇÃO PÚBLICA'],
-        ['Administracao publica', 'Administração pública'],
-        ['administracao publica', 'administração pública'],
-        ['COMPREENSÃO E INTERPRETACAO', 'COMPREENSÃO E INTERPRETAÇÃO'],
-        ['Compreensao e interpretacao', 'Compreensão e interpretação'],
-        ['compreensao e interpretacao', 'compreensão e interpretação'],
-        ['PROPOSICOES', 'PROPOSIÇÕES'], ['Proposicoes', 'Proposições'], ['proposicoes', 'proposições'],
-        ['RACIOCINIO LOGICO', 'RACIOCÍNIO LÓGICO'],
-        ['Raciocinio Logico', 'Raciocínio Lógico'],
-        ['PORTUGUES', 'PORTUGUÊS'], ['Portugues', 'Português']
+        ['PLANTAO', 'PLANTÃƒO'], ['Plantao', 'PlantÃ£o'], ['plantao', 'plantÃ£o'],
+        ['MISSAO', 'MISSÃƒO'], ['Missao', 'MissÃ£o'], ['missao', 'missÃ£o'],
+        ['FORCA', 'FORÃ‡A'], ['Forca', 'ForÃ§a'], ['forca', 'forÃ§a'],
+        ['AMANHA', 'AMANHÃƒ'], ['Amanha', 'AmanhÃ£'], ['amanha', 'amanhÃ£'],
+        ['PROXIMO', 'PRÃ“XIMO'], ['Proximo', 'PrÃ³ximo'], ['proximo', 'prÃ³ximo'],
+        ['PROXIMOS', 'PRÃ“XIMOS'], ['Proximos', 'PrÃ³ximos'], ['proximos', 'prÃ³ximos'],
+        ['REVISAO', 'REVISÃƒO'], ['Revisao', 'RevisÃ£o'], ['revisao', 'revisÃ£o'],
+        ['EXERCICIOS', 'EXERCÃCIOS'], ['Exercicios', 'ExercÃ­cios'], ['exercicios', 'exercÃ­cios'],
+        ['QUESTOES', 'QUESTÃ•ES'], ['Questoes', 'QuestÃµes'], ['questoes', 'questÃµes'],
+        ['LANCAMENTO', 'LANÃ‡AMENTO'], ['Lancamento', 'LanÃ§amento'], ['lancamento', 'lanÃ§amento'],
+        ['LANCAMENTOS', 'LANÃ‡AMENTOS'], ['Lancamentos', 'LanÃ§amentos'], ['lancamentos', 'lanÃ§amentos'],
+        ['DISTRIBUICAO', 'DISTRIBUIÃ‡ÃƒO'], ['Distribuicao', 'DistribuiÃ§Ã£o'], ['distribuicao', 'distribuiÃ§Ã£o'],
+        ['MATERIA', 'MATÃ‰RIA'], ['Materia', 'MatÃ©ria'], ['materia', 'matÃ©ria'],
+        ['MATERIAS', 'MATÃ‰RIAS'], ['Materias', 'MatÃ©rias'], ['materias', 'matÃ©rias'],
+        ['PRECISAO', 'PRECISÃƒO'], ['Precisao', 'PrecisÃ£o'], ['precisao', 'precisÃ£o'],
+        ['SEQUENCIA', 'SEQUÃŠNCIA'], ['Sequencia', 'SequÃªncia'], ['sequencia', 'sequÃªncia'],
+        ['DIARIAS', 'DIÃRIAS'], ['Diarias', 'DiÃ¡rias'], ['diarias', 'diÃ¡rias'],
+        ['DIARIA', 'DIÃRIA'], ['Diaria', 'DiÃ¡ria'], ['diaria', 'diÃ¡ria'],
+        ['HORARIA', 'HORÃRIA'], ['Horaria', 'HorÃ¡ria'], ['horaria', 'horÃ¡ria'],
+        ['HORARIOS', 'HORÃRIOS'], ['Horarios', 'HorÃ¡rios'], ['horarios', 'horÃ¡rios'],
+        ['ULTIMO', 'ÃšLTIMO'], ['Ultimo', 'Ãšltimo'], ['ultimo', 'Ãºltimo'],
+        ['CODIGO', 'CÃ“DIGO'], ['Codigo', 'CÃ³digo'], ['codigo', 'cÃ³digo'],
+        ['ESTA ATIVO', 'ESTÃ ATIVO'], ['Esta ativo', 'EstÃ¡ ativo'], ['esta ativo', 'estÃ¡ ativo'],
+        ['ESTA PAUSADO', 'ESTÃ PAUSADO'], ['Esta pausado', 'EstÃ¡ pausado'], ['esta pausado', 'estÃ¡ pausado'],
+        ['ENTRARA', 'ENTRARÃ'], ['Entrara', 'EntrarÃ¡'], ['entrara', 'entrarÃ¡'],
+        ['INICIO', 'INÃCIO'], ['Inicio', 'InÃ­cio'], ['inicio', 'inÃ­cio'],
+        ['COPIA', 'CÃ“PIA'], ['Copia', 'CÃ³pia'], ['copia', 'cÃ³pia'],
+        ['NAO', 'NÃƒO'], ['Nao', 'NÃ£o'], ['nao', 'nÃ£o'],
+        ['VOCE', 'VOCÃŠ'], ['Voce', 'VocÃª'], ['voce', 'vocÃª'],
+        ['PUBLICACAO', 'PUBLICAÃ‡ÃƒO'], ['Publicacao', 'PublicaÃ§Ã£o'], ['publicacao', 'publicaÃ§Ã£o'],
+        ['APROVACAO', 'APROVAÃ‡ÃƒO'], ['Aprovacao', 'AprovaÃ§Ã£o'], ['aprovacao', 'aprovaÃ§Ã£o'],
+        ['SINCRONIZACAO', 'SINCRONIZAÃ‡ÃƒO'], ['Sincronizacao', 'SincronizaÃ§Ã£o'], ['sincronizacao', 'sincronizaÃ§Ã£o'],
+        ['ADMINISTRACAO PUBLICA', 'ADMINISTRAÃ‡ÃƒO PÃšBLICA'],
+        ['Administracao publica', 'AdministraÃ§Ã£o pÃºblica'],
+        ['administracao publica', 'administraÃ§Ã£o pÃºblica'],
+        ['COMPREENSÃƒO E INTERPRETACAO', 'COMPREENSÃƒO E INTERPRETAÃ‡ÃƒO'],
+        ['Compreensao e interpretacao', 'CompreensÃ£o e interpretaÃ§Ã£o'],
+        ['compreensao e interpretacao', 'compreensÃ£o e interpretaÃ§Ã£o'],
+        ['PROPOSICOES', 'PROPOSIÃ‡Ã•ES'], ['Proposicoes', 'ProposiÃ§Ãµes'], ['proposicoes', 'proposiÃ§Ãµes'],
+        ['RACIOCINIO LOGICO', 'RACIOCÃNIO LÃ“GICO'],
+        ['Raciocinio Logico', 'RaciocÃ­nio LÃ³gico'],
+        ['PORTUGUES', 'PORTUGUÃŠS'], ['Portugues', 'PortuguÃªs']
     ];
     ortografia.forEach(([de, para]) => {
         texto = texto.split(de).join(para);
@@ -411,7 +411,7 @@ function garantirRankingInterface() {
                     <div class="page-header">
                         <div>
                             <h2>Ranking dos Alunos</h2>
-                            <p class="meta-sub">Comparativo de horas estudadas, precisão e sequência de dias.</p>
+                            <p class="meta-sub">Comparativo de horas estudadas, precisÃ£o e sequÃªncia de dias.</p>
                         </div>
                         <button class="btn btn-sm btn-outline" onclick="renderRankingAlunos()">
                             <i class="fas fa-rotate"></i> ATUALIZAR
@@ -548,7 +548,7 @@ function mensagemErroSupabase(error) {
         error?.message,
         error?.details,
         error?.hint,
-        error?.code ? `Código: ${error.code}` : ''
+        error?.code ? `CÃ³digo: ${error.code}` : ''
     ].filter(Boolean);
     return partes.join(' | ') || 'Erro desconhecido do Supabase.';
 }
@@ -567,7 +567,7 @@ async function esperarSessaoSupabase(tentativas = 8, intervaloMs = 450) {
             const { data, error } = await comTimeout(
                 supabaseClient.auth.getSession(),
                 2500,
-                'Tempo esgotado ao verificar a sessão Supabase.'
+                'Tempo esgotado ao verificar a sessÃ£o Supabase.'
             );
             if(error) throw error;
             if(data?.session?.user) return data.session;
@@ -625,7 +625,7 @@ async function sessaoSupabasePeloHash(hashParams) {
     if(!accessToken) return null;
 
     supabaseClient = criarClienteSupabase(accessToken);
-    setCloudStatus('Login Google recebido. Preparando sua sessão...');
+    setCloudStatus('Login Google recebido. Preparando sua sessÃ£o...');
     if(refreshToken) {
         try {
             const { data, error } = await comTimeout(
@@ -634,14 +634,14 @@ async function sessaoSupabasePeloHash(hashParams) {
                     refresh_token: refreshToken
                 }),
                 6000,
-                'Tempo esgotado ao salvar a sessão Supabase.'
+                'Tempo esgotado ao salvar a sessÃ£o Supabase.'
             );
             if(error) throw error;
             supabaseAccessToken = data?.session?.access_token || accessToken;
             supabaseClient = criarClienteSupabase(supabaseAccessToken);
             if(data?.session?.user) return data.session;
         } catch(e) {
-            setCloudStatus('Sessão Supabase demorou; liberando pelo token Google validado...');
+            setCloudStatus('SessÃ£o Supabase demorou; liberando pelo token Google validado...');
             supabaseClient = criarClienteSupabase(accessToken);
         }
     }
@@ -671,7 +671,7 @@ function parseDataISO(valor) {
 
 function formatarDataBR(valor) {
     const data = parseDataISO(valor);
-    if(!data) return 'Não definida';
+    if(!data) return 'NÃ£o definida';
     return data.toLocaleDateString('pt-BR');
 }
 
@@ -688,7 +688,7 @@ function textoDataEdital() {
     if(dias === null) return '';
     const data = formatarDataBR(db.editalPublicacao);
     if(dias > 1) return `Edital em ${dias} dias (${data})`;
-    if(dias === 1) return `Edital amanhã (${data})`;
+    if(dias === 1) return `Edital amanhÃ£ (${data})`;
     if(dias === 0) return `Edital hoje (${data})`;
     return `Edital publicado em ${data}`;
 }
@@ -696,7 +696,7 @@ function textoDataEdital() {
 function atualizarPersonalizacao() {
     garantirRankingInterface();
     const welcome = document.getElementById('welcome-title');
-    if(welcome) welcome.innerText = `FORÇA E HONRA, ${nomeUsuario().toUpperCase()}!`;
+    if(welcome) welcome.innerText = `FORÃ‡A E HONRA, ${nomeUsuario().toUpperCase()}!`;
     document.querySelectorAll('[data-student-name]').forEach(el => {
         el.innerText = nomeUsuario();
     });
@@ -797,7 +797,7 @@ async function verificarAcessoSupabase() {
             .eq('email', email)
             .maybeSingle(),
         8000,
-        'Tempo esgotado ao verificar aprovação.'
+        'Tempo esgotado ao verificar aprovaÃ§Ã£o.'
     );
     if(error) throw error;
 
@@ -813,7 +813,7 @@ function bloquearAcessoPorAprovacao(profile) {
     const status = profile?.status || 'pending';
     const texto = status === 'rejected'
         ? 'Seu acesso foi recusado pelo administrador.'
-        : 'Seu acesso foi solicitado. Aguarde aprovação do administrador.';
+        : 'Seu acesso foi solicitado. Aguarde aprovaÃ§Ã£o do administrador.';
     setCloudStatus(texto);
     atualizarPersonalizacao();
     mostrarTelaLogin();
@@ -821,12 +821,12 @@ function bloquearAcessoPorAprovacao(profile) {
 
 async function entrarComSessaoSupabase(user) {
     cloudUser = {...user, provider: 'supabase'};
-    setCloudStatus(`Conectado como ${cloudUser.email || 'Google'}. Verificando aprovação...`);
+    setCloudStatus(`Conectado como ${cloudUser.email || 'Google'}. Verificando aprovaÃ§Ã£o...`);
     try {
         accessProfile = await verificarAcessoSupabase();
     } catch(e) {
         accessProfile = null;
-        setCloudStatus(`Não foi possível solicitar/verificar aprovação: ${mensagemErroSupabase(e)}`);
+        setCloudStatus(`NÃ£o foi possÃ­vel solicitar/verificar aprovaÃ§Ã£o: ${mensagemErroSupabase(e)}`);
         mostrarTelaLogin();
         return;
     }
@@ -841,7 +841,7 @@ async function entrarComSessaoSupabase(user) {
     comTimeout(carregarDadosDaNuvem(), 7000, 'Tempo esgotado ao carregar dados da nuvem.').then(() => {
         init();
     }).catch(() => {
-        showToast('Nuvem lenta', 'A plataforma foi aberta com os dados locais e tentará sincronizar depois.');
+        showToast('Nuvem lenta', 'A plataforma foi aberta com os dados locais e tentarÃ¡ sincronizar depois.');
     });
 }
 
@@ -860,14 +860,14 @@ async function initSupabaseAuth() {
             || hashParams.get('error');
 
         if(authError) {
-            setCloudStatus(`Login Google não concluído: ${decodeURIComponent(authError)}`);
+            setCloudStatus(`Login Google nÃ£o concluÃ­do: ${decodeURIComponent(authError)}`);
             window.history.replaceState({}, document.title, window.location.pathname);
             return true;
         }
 
         if(authCode) {
             authProcessandoRetorno = true;
-            setCloudStatus('Login retornou em modo código. Limpando retorno antigo; clique em Entrar com Google novamente.');
+            setCloudStatus('Login retornou em modo cÃ³digo. Limpando retorno antigo; clique em Entrar com Google novamente.');
             window.history.replaceState({}, document.title, window.location.pathname);
             authProcessandoRetorno = false;
             return true;
@@ -917,7 +917,7 @@ async function initSupabaseAuth() {
         });
         return true;
     } catch(e) {
-        setCloudStatus(`Não foi possível concluir o login Supabase: ${mensagemErroSupabase(e)}`);
+        setCloudStatus(`NÃ£o foi possÃ­vel concluir o login Supabase: ${mensagemErroSupabase(e)}`);
         return false;
     }
 }
@@ -926,7 +926,7 @@ function initFirebaseAuth() {
     firebaseApp = null;
     firebaseAuth = null;
     firebaseStore = null;
-    setCloudStatus('Firebase desativado. Este projeto usa Supabase com aprovação do admin.');
+    setCloudStatus('Firebase desativado. Este projeto usa Supabase com aprovaÃ§Ã£o do admin.');
     return false;
 }
 
@@ -943,20 +943,20 @@ async function loginGoogle() {
                     queryParams: { prompt: 'select_account' }
                 }
             });
-            if(error) setCloudStatus('Não foi possível iniciar login Google no Supabase.');
+            if(error) setCloudStatus('NÃ£o foi possÃ­vel iniciar login Google no Supabase.');
             return;
         } catch(e) {
             setCloudStatus('Login Google cancelado ou bloqueado pelo navegador.');
             return;
         }
     }
-    setCloudStatus('Supabase não configurado. Configure o supabase-config.js para usar login aprovado.');
+    setCloudStatus('Supabase nÃ£o configurado. Configure o supabase-config.js para usar login aprovado.');
 }
 
 function mostrarCadastroAluno(mostrar) {
     const box = document.getElementById('cadastro-aluno-box');
     if(box) box.style.display = mostrar ? 'grid' : 'none';
-    setCloudStatus(mostrar ? 'Preencha o cadastro. O acesso só entra após aprovação do admin.' : 'Entre com Google ou e-mail para continuar.');
+    setCloudStatus(mostrar ? 'Preencha o cadastro. O acesso sÃ³ entra apÃ³s aprovaÃ§Ã£o do admin.' : 'Entre com Google ou e-mail para continuar.');
 }
 
 function dadosCadastroAluno() {
@@ -1006,7 +1006,7 @@ async function registrarSolicitacaoCadastro({ userId, email, nome, telefone, con
 
 async function cadastrarAluno() {
     if(!supabaseConfigurado()) {
-        setCloudStatus('Supabase não configurado. Configure o supabase-config.js antes de cadastrar alunos.');
+        setCloudStatus('Supabase nÃ£o configurado. Configure o supabase-config.js antes de cadastrar alunos.');
         return;
     }
     const dados = dadosCadastroAluno();
@@ -1016,7 +1016,7 @@ async function cadastrarAluno() {
     }
     try {
         if(!supabaseClient) supabaseClient = criarClienteSupabase();
-        setCloudStatus('Criando cadastro e enviando para aprovação...');
+        setCloudStatus('Criando cadastro e enviando para aprovaÃ§Ã£o...');
         const { data, error } = await supabaseClient.auth.signUp({
             email: dados.email,
             password: dados.senha,
@@ -1041,15 +1041,15 @@ async function cadastrarAluno() {
         limparCadastroAluno();
         mostrarCadastroAluno(false);
         try { await supabaseClient.auth.signOut({ scope: 'local' }); } catch(e) {}
-        setCloudStatus('Cadastro enviado. Aguarde aprovação do administrador para entrar.');
+        setCloudStatus('Cadastro enviado. Aguarde aprovaÃ§Ã£o do administrador para entrar.');
     } catch(e) {
-        setCloudStatus(`Não foi possível cadastrar: ${mensagemErroSupabase(e)}`);
+        setCloudStatus(`NÃ£o foi possÃ­vel cadastrar: ${mensagemErroSupabase(e)}`);
     }
 }
 
 async function entrarEmailSenha() {
     if(!supabaseConfigurado()) {
-        setCloudStatus('Supabase não configurado. Configure o supabase-config.js para entrar.');
+        setCloudStatus('Supabase nÃ£o configurado. Configure o supabase-config.js para entrar.');
         return;
     }
     const email = String(document.getElementById('login-email')?.value || '').trim().toLowerCase();
@@ -1069,16 +1069,16 @@ async function entrarEmailSenha() {
     } catch(e) {
         const msg = mensagemErroSupabase(e);
         if(email === ADMIN_EMAIL) {
-            setCloudStatus(`Não foi possível entrar como admin: ${msg}. Se a senha ainda não foi criada, clique em Criar ou recuperar senha.`);
+            setCloudStatus(`NÃ£o foi possÃ­vel entrar como admin: ${msg}. Se a senha ainda nÃ£o foi criada, clique em Criar ou recuperar senha.`);
             return;
         }
-        setCloudStatus(`Não foi possível entrar: ${msg}`);
+        setCloudStatus(`NÃ£o foi possÃ­vel entrar: ${msg}`);
     }
 }
 
 async function enviarRecuperacaoSenha() {
     if(!supabaseConfigurado()) {
-        setCloudStatus('Supabase não configurado. Configure o supabase-config.js para recuperar senha.');
+        setCloudStatus('Supabase nÃ£o configurado. Configure o supabase-config.js para recuperar senha.');
         return;
     }
     const email = String(document.getElementById('login-email')?.value || '').trim().toLowerCase();
@@ -1093,13 +1093,13 @@ async function enviarRecuperacaoSenha() {
         if(error) throw error;
         setCloudStatus('Enviamos um link para seu e-mail. Abra o link, digite a nova senha aqui e clique em Salvar nova senha.');
     } catch(e) {
-        setCloudStatus(`Não foi possível enviar recuperação de senha: ${mensagemErroSupabase(e)}`);
+        setCloudStatus(`NÃ£o foi possÃ­vel enviar recuperaÃ§Ã£o de senha: ${mensagemErroSupabase(e)}`);
     }
 }
 
 async function salvarNovaSenhaEmail() {
     if(!supabaseConfigurado()) {
-        setCloudStatus('Supabase não configurado. Configure o supabase-config.js para salvar senha.');
+        setCloudStatus('Supabase nÃ£o configurado. Configure o supabase-config.js para salvar senha.');
         return;
     }
     if(!supabaseClient) supabaseClient = criarClienteSupabase();
@@ -1117,7 +1117,7 @@ async function salvarNovaSenhaEmail() {
         setCloudStatus('Senha salva. Entrando na plataforma...');
         if(data?.user) await entrarComSessaoSupabase(data.user);
     } catch(e) {
-        setCloudStatus(`Não foi possível salvar a nova senha: ${mensagemErroSupabase(e)}`);
+        setCloudStatus(`NÃ£o foi possÃ­vel salvar a nova senha: ${mensagemErroSupabase(e)}`);
     }
 }
 async function sairGoogle() {
@@ -1138,7 +1138,7 @@ async function sairGoogle() {
             if(key.startsWith('sb-') || key.includes('supabase.auth.token')) sessionStorage.removeItem(key);
         });
     } catch(e) {
-        setCloudStatus('Sessão local encerrada. Entre novamente com Google.');
+        setCloudStatus('SessÃ£o local encerrada. Entre novamente com Google.');
     } finally {
         cloudUser = null;
         supabaseAccessToken = null;
@@ -1152,7 +1152,7 @@ async function sairGoogle() {
         renderPerfil();
         mostrarTelaLogin();
         window.history.replaceState({}, document.title, window.location.pathname);
-        setCloudStatus('Você saiu do login. Entre novamente com Google.');
+        setCloudStatus('VocÃª saiu do login. Entre novamente com Google.');
     }
 }
 
@@ -1178,7 +1178,7 @@ async function carregarDadosDaNuvem() {
             showToast('Nuvem ativada', 'Seus dados locais foram salvos na sua conta Google.');
         }
     } catch(e) {
-        showToast('Sincronização indisponível', 'O site continuará usando a cópia local neste dispositivo.');
+        showToast('SincronizaÃ§Ã£o indisponÃ­vel', 'O site continuarÃ¡ usando a cÃ³pia local neste dispositivo.');
     } finally {
         carregandoNuvem = false;
     }
@@ -1203,7 +1203,7 @@ async function salvarDadosNaNuvem(imediato) {
             email: cloudUser.email || null
         }, { merge: true });
     } catch(e) {
-        showToast('Falha ao salvar na nuvem', 'A cópia local continua preservada no navegador.');
+        showToast('Falha ao salvar na nuvem', 'A cÃ³pia local continua preservada no navegador.');
     }
 }
 
@@ -1211,7 +1211,7 @@ async function carregarDadosSupabase() {
     if(!supabaseClient || !cloudUser) return false;
     const alvo = alvoDadosNuvem();
     if(!alvo.user_id) {
-        showToast('Aluno sem dados ainda', 'Esse aluno precisa entrar uma vez pelo Google antes de você editar o perfil dele.');
+        showToast('Aluno sem dados ainda', 'Esse aluno precisa entrar uma vez pelo Google antes de vocÃª editar o perfil dele.');
         return false;
     }
     carregandoNuvem = true;
@@ -1236,7 +1236,7 @@ async function carregarDadosSupabase() {
             return true;
         } else {
             if(editandoAlunoComoAdmin()) {
-                showToast('Aluno sem planejamento', 'O aluno ainda não tem dados salvos no Supabase.');
+                showToast('Aluno sem planejamento', 'O aluno ainda nÃ£o tem dados salvos no Supabase.');
                 return false;
             }
             aplicarPreferenciasLocais();
@@ -1245,7 +1245,7 @@ async function carregarDadosSupabase() {
             return true;
         }
     } catch(e) {
-        showToast('Sincronização indisponível', 'Confira a tabela e as regras do Supabase.');
+        showToast('SincronizaÃ§Ã£o indisponÃ­vel', 'Confira a tabela e as regras do Supabase.');
         return false;
     } finally {
         carregandoNuvem = false;
@@ -1268,13 +1268,13 @@ async function garantirBackupEdicaoAdmin(alvo) {
                 student_user_id: alvo.user_id,
                 student_email: alvo.email || null,
                 before_data: cloneDados(data?.data || db),
-                note: 'Backup automático antes de edição pelo admin'
+                note: 'Backup automÃ¡tico antes de ediÃ§Ã£o pelo admin'
             });
         if(backupError) throw backupError;
         adminEditBackupReady = true;
-        showToast('Backup do aluno criado', 'Uma cópia dos dados anteriores foi salva antes da sua edição.');
+        showToast('Backup do aluno criado', 'Uma cÃ³pia dos dados anteriores foi salva antes da sua ediÃ§Ã£o.');
     } catch(e) {
-        showToast('Backup não confirmado', 'Confira a tabela plantao_admin_backups antes de editar este aluno.');
+        showToast('Backup nÃ£o confirmado', 'Confira a tabela plantao_admin_backups antes de editar este aluno.');
         throw e;
     }
 }
@@ -1296,7 +1296,7 @@ async function salvarDadosSupabase(imediato) {
             }, { onConflict: 'user_id' });
         if(error) throw error;
     } catch(e) {
-        showToast('Falha ao salvar na nuvem', 'A cópia local continua preservada no navegador.');
+        showToast('Falha ao salvar na nuvem', 'A cÃ³pia local continua preservada no navegador.');
     }
 }
 
@@ -1383,7 +1383,7 @@ function normalizarBanco() {
 normalizarBanco();
 
 function checkAccess() {
-    setCloudStatus('Acesso local desativado. Entre com Google e aguarde aprovação do admin.');
+    setCloudStatus('Acesso local desativado. Entre com Google e aguarde aprovaÃ§Ã£o do admin.');
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1392,7 +1392,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     iniciarCorretorTextosContinuo();
     const supabaseOk = await initSupabaseAuth();
     if(!supabaseOk) {
-        setCloudStatus('Supabase não configurado ou supabase-config.js não carregado. O acesso depende do login aprovado pelo admin.');
+        setCloudStatus('Supabase nÃ£o configurado ou supabase-config.js nÃ£o carregado. O acesso depende do login aprovado pelo admin.');
     }
     setTimeout(() => corrigirTextosDaTela(), 800);
 });
@@ -1409,7 +1409,7 @@ function showTab(id, el) {
     const paginasAdmin = ['ranking'];
     if(id === 'backup') id = 'perfil';
     if(paginasAdmin.includes(id) && !usuarioAdmin()) {
-        showToast('Acesso restrito', 'Esta área aparece somente para administradores.');
+        showToast('Acesso restrito', 'Esta Ã¡rea aparece somente para administradores.');
         id = 'diaria';
         el = document.querySelector(".nav-item[onclick*='diaria']");
     }
@@ -1482,13 +1482,8 @@ function renderDiario(date) {
     const hoje = new Date(); hoje.setHours(0,0,0,0);
     const viewDate = new Date(date); viewDate.setHours(0,0,0,0);
     const curStr = dateKey(date);
-    let temAtr = false;
-    const pD = new Date(hoje); pD.setDate(hoje.getDate() - hoje.getDay());
-
-    for(let i=0; i<hoje.getDay(); i++) {
-        const dP = new Date(pD); dP.setDate(pD.getDate() + i);
-        if(db.metaFixa[dateKey(dP)]?.some(t => !t.c)) { temAtr = true; break; }
-    }
+    const atrasosPendentes = getAtrasosAteHoje(hoje);
+    const temAtr = atrasosPendentes.length > 0;
 
     const btnReplan = document.querySelector('.replan-btn');
     if(btnReplan) btnReplan.style.display = temAtr ? "inline-flex" : "none";
@@ -1506,11 +1501,11 @@ function renderDiario(date) {
 
     const tasks = db.metaFixa[curStr];
     document.getElementById('meta-status').innerText = `${tasks.reduce((a,b)=>a+b.h,0).toFixed(1)}h / ${db.h[date.getDay()]}h meta`;
-    const atrasos = curStr === dateKey(hoje) ? getAtrasosDaSemana(hoje) : [];
+    const atrasos = curStr === dateKey(hoje) ? atrasosPendentes : [];
     const atrasoHtml = atrasos.length ? `
         <div class="stat-card atraso-box">
             <h3>Atividades em atraso</h3>
-            <p>Você tem atividade(s) anterior(es) não finalizada(s). Deseja replanejar os atrasos?</p>
+            <p>VocÃª tem atividade(s) anterior(es) nÃ£o finalizada(s). Deseja replanejar os atrasos?</p>
             <button class="btn btn-sm btn-outline" onclick="replanejarAgora()">REPLANEJAR ATRASOS</button>
         </div>
         ${atrasos.map(({task, dia}) => renderTaskCard(task, dia, `atraso-${dia}-${task.itemId || task.m}`, true)).join('')}
@@ -1523,7 +1518,7 @@ function renderDiario(date) {
         <div class="empty-state replan-empty">
             <i class="fas fa-calendar-minus"></i>
             <strong>Dia pausado</strong>
-            <span>Hoje ficou vazio e o planejamento recomeça amanhã.</span>
+            <span>Hoje ficou vazio e o planejamento recomeÃ§a amanhÃ£.</span>
             <button class="btn btn-sm btn-outline" onclick="showTab('replanejar')">VER REPLANEJAMENTO</button>
         </div>` : '';
 
@@ -1535,7 +1530,7 @@ function renderDiario(date) {
         </button>`;
 
     const ehHoje = curStr === dateKey(hoje);
-    document.getElementById('view-title').innerText = ehHoje ? "Missão de Hoje" : "Missão de Amanhã";
+    document.getElementById('view-title').innerText = ehHoje ? "MissÃ£o de Hoje" : "MissÃ£o de AmanhÃ£";
     document.getElementById('btn-hoje').style.display = ehHoje ? "none" : "inline-flex";
 }
 
@@ -1544,11 +1539,11 @@ function renderMissaoCumpridaCard(ehHoje) {
         <div class="mission-complete-card">
             <div class="mission-complete-icon"><i class="fas fa-check"></i></div>
             <div>
-                <h3>Missão cumprida</h3>
-                <p>Parabéns, você concluiu todas as atividades planejadas para este dia.</p>
+                <h3>MissÃ£o cumprida</h3>
+                <p>ParabÃ©ns, vocÃª concluiu todas as atividades planejadas para este dia.</p>
             </div>
             <button class="btn btn-sm" onclick="navDay(1)">
-                <i class="fas fa-arrow-right"></i> ${ehHoje ? 'ADIANTAR AMANHÃ' : 'VER PRÓXIMO DIA'}
+                <i class="fas fa-arrow-right"></i> ${ehHoje ? 'ADIANTAR AMANHÃƒ' : 'VER PRÃ“XIMO DIA'}
             </button>
         </div>`;
 }
@@ -1574,16 +1569,17 @@ function renderTaskCard(t, dia, idx, atrasada) {
         </div>`;
 }
 
-function getAtrasosDaSemana(hoje) {
-    const pD = new Date(hoje);
-    pD.setDate(hoje.getDate() - hoje.getDay());
+function getAtrasosAteHoje(hoje) {
+    const hojeBase = new Date(hoje);
+    hojeBase.setHours(0,0,0,0);
     const atrasos = [];
-    for(let i=0; i<hoje.getDay(); i++) {
-        const d = new Date(pD);
-        d.setDate(pD.getDate() + i);
-        const k = dateKey(d);
-        (db.metaFixa[k] || []).filter(t => !t.c).forEach(task => atrasos.push({task, dia: k}));
-    }
+    Object.entries(db.metaFixa || {}).forEach(([k, tasks]) => {
+        const data = keyToDate(k);
+        data.setHours(0,0,0,0);
+        if(data >= hojeBase) return;
+        (tasks || []).filter(t => !t.c && !isExtraTask(t)).forEach(task => atrasos.push({task, dia: k}));
+    });
+    atrasos.sort((a, b) => a.dia.localeCompare(b.dia));
     return atrasos;
 }
 
@@ -1613,7 +1609,7 @@ function fecharModais() {
 function abrirModalExtra() {
     const selectMat = document.getElementById('extra-mat');
     const materiasUnicas = [...new Set(db.lista.map(x => x.m))];
-    selectMat.innerHTML = '<option value="">Selecione a Matéria</option>' + materiasUnicas.map(m => `<option value="${m}">${m}</option>`).join('');
+    selectMat.innerHTML = '<option value="">Selecione a MatÃ©ria</option>' + materiasUnicas.map(m => `<option value="${m}">${m}</option>`).join('');
     document.getElementById('modal-extra').style.display = 'flex';
 }
 
@@ -1675,7 +1671,7 @@ function aplicarTempoExtraTeoria(destino) {
     teoriaPendente = null;
     fecharModais();
     save();
-    showToast("Tempo extra planejado", destino === 'hoje' ? "O reforço foi tentado no dia atual." : "Os próximos dias foram recalculados sem alterar dias anteriores.");
+    showToast("Tempo extra planejado", destino === 'hoje' ? "O reforÃ§o foi tentado no dia atual." : "Os prÃ³ximos dias foram recalculados sem alterar dias anteriores.");
     updateDashboard();
     renderDiarioSemRecalcular(vDate);
 }
@@ -1687,7 +1683,7 @@ function inserirTeoriaExtraNoDia(item, diaKey, horas) {
     const total = tarefasPlanejadas(tasks).reduce((acc, t) => acc + (parseFloat(t.h) || 0), 0);
     const livre = Math.max(0, limite - total);
     if(livre <= 0.01) {
-        showToast("Sem espaço hoje", "A teoria extra entrará no próximo dia disponível do cronograma.");
+        showToast("Sem espaÃ§o hoje", "A teoria extra entrarÃ¡ no prÃ³ximo dia disponÃ­vel do cronograma.");
         return;
     }
     const horasHoje = Math.min(livre, horas);
@@ -1733,8 +1729,8 @@ function renderLancamentos() {
         alvo.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-database"></i>
-                <strong>Nenhum lançamento registrado</strong>
-                <span>Quando você marcar uma atividade como feita, ela aparecerá aqui.</span>
+                <strong>Nenhum lanÃ§amento registrado</strong>
+                <span>Quando vocÃª marcar uma atividade como feita, ela aparecerÃ¡ aqui.</span>
             </div>`;
         return;
     }
@@ -1792,9 +1788,9 @@ function renderPerfil() {
         .slice(0, 2)
         .map(p => p[0]?.toUpperCase())
         .join('') || 'P';
-    const sincronizado = cloudUser ? 'Sincronização ativa' : 'Acesso local';
+    const sincronizado = cloudUser ? 'SincronizaÃ§Ã£o ativa' : 'Acesso local';
     const detalhe = cloudUser
-        ? (editandoAlunoComoAdmin() ? `Você está editando os dados de ${adminStudentContext.email}.` : 'Este perfil usa sua conta Google para carregar e salvar os dados no Supabase.')
+        ? (editandoAlunoComoAdmin() ? `VocÃª estÃ¡ editando os dados de ${adminStudentContext.email}.` : 'Este perfil usa sua conta Google para carregar e salvar os dados no Supabase.')
         : 'Entre com Google para sincronizar seus dados entre celular, tablet e computador.';
     const statusAcesso = accessProfile?.status === 'approved' ? 'Aprovado' : (accessProfile?.status === 'pending' ? 'Pendente' : (accessProfile?.status === 'rejected' ? 'Recusado' : sincronizado));
     const adminHtml = usuarioAdmin() ? `
@@ -1802,14 +1798,14 @@ function renderPerfil() {
                 <div class="admin-access-head">
                     <div>
                         <h3>Aprovar alunos</h3>
-                        <p class="meta-sub">Controle quem pode acessar o Plantão como aluno e abra o perfil para fazer ajustes.</p>
+                        <p class="meta-sub">Controle quem pode acessar o PlantÃ£o como aluno e abra o perfil para fazer ajustes.</p>
                     </div>
                     <button class="btn btn-sm btn-outline" onclick="carregarSolicitacoesAcesso()">
                         <i class="fas fa-rotate"></i> ATUALIZAR
                     </button>
                 </div>
                 <div id="admin-access-list" class="admin-access-list">
-                    <div class="empty-state">Carregando solicitações...</div>
+                    <div class="empty-state">Carregando solicitaÃ§Ãµes...</div>
                 </div>
             </div>` : '';
 
@@ -1845,7 +1841,7 @@ function renderPerfil() {
             </div>
             <div class="stat-card profile-actions-card">
                 <h3>Nome na plataforma</h3>
-                <p class="meta-sub">Esse nome aparece no painel, no ranking e nas áreas de acompanhamento.</p>
+                <p class="meta-sub">Esse nome aparece no painel, no ranking e nas Ã¡reas de acompanhamento.</p>
                 <label for="perfil-nome-aluno">Nome exibido</label>
                 <input type="text" id="perfil-nome-aluno" value="${nomeSeguro}" maxlength="80" placeholder="Nome do aluno">
                 <button class="btn" onclick="salvarNomePerfil()">
@@ -1861,8 +1857,8 @@ function renderPerfil() {
             </div>
             <div class="stat-card profile-deadline-card">
                 <h3>Data do edital</h3>
-                <p class="meta-sub">Informe a data prevista de publicação para o painel acompanhar a contagem.</p>
-                <label for="edital-publicacao">Publicação do edital</label>
+                <p class="meta-sub">Informe a data prevista de publicaÃ§Ã£o para o painel acompanhar a contagem.</p>
+                <label for="edital-publicacao">PublicaÃ§Ã£o do edital</label>
                 <input type="date" id="edital-publicacao" value="${escapeHtml(db.editalPublicacao || '')}">
                 <div class="deadline-preview">${escapeHtml(textoDataEdital() || 'Nenhuma data definida.')}</div>
                 <button class="btn" onclick="salvarDataEdital()">
@@ -1878,7 +1874,7 @@ function renderPerfil() {
 async function carregarSolicitacoesAcesso() {
     const alvo = document.getElementById('admin-access-list');
     if(!alvo || !supabaseClient || !usuarioAdmin()) return;
-    alvo.innerHTML = '<div class="empty-state">Carregando solicitações...</div>';
+    alvo.innerHTML = '<div class="empty-state">Carregando solicitaÃ§Ãµes...</div>';
     try {
         const adminEmailAtual = emailUsuario();
         try {
@@ -1890,7 +1886,7 @@ async function carregarSolicitacoesAcesso() {
                 .select('*')
                 .order('requested_at', { ascending: false }),
             8000,
-            'Tempo esgotado ao carregar solicitações.'
+            'Tempo esgotado ao carregar solicitaÃ§Ãµes.'
         );
         if(error) throw error;
         adminAccessList = data || [];
@@ -1898,10 +1894,10 @@ async function carregarSolicitacoesAcesso() {
     } catch(e) {
         alvo.innerHTML = `
             <div class="empty-state">
-                <strong>Não foi possível carregar os alunos</strong>
+                <strong>NÃ£o foi possÃ­vel carregar os alunos</strong>
                 <span>${escapeHtml(mensagemErroSupabase(e))}</span>
-                <span>Sessão admin: ${escapeHtml(emailUsuario())} | token ${supabaseAccessToken ? 'ativo' : 'ausente'}</span>
-                <span>Rode novamente o SQL de acesso no Supabase e depois peça para o aluno sair e entrar com Google.</span>
+                <span>SessÃ£o admin: ${escapeHtml(emailUsuario())} | token ${supabaseAccessToken ? 'ativo' : 'ausente'}</span>
+                <span>Rode novamente o SQL de acesso no Supabase e depois peÃ§a para o aluno sair e entrar com Google.</span>
                 <button class="btn btn-sm btn-outline" onclick="carregarSolicitacoesAcesso()">TENTAR NOVAMENTE</button>
             </div>`;
     }
@@ -1914,9 +1910,9 @@ function renderAdminAccessList(adminEmailAtual = '') {
     if(!alunos.length) {
         alvo.innerHTML = `
             <div class="empty-state">
-                <strong>Nenhuma solicitação de aluno por enquanto</strong>
+                <strong>Nenhuma solicitaÃ§Ã£o de aluno por enquanto</strong>
                 <span>Admin conectado: ${escapeHtml(adminEmailAtual || emailUsuario())}</span>
-                <span>Para aparecer aqui, o aluno precisa clicar em Entrar com Google. Se ele já testou, rode o SQL atualizado no Supabase.</span>
+                <span>Para aparecer aqui, o aluno precisa clicar em Entrar com Google. Se ele jÃ¡ testou, rode o SQL atualizado no Supabase.</span>
             </div>`;
         return;
     }
@@ -1925,8 +1921,8 @@ function renderAdminAccessList(adminEmailAtual = '') {
         const emailParam = encodeURIComponent(item.email || '');
         const nome = escapeHtml(item.name || item.email || 'Aluno');
         const telefone = escapeHtml(item.phone || 'Sem telefone');
-        const concurso = escapeHtml(item.contest || 'Concurso não informado');
-        const idade = item.age ? `${escapeHtml(item.age)} anos` : 'Idade não informada';
+        const concurso = escapeHtml(item.contest || 'Concurso nÃ£o informado');
+        const idade = item.age ? `${escapeHtml(item.age)} anos` : 'Idade nÃ£o informada';
         const status = escapeHtml(item.status || 'pending');
         const role = escapeHtml(item.role || 'aluno');
         const statusLabel = item.status === 'approved' ? 'Aprovado' : (item.status === 'rejected' ? 'Recusado' : 'Pendente');
@@ -1980,11 +1976,11 @@ async function entrarPerfilAluno(email) {
     const cleanEmail = decodeURIComponent(String(email || '')).toLowerCase();
     const aluno = adminAccessList.find(item => String(item.email || '').toLowerCase() === cleanEmail);
     if(!aluno || aluno.status !== 'approved') {
-        showToast('Aluno não aprovado', 'Aprove o aluno antes de abrir o perfil.');
+        showToast('Aluno nÃ£o aprovado', 'Aprove o aluno antes de abrir o perfil.');
         return;
     }
     if(!aluno.user_id) {
-        showToast('Aluno sem login completo', 'Esse aluno precisa entrar pelo Google uma vez antes de você editar os dados dele.');
+        showToast('Aluno sem login completo', 'Esse aluno precisa entrar pelo Google uma vez antes de vocÃª editar os dados dele.');
         return;
     }
     await salvarDadosSupabase(true);
@@ -2015,7 +2011,7 @@ async function voltarPerfilAdmin() {
     renderAdminStudentBanner();
     renderPerfil();
     showTab('perfil', document.querySelector(".nav-item[onclick*='perfil']"));
-    showToast('Perfil admin restaurado', 'Você voltou para os seus dados.');
+    showToast('Perfil admin restaurado', 'VocÃª voltou para os seus dados.');
 }
 
 async function restaurarBackupAluno(email) {
@@ -2023,7 +2019,7 @@ async function restaurarBackupAluno(email) {
     const cleanEmail = decodeURIComponent(String(email || '')).toLowerCase();
     const aluno = adminAccessList.find(item => String(item.email || '').toLowerCase() === cleanEmail);
     if(!aluno?.user_id) {
-        showToast('Aluno sem registro', 'Não encontrei o usuário do aluno para restaurar.');
+        showToast('Aluno sem registro', 'NÃ£o encontrei o usuÃ¡rio do aluno para restaurar.');
         return;
     }
     try {
@@ -2036,7 +2032,7 @@ async function restaurarBackupAluno(email) {
             .maybeSingle();
         if(error) throw error;
         if(!data?.before_data) {
-            showToast('Sem backup encontrado', 'Ainda não existe backup salvo para este aluno.');
+            showToast('Sem backup encontrado', 'Ainda nÃ£o existe backup salvo para este aluno.');
             return;
         }
         const { error: saveError } = await supabaseClient
@@ -2054,9 +2050,9 @@ async function restaurarBackupAluno(email) {
             normalizarBanco();
             init();
         }
-        showToast('Backup restaurado', `Dados de ${cleanEmail} voltaram para o último backup.`);
+        showToast('Backup restaurado', `Dados de ${cleanEmail} voltaram para o Ãºltimo backup.`);
     } catch(e) {
-        showToast('Falha ao restaurar backup', 'Confira as permissões da tabela plantao_admin_backups.');
+        showToast('Falha ao restaurar backup', 'Confira as permissÃµes da tabela plantao_admin_backups.');
     }
 }
 
@@ -2079,7 +2075,7 @@ async function alterarAcessoAluno(email, status) {
         showToast(status === 'approved' ? 'Aluno aprovado' : 'Acesso atualizado', cleanEmail);
         await carregarSolicitacoesAcesso();
     } catch(e) {
-        showToast('Falha ao atualizar acesso', 'Confira as permissões da tabela no Supabase.');
+        showToast('Falha ao atualizar acesso', 'Confira as permissÃµes da tabela no Supabase.');
     }
 }
 
@@ -2088,7 +2084,7 @@ async function excluirAlunoPlataforma(email) {
     const cleanEmail = decodeURIComponent(String(email || '')).toLowerCase();
     if(!cleanEmail || cleanEmail === ADMIN_EMAIL) return;
     const aluno = adminAccessList.find(item => String(item.email || '').toLowerCase() === cleanEmail);
-    if(!confirm(`Excluir ${cleanEmail} da plataforma? Os dados de planejamento deste aluno também serão removidos.`)) return;
+    if(!confirm(`Excluir ${cleanEmail} da plataforma? Os dados de planejamento deste aluno tambÃ©m serÃ£o removidos.`)) return;
     try {
         if(aluno?.user_id) {
             const { error: dataError } = await supabaseClient
@@ -2105,10 +2101,10 @@ async function excluirAlunoPlataforma(email) {
         if(editandoAlunoComoAdmin() && adminStudentContext?.email === cleanEmail) {
             await voltarPerfilAdmin();
         }
-        showToast('Aluno excluído', `${cleanEmail} foi removido da plataforma.`);
+        showToast('Aluno excluÃ­do', `${cleanEmail} foi removido da plataforma.`);
         await carregarSolicitacoesAcesso();
     } catch(e) {
-        showToast('Falha ao excluir aluno', 'Confira as permissões de exclusão no SQL do Supabase.');
+        showToast('Falha ao excluir aluno', 'Confira as permissÃµes de exclusÃ£o no SQL do Supabase.');
     }
 }
 
@@ -2117,7 +2113,7 @@ async function salvarNomePerfil() {
     if(!input) return;
     const nome = input.value.trim();
     if(nome.length < 2) {
-        showToast('Nome não salvo', 'Informe pelo menos 2 letras.');
+        showToast('Nome nÃ£o salvo', 'Informe pelo menos 2 letras.');
         return;
     }
     db.perfilNome = nome;
@@ -2135,7 +2131,7 @@ async function salvarNomePerfil() {
         }
         await salvarDadosSupabase(true);
     } catch(e) {}
-    showToast('Nome atualizado', `${nome} será usado na plataforma.`);
+    showToast('Nome atualizado', `${nome} serÃ¡ usado na plataforma.`);
 }
 
 function salvarDataEdital() {
@@ -2215,19 +2211,19 @@ function renderPerfGeral(data) {
     el.innerHTML = `
         <div class="perf-kpi-grid">
             <div class="perf-kpi"><small>Horas estudadas</small><strong>${total.horas.toFixed(1)}h</strong></div>
-            <div class="perf-kpi"><small>Questões feitas</small><strong>${total.questoes}</strong></div>
-            <div class="perf-kpi"><small>Questões acertadas</small><strong>${total.acertos}</strong></div>
-            <div class="perf-kpi"><small>Precisão geral</small><strong>${taxa(total)}%</strong></div>
+            <div class="perf-kpi"><small>QuestÃµes feitas</small><strong>${total.questoes}</strong></div>
+            <div class="perf-kpi"><small>QuestÃµes acertadas</small><strong>${total.acertos}</strong></div>
+            <div class="perf-kpi"><small>PrecisÃ£o geral</small><strong>${taxa(total)}%</strong></div>
         </div>
         <div class="perf-grid">
             <div class="stat-card">
-                <h3>Distribuição dos lançamentos</h3>
+                <h3>DistribuiÃ§Ã£o dos lanÃ§amentos</h3>
                 ${perfMetricBar('Estudo', total.estudos, total.atividades)}
-                ${perfMetricBar('Revisão', total.revisoes, total.atividades)}
-                ${perfMetricBar('Exercícios', total.exercicios, total.atividades)}
+                ${perfMetricBar('RevisÃ£o', total.revisoes, total.atividades)}
+                ${perfMetricBar('ExercÃ­cios', total.exercicios, total.atividades)}
             </div>
             <div class="stat-card">
-                <h3>Matérias mais trabalhadas</h3>
+                <h3>MatÃ©rias mais trabalhadas</h3>
                 ${renderRankList(data.materias.sort((a,b) => b.horas - a.horas).slice(0,5), 'horas')}
             </div>
         </div>`;
@@ -2243,13 +2239,13 @@ function perfMetricBar(label, value, total) {
 }
 
 function renderRankList(items, mode) {
-    if(!items.length) return perfEmpty('Marque atividades como concluídas para gerar análise.');
+    if(!items.length) return perfEmpty('Marque atividades como concluÃ­das para gerar anÃ¡lise.');
     return `<div class="perf-rank-list">${items.map((item, idx) => `
         <div class="perf-rank-row">
             <span>${idx + 1}</span>
             <div>
                 <b>${item.assunto || item.nome}</b>
-                <small>${item.materia ? item.materia + ' | ' : ''}${item.horas.toFixed(1)}h | ${item.questoes} questões | ${taxa(item)}%</small>
+                <small>${item.materia ? item.materia + ' | ' : ''}${item.horas.toFixed(1)}h | ${item.questoes} questÃµes | ${taxa(item)}%</small>
             </div>
             <strong>${mode === 'taxa' ? taxa(item) + '%' : item.horas.toFixed(1) + 'h'}</strong>
         </div>`).join('')}</div>`;
@@ -2262,8 +2258,8 @@ function renderPerfQuestoes(data) {
     el.innerHTML = `
         <div class="perf-grid">
             <div class="stat-card">
-                <h3>Questões por matéria</h3>
-                ${materiasComQuestoes.length ? materiasComQuestoes.map(m => perfQuestionRow(m.nome, m.questoes, m.acertos)).join('') : perfEmpty('Registre exercícios para ver questões por matéria.')}
+                <h3>QuestÃµes por matÃ©ria</h3>
+                ${materiasComQuestoes.length ? materiasComQuestoes.map(m => perfQuestionRow(m.nome, m.questoes, m.acertos)).join('') : perfEmpty('Registre exercÃ­cios para ver questÃµes por matÃ©ria.')}
             </div>
             <div class="stat-card">
                 <h3>Melhores assuntos</h3>
@@ -2271,7 +2267,7 @@ function renderPerfQuestoes(data) {
             </div>
             <div class="stat-card perf-subject-card">
                 <h3>Desempenho por assunto</h3>
-                <p class="meta-sub">Cada assunto aparece dentro da sua matéria com questões feitas, acertos e precisão.</p>
+                <p class="meta-sub">Cada assunto aparece dentro da sua matÃ©ria com questÃµes feitas, acertos e precisÃ£o.</p>
                 ${renderAssuntosQuestoesPorMateria(data)}
             </div>
         </div>`;
@@ -2291,10 +2287,10 @@ function renderAssuntosQuestoesPorMateria(data) {
     const assuntos = data.assuntos
         .filter(x => x.questoes > 0)
         .sort((a,b) => String(a.materia).localeCompare(String(b.materia), 'pt-BR') || taxa(b) - taxa(a) || String(a.assunto).localeCompare(String(b.assunto), 'pt-BR'));
-    if(!assuntos.length) return perfEmpty('Registre exercícios para ver seu desempenho por assunto.');
+    if(!assuntos.length) return perfEmpty('Registre exercÃ­cios para ver seu desempenho por assunto.');
 
     const porMateria = assuntos.reduce((acc, item) => {
-        const materia = item.materia || 'Matéria não informada';
+        const materia = item.materia || 'MatÃ©ria nÃ£o informada';
         if(!acc[materia]) acc[materia] = [];
         acc[materia].push(item);
         return acc;
@@ -2314,7 +2310,7 @@ function renderAssuntosQuestoesPorMateria(data) {
                         <small>${total.acertos}/${total.questoes} acertos | ${taxa(total)}%</small>
                     </div>
                 </div>
-                ${itens.map(item => perfQuestionRow(escapeHtml(item.assunto || 'Assunto não informado'), item.questoes, item.acertos)).join('')}
+                ${itens.map(item => perfQuestionRow(escapeHtml(item.assunto || 'Assunto nÃ£o informado'), item.questoes, item.acertos)).join('')}
             </div>`;
     }).join('');
 }
@@ -2326,8 +2322,8 @@ function renderPerfMelhores(data) {
     const melhoresAssuntos = data.assuntos.filter(x => x.questoes > 0).sort((a,b) => taxa(b) - taxa(a) || b.questoes - a.questoes).slice(0,8);
     el.innerHTML = `
         <div class="perf-grid">
-            <div class="stat-card"><h3>Matérias em que você está melhor</h3>${renderRankList(melhoresMaterias, 'taxa')}</div>
-            <div class="stat-card"><h3>Assuntos em que você está melhor</h3>${renderRankList(melhoresAssuntos, 'taxa')}</div>
+            <div class="stat-card"><h3>MatÃ©rias em que vocÃª estÃ¡ melhor</h3>${renderRankList(melhoresMaterias, 'taxa')}</div>
+            <div class="stat-card"><h3>Assuntos em que vocÃª estÃ¡ melhor</h3>${renderRankList(melhoresAssuntos, 'taxa')}</div>
         </div>`;
 }
 
@@ -2344,9 +2340,9 @@ function renderPerfPrioridades(data) {
     const prioridades = materias.sort((a,b) => prioridadeScore(b) - prioridadeScore(a)).slice(0,8);
     el.innerHTML = `
         <div class="stat-card">
-            <h3>Em quais matérias devo estudar</h3>
-            <p class="meta-sub">Prioridade calculada por baixa precisão, poucas questões, poucas horas e assuntos pendentes.</p>
-            ${prioridades.length ? prioridades.map(renderPrioridadeRow).join('') : perfEmpty('Ative matérias no ciclo para gerar prioridades.')}
+            <h3>Em quais matÃ©rias devo estudar</h3>
+            <p class="meta-sub">Prioridade calculada por baixa precisÃ£o, poucas questÃµes, poucas horas e assuntos pendentes.</p>
+            ${prioridades.length ? prioridades.map(renderPrioridadeRow).join('') : perfEmpty('Ative matÃ©rias no ciclo para gerar prioridades.')}
         </div>`;
 }
 
@@ -2360,7 +2356,7 @@ function prioridadeScore(item) {
 
 function renderPrioridadeRow(item) {
     const pct = Math.min(100, prioridadeScore(item));
-    const motivo = item.questoes === 0 ? 'sem questões registradas' : `${taxa(item)}% de precisão`;
+    const motivo = item.questoes === 0 ? 'sem questÃµes registradas' : `${taxa(item)}% de precisÃ£o`;
     return `
         <div class="priority-row">
             <div>
@@ -2433,10 +2429,10 @@ function rankingLista(titulo, subtitulo, alunos, criterio, unidade) {
                     <span class="ranking-pos">${idx + 1}</span>
                     <div>
                         <b>${escapeHtml(aluno.nome)}</b>
-                        <small>${escapeHtml(aluno.email)} | ${aluno.horas.toFixed(1)}h | ${aluno.questoes} questões | ${aluno.taxa}%</small>
+                        <small>${escapeHtml(aluno.email)} | ${aluno.horas.toFixed(1)}h | ${aluno.questoes} questÃµes | ${aluno.taxa}%</small>
                     </div>
                     <strong>${criterio === 'horas' ? aluno[criterio].toFixed(1) : aluno[criterio]}${unidade}</strong>
-                </div>`).join('') : perfEmpty('Ainda não há alunos com dados para ranquear.')}
+                </div>`).join('') : perfEmpty('Ainda nÃ£o hÃ¡ alunos com dados para ranquear.')}
         </div>`;
 }
 
@@ -2444,7 +2440,7 @@ async function renderRankingAlunos() {
     const alvo = document.getElementById('ranking-content');
     if(!alvo) return;
     if(!usuarioAdmin()) {
-        alvo.innerHTML = perfEmpty('O ranking fica disponível somente para o admin.');
+        alvo.innerHTML = perfEmpty('O ranking fica disponÃ­vel somente para o admin.');
         return;
     }
     alvo.innerHTML = '<div class="empty-state">Carregando ranking dos alunos...</div>';
@@ -2469,14 +2465,14 @@ async function renderRankingAlunos() {
         const ranking = alunos.map(aluno => resumoRankingAluno(aluno, dadosPorId.get(aluno.user_id)));
         alvo.innerHTML = `
             <div class="ranking-grid">
-                ${rankingLista('Horas estudadas', 'Soma de atividades concluídas.', ranking, 'horas', 'h')}
-                ${rankingLista('Precisão de acertos', 'Percentual geral de acertos em questões.', ranking.filter(a => a.questoes > 0), 'taxa', '%')}
-                ${rankingLista('Dias sem falhar', 'Sequência atual de dias com todas as metas concluídas.', ranking, 'streak', ' dias')}
+                ${rankingLista('Horas estudadas', 'Soma de atividades concluÃ­das.', ranking, 'horas', 'h')}
+                ${rankingLista('PrecisÃ£o de acertos', 'Percentual geral de acertos em questÃµes.', ranking.filter(a => a.questoes > 0), 'taxa', '%')}
+                ${rankingLista('Dias sem falhar', 'SequÃªncia atual de dias com todas as metas concluÃ­das.', ranking, 'streak', ' dias')}
             </div>`;
     } catch(e) {
         alvo.innerHTML = `
             <div class="empty-state">
-                <strong>Não foi possível carregar o ranking</strong>
+                <strong>NÃ£o foi possÃ­vel carregar o ranking</strong>
                 <span>${escapeHtml(mensagemErroSupabase(e))}</span>
                 <span>Confira se o SQL do Supabase permite o admin ler plantao_user_data.</span>
             </div>`;
@@ -2497,7 +2493,7 @@ function desmarcarLancamento(dia, idx, voltarParaBase) {
     updateDashboard();
     if(voltarParaBase) {
         renderLancamentos();
-        showToast("Lançamento removido", "A atividade voltou para pendente e o progresso foi recalculado.");
+        showToast("LanÃ§amento removido", "A atividade voltou para pendente e o progresso foi recalculado.");
     }
 }
 
@@ -2544,10 +2540,10 @@ function calcCebraspe() {
     const acertosInformados = Math.max(0, parseInt(document.getElementById('ex-acertos').value) || 0);
     const acertos = total > 0 ? Math.min(acertosInformados, total) : acertosInformados;
     const perc = total > 0 ? Math.round((acertos / total) * 100) : 0;
-    const aviso = acertosInformados > total && total > 0 ? '<br><small>Acertos ajustados ao total de questões.</small>' : '';
+    const aviso = acertosInformados > total && total > 0 ? '<br><small>Acertos ajustados ao total de questÃµes.</small>' : '';
     document.getElementById('cebraspe-feedback').innerHTML = total
         ? `Acertos: ${acertos}/${total} | Aproveitamento: ${perc}%${aviso}`
-        : 'Informe as questões e os acertos.';
+        : 'Informe as questÃµes e os acertos.';
 }
 
 function confirmarExercicio() {
@@ -2577,7 +2573,7 @@ function replanejarAgora() {
         if(db.metaFixa[k]) db.metaFixa[k] = db.metaFixa[k].filter(t => t.c);
     }
     save();
-    showToast("Plantão replanejado", "Os atrasos foram removidos do planejamento ativo.");
+    showToast("PlantÃ£o replanejado", "Os atrasos foram removidos do planejamento ativo.");
     init();
 }
 
@@ -2596,7 +2592,7 @@ function renderReplanejamento() {
             <div class="stat-card replan-card ${pausado ? 'active' : ''}">
                 <div class="replan-icon"><i class="fas fa-calendar-plus"></i></div>
                 <div>
-                    <h3>Começar a semana amanhã</h3>
+                    <h3>ComeÃ§ar a semana amanhÃ£</h3>
                     <p class="meta-sub">Esvazia o dia de hoje e recalcula o cronograma a partir de ${amanhaKey}, respeitando suas horas cadastradas.</p>
                 </div>
                 <div class="replan-status">
@@ -2604,7 +2600,7 @@ function renderReplanejamento() {
                     <strong>${horasHoje.toFixed(1)}h hoje</strong>
                 </div>
                 <button class="btn" onclick="replanejarComecarAmanha()">
-                    <i class="fas fa-forward"></i> COMEÇAR AMANHA
+                    <i class="fas fa-forward"></i> COMEÃ‡AR AMANHA
                 </button>
                 ${pausado ? `<button class="btn btn-outline" onclick="reativarDiaAtual()"><i class="fas fa-undo"></i> REATIVAR HOJE</button>` : ''}
             </div>
@@ -2612,8 +2608,8 @@ function renderReplanejamento() {
                 <h3>O que acontece</h3>
                 <div class="replan-steps">
                     <div><i class="fas fa-check"></i><span>Hoje fica sem cards planejados.</span></div>
-                    <div><i class="fas fa-check"></i><span>As atividades não concluídas voltam para a fila.</span></div>
-                    <div><i class="fas fa-check"></i><span>Amanhã assume o início do ciclo, sem marcar nada como estudado.</span></div>
+                    <div><i class="fas fa-check"></i><span>As atividades nÃ£o concluÃ­das voltam para a fila.</span></div>
+                    <div><i class="fas fa-check"></i><span>AmanhÃ£ assume o inÃ­cio do ciclo, sem marcar nada como estudado.</span></div>
                     <div><i class="fas fa-check"></i><span>Domingo a sabado continuam respeitando os limites diarios.</span></div>
                 </div>
             </div>
@@ -2628,7 +2624,7 @@ function replanejarComecarAmanha() {
     db.metaFixa[hojeKey] = [];
     limparPlanejamentoFuturo(hojeKey);
     save();
-    showToast("Dia pausado", "Hoje ficou vazio e o cronograma recomeça amanhã.");
+    showToast("Dia pausado", "Hoje ficou vazio e o cronograma recomeÃ§a amanhÃ£.");
     renderReplanejamento();
     renderDiario(vDate);
     updateDashboard();
@@ -2652,14 +2648,14 @@ function renderBackup() {
     if(!content) return;
     const totalAssuntos = db.lista.length;
     const totalLancamentos = listarLancamentos().length;
-    const ultimaCopia = db.ultimoBackup ? new Date(db.ultimoBackup).toLocaleString() : 'Nenhuma cópia registrada';
+    const ultimaCopia = db.ultimoBackup ? new Date(db.ultimoBackup).toLocaleString() : 'Nenhuma cÃ³pia registrada';
 
     content.innerHTML = `
         <div class="backup-grid">
             <div class="stat-card backup-card">
                 <div class="backup-icon"><i class="fas fa-lock"></i></div>
                 <h3>Exportar backup seguro</h3>
-                <p class="meta-sub">Crie um arquivo criptografado. Guarde a senha, porque sem ela não será possível restaurar.</p>
+                <p class="meta-sub">Crie um arquivo criptografado. Guarde a senha, porque sem ela nÃ£o serÃ¡ possÃ­vel restaurar.</p>
                 <label for="backup-pass">Senha do backup</label>
                 <input type="password" id="backup-pass" placeholder="Digite uma senha forte">
                 <button class="btn" onclick="exportarBackupSeguro()"><i class="fas fa-download"></i> BAIXAR BACKUP SEGURO</button>
@@ -2678,8 +2674,8 @@ function renderBackup() {
                 <h3>Dados protegidos</h3>
                 <div class="backup-stats">
                     <div><small>Assuntos</small><strong>${totalAssuntos}</strong></div>
-                    <div><small>Lançamentos</small><strong>${totalLancamentos}</strong></div>
-                    <div><small>Último backup</small><strong>${ultimaCopia}</strong></div>
+                    <div><small>LanÃ§amentos</small><strong>${totalLancamentos}</strong></div>
+                    <div><small>Ãšltimo backup</small><strong>${ultimaCopia}</strong></div>
                 </div>
             </div>
         </div>`;
@@ -2711,7 +2707,7 @@ async function gerarChaveBackup(senha, salt) {
 
 async function exportarBackupSeguro() {
     try {
-        if(!crypto?.subtle) return showToast('Criptografia indisponível', 'Abra o site no Chrome ou Edge atualizado para usar backup seguro.');
+        if(!crypto?.subtle) return showToast('Criptografia indisponÃ­vel', 'Abra o site no Chrome ou Edge atualizado para usar backup seguro.');
         const pass = document.getElementById('backup-pass').value;
         if(!pass || pass.length < 6) return showToast('Senha curta', 'Use pelo menos 6 caracteres para proteger o backup.');
 
@@ -2751,13 +2747,13 @@ async function exportarBackupSeguro() {
         renderBackup();
         showToast('Backup criado', 'Arquivo criptografado baixado com sucesso.');
     } catch(e) {
-        showToast('Erro no backup', 'Não foi possível gerar o arquivo seguro.');
+        showToast('Erro no backup', 'NÃ£o foi possÃ­vel gerar o arquivo seguro.');
     }
 }
 
 async function restaurarBackupSeguro() {
     try {
-        if(!crypto?.subtle) return showToast('Criptografia indisponível', 'Abra o site no Chrome ou Edge atualizado para restaurar backup seguro.');
+        if(!crypto?.subtle) return showToast('Criptografia indisponÃ­vel', 'Abra o site no Chrome ou Edge atualizado para restaurar backup seguro.');
         const file = document.getElementById('restore-file').files[0];
         const pass = document.getElementById('restore-pass').value;
         if(!file) return showToast('Selecione o arquivo', 'Escolha o backup criptografado para restaurar.');
@@ -2766,7 +2762,7 @@ async function restaurarBackupSeguro() {
         const raw = await file.text();
         const backup = JSON.parse(raw);
         if(backup.type !== 'encrypted-backup' || !backup.salt || !backup.iv || !backup.data) {
-            return showToast('Arquivo inválido', 'Este arquivo não parece ser um backup seguro do sistema.');
+            return showToast('Arquivo invÃ¡lido', 'Este arquivo nÃ£o parece ser um backup seguro do sistema.');
         }
 
         const key = await gerarChaveBackup(pass, base64ToBytes(backup.salt));
@@ -2777,7 +2773,7 @@ async function restaurarBackupSeguro() {
         );
         const payload = JSON.parse(textDecoder.decode(decrypted));
         if(payload.app !== 'plantao-policia' || !payload.data) {
-            return showToast('Backup inválido', 'O conteúdo restaurado não pertence a este sistema.');
+            return showToast('Backup invÃ¡lido', 'O conteÃºdo restaurado nÃ£o pertence a este sistema.');
         }
 
         db = payload.data;
@@ -3039,7 +3035,7 @@ function montarCicloPonderado() {
 }
 
 function criarTask(item, tipo, horas, dataKey) {
-    const labels = { E: 'Estudo', Rev: 'Revisão', Ex: 'Exercícios' };
+    const labels = { E: 'Estudo', Rev: 'RevisÃ£o', Ex: 'ExercÃ­cios' };
     const ciclo = item.f && item.revCycle ? ` - Ciclo ${String(item.revCycle.cycle || 1).padStart(2, '0')}` : '';
     return { itemId: item.id, m: item.m, a: item.a, l: `${labels[tipo]}${ciclo}`, k: tipo, h: horas, c: false, data: dataKey };
 }
@@ -3371,7 +3367,7 @@ function impEdital() {
     const peso = limitarPeso(pesoEl.value);
     pesoEl.value = peso;
     if(!m || !txt) {
-        showToast("Preencha a matéria", "Informe a matéria e pelo menos um assunto.");
+        showToast("Preencha a matÃ©ria", "Informe a matÃ©ria e pelo menos um assunto.");
         return;
     }
 
@@ -3398,7 +3394,7 @@ function impEdital() {
     assEl.value = '';
     horasEl.value = '1.5';
     pesoEl.value = '1';
-    showToast("Matéria salva", `${m} entrou no edital com ${assuntos.length} assunto(s).`);
+    showToast("MatÃ©ria salva", `${m} entrou no edital com ${assuntos.length} assunto(s).`);
 }
 
 function renderTree() {
@@ -3452,7 +3448,7 @@ function renderTree() {
                     <div class="sinal-row ${a.sinalizado ? 'done' : ''}">
                         <div class="sinal-info">
                             <span>${a.a}</span>
-                            <small>${a.sinalizado ? 'Sinalizado como estudado' : 'Entrará no ciclo inicial'}</small>
+                            <small>${a.sinalizado ? 'Sinalizado como estudado' : 'EntrarÃ¡ no ciclo inicial'}</small>
                         </div>
                         <label class="cycle-toggle" title="Sinalizar assunto">
                             <input type="checkbox" ${a.sinalizado?'checked':''} onchange="sinalizarAssunto(${a.idx}, this.checked)">
@@ -3505,7 +3501,7 @@ function renderReverSinalizados() {
                 <div class="empty-state">
                     <i class="fas fa-book-open"></i>
                     <strong>Nenhum assunto sinalizado</strong>
-                    <span>Os assuntos marcados como estudados aparecerão aqui.</span>
+                    <span>Os assuntos marcados como estudados aparecerÃ£o aqui.</span>
                 </div>`}
         </div>`;
 }
@@ -3520,7 +3516,7 @@ function renderFluxo() {
                 <div class="flow-row flow-toggle-head" onclick="toggleFluxoBox(this)">
                     <div class="flow-info">
                         <b>${m}</b>
-                        <small style="display:block; color:var(--text-sec); margin-top:4px;">${assuntos.length} assunto(s) | peso ${item.peso}x | ${item.h.E}h padrão</small>
+                        <small style="display:block; color:var(--text-sec); margin-top:4px;">${assuntos.length} assunto(s) | peso ${item.peso}x | ${item.h.E}h padrÃ£o</small>
                     </div>
                     <button type="button" class="flow-expand-btn" onclick="event.stopPropagation(); toggleFluxoBox(this.closest('.flow-toggle-head'))">
                         <i class="fas fa-chevron-down"></i>
@@ -3530,11 +3526,11 @@ function renderFluxo() {
                     <div class="flow-row flow-row-inner">
                         <div class="flow-info">
                             <b>Ajuste geral</b>
-                            <small style="display:block; color:var(--text-sec); margin-top:4px;">O peso vale para todos os assuntos desta matéria.</small>
+                            <small style="display:block; color:var(--text-sec); margin-top:4px;">O peso vale para todos os assuntos desta matÃ©ria.</small>
                         </div>
                     <div class="flow-grid">
                         <div>
-                            <label>Horas de estudo da matéria</label>
+                            <label>Horas de estudo da matÃ©ria</label>
                             <input type="number" id="fluxo-h-${safeId(m)}" min="0.5" step="0.5" value="${item.h.E}">
                         </div>
                         <div>
@@ -3542,7 +3538,7 @@ function renderFluxo() {
                             <input type="number" id="fluxo-p-${safeId(m)}" min="1" max="5" step="1" value="${item.peso}">
                         </div>
                     </div>
-                    <button class="btn btn-sm" onclick="salvarFluxoMateria('${encodeURIComponent(m)}')">SALVAR MATÉRIA</button>
+                    <button class="btn btn-sm" onclick="salvarFluxoMateria('${encodeURIComponent(m)}')">SALVAR MATÃ‰RIA</button>
                     </div>
                     <div class="subject-flow-list">
                         <div class="subject-flow-head">
@@ -3593,7 +3589,7 @@ function renderCiclo() {
                     <span>${ativo ? 'Ativa' : 'Fora do ciclo'}</span>
                 </div>
                 <div class="ciclo-actions">
-                    <button class="icon-danger-btn" title="Remover matéria do site" onclick="removerMateria('${encodeURIComponent(m)}')">
+                    <button class="icon-danger-btn" title="Remover matÃ©ria do site" onclick="removerMateria('${encodeURIComponent(m)}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -3607,12 +3603,12 @@ function saveC() {
     save();
     renderCiclo();
     updateDashboard();
-    showToast("Ciclo ativado", `${db.ciclo.length} matéria(s) em giro no planejamento.`);
+    showToast("Ciclo ativado", `${db.ciclo.length} matÃ©ria(s) em giro no planejamento.`);
 }
 
 function removerMateria(materia) {
     materia = decodeURIComponent(materia);
-    if(!confirm(`Remover ${materia} do site? Isso apaga os assuntos dessa matéria e refaz o planejamento.`)) return;
+    if(!confirm(`Remover ${materia} do site? Isso apaga os assuntos dessa matÃ©ria e refaz o planejamento.`)) return;
     db.lista = db.lista.filter(x => x.m !== materia);
     db.ciclo = db.ciclo.filter(x => x !== materia);
     Object.keys(db.metaFixa).forEach(dia => {
@@ -3636,7 +3632,7 @@ function renderHInputs() {
                 <label>Horas no fim de semana</label>
                 <input type="number" id="h-fds" min="0" step="0.5" value="${db.h[6] || 0}">
             </div>
-            <button type="button" class="btn btn-outline" style="grid-column:1 / -1;" onclick="aplicarHorasGrupo()">APLICAR NAS DIÁRIAS</button>
+            <button type="button" class="btn btn-outline" style="grid-column:1 / -1;" onclick="aplicarHorasGrupo()">APLICAR NAS DIÃRIAS</button>
         </div>
         ${dN.map((n,i) => `<div><small>${n}</small><br><input type="number" min="0" step="0.5" id="h-in-${i}" value="${db.h[i]}" style="width:70px;"></div>`).join('')}`;
 }
@@ -3646,7 +3642,7 @@ function saveH() {
     db.metaFixa = {};
     save();
     updateDashboard();
-    showToast("Horas salvas", "A carga diária foi atualizada no planejamento.");
+    showToast("Horas salvas", "A carga diÃ¡ria foi atualizada no planejamento.");
 }
 
 function aplicarHorasGrupo() {
@@ -3821,3 +3817,4 @@ function salvarExtra() {
     updateDashboard();
 }
 //trigger deploy
+
