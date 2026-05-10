@@ -6,31 +6,19 @@ window.PLANTAO_SUPABASE_CONFIG = {
 (function plantaoRuntimeFixes() {
     const APP_NAME = 'Plantão';
     const STORAGE_KEY = 'prf_v120';
-    const STORAGE_PATCHED = '__plantao_storage_encoding_patched__';
     const ch = (...codes) => String.fromCharCode(...codes);
     const badCodes = new Set([0x00c3, 0x0192, 0x201a, 0xfffd, 0x00e2, 0x20ac, 0x00c2, 0x00c5, 0x008d]);
     const score = value => Array.from(String(value)).filter(char => badCodes.has(char.charCodeAt(0))).length;
-    const titleCase = value => String(value).toLowerCase().replace(/(^|\s)\S/g, letter => letter.toUpperCase());
+    const getDb = () => (typeof db !== 'undefined' ? db : window.db);
+    const getViewDate = () => (typeof vDate !== 'undefined' ? vDate : new Date());
 
-    function replaceAll(text, from, to) {
-        return text.split(from).join(to);
-    }
+    function replaceAll(text, from, to) { return text.split(from).join(to); }
 
     function decodeLatin1Utf8(text) {
         try {
             const decoded = decodeURIComponent(escape(text));
             return decoded && score(decoded) <= score(text) ? decoded : text;
-        } catch (error) {
-            return text;
-        }
-    }
-
-    function replaceWords(text, from, to) {
-        const variants = [[from, to], [titleCase(from), titleCase(to)], [from.toLowerCase(), to.toLowerCase()]];
-        variants.forEach(([bad, good]) => {
-            text = replaceAll(text, bad, good);
-        });
-        return text;
+        } catch (error) { return text; }
     }
 
     function fixText(value) {
@@ -60,7 +48,10 @@ window.PLANTAO_SUPABASE_CONFIG = {
             ['MISSAO', 'MISS' + ch(0x00c3) + 'O'], ['PRECISAO', 'PRECIS' + ch(0x00c3) + 'O'], ['VOCE', 'VOC' + ch(0x00ca)],
             ['AMANHA', 'AMANH' + ch(0x00c3)], ['PROXIMOS', 'PR' + ch(0x00d3) + 'XIMOS'], ['SEQUENCIA', 'SEQU' + ch(0x00ca) + 'NCIA']
         ];
-        words.forEach(([from, to]) => { text = replaceWords(text, from, to); });
+        words.forEach(([from, to]) => {
+            text = replaceAll(text, from, to);
+            text = replaceAll(text, from.toLowerCase(), to.toLowerCase());
+        });
         return text.replace(/\bPlant[oó]\b/gi, APP_NAME).replace(/\s*v\.?\s*\d+\b/gi, '').trim();
     }
 
@@ -77,8 +68,8 @@ window.PLANTAO_SUPABASE_CONFIG = {
         catch (error) { return raw; }
     }
 
-    if (!window[STORAGE_PATCHED] && window.Storage && Storage.prototype) {
-        window[STORAGE_PATCHED] = true;
+    if (!window.__plantao_storage_encoding_patched__ && window.Storage && Storage.prototype) {
+        window.__plantao_storage_encoding_patched__ = true;
         const originalGetItem = Storage.prototype.getItem;
         const originalSetItem = Storage.prototype.setItem;
         Storage.prototype.getItem = function getItemPatched(key) {
@@ -97,13 +88,13 @@ window.PLANTAO_SUPABASE_CONFIG = {
         if (!document.querySelector('link[href*="app-polish.css"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = 'app-polish.css?v=146';
+            link.href = 'app-polish.css?v=147';
             document.head.appendChild(link);
         }
     }
 
     function fixDom(root = document.body) {
-        if (!root) return;
+        if (!root || !document.body) return;
         document.title = APP_NAME;
         document.body.classList.add('plantao-polished');
         root.querySelectorAll?.('.logo-box').forEach(el => {
@@ -151,8 +142,8 @@ window.PLANTAO_SUPABASE_CONFIG = {
 
     const taskHours = task => Math.max(0.5, parseFloat(task?.h) || 1);
     const taskIsExtra = task => task?.extra === true || task?.l === 'Extra';
-    const dayCapacity = date => Math.max(0, parseFloat(window.db?.h?.[new Date(date).getDay()]) || 0);
-    const usedHours = key => (window.db?.metaFixa?.[key] || []).reduce((sum, task) => sum + taskHours(task), 0);
+    const dayCapacity = date => Math.max(0, parseFloat(getDb()?.h?.[new Date(date).getDay()]) || 0);
+    const usedHours = key => (getDb()?.metaFixa?.[key] || []).reduce((sum, task) => sum + taskHours(task), 0);
 
     function findSlot(task, startDate) {
         let fallback = toDateKey(startDate);
@@ -167,68 +158,72 @@ window.PLANTAO_SUPABASE_CONFIG = {
     }
 
     function collectOverdueTasks() {
+        const state = getDb();
         const todayKey = toDateKey(todayDate());
         const overdue = [];
-        Object.keys(window.db?.metaFixa || {}).sort().forEach(key => {
+        Object.keys(state?.metaFixa || {}).sort().forEach(key => {
             if (key >= todayKey) return;
             const remaining = [];
-            (window.db.metaFixa[key] || []).forEach(task => {
+            (state.metaFixa[key] || []).forEach(task => {
                 if (!task?.c && !taskIsExtra(task)) overdue.push({ ...task, c: false, atraso: false, replanejado: true, origemAtraso: task.origemAtraso || key });
                 else remaining.push(task);
             });
-            if (remaining.length) window.db.metaFixa[key] = remaining;
-            else delete window.db.metaFixa[key];
+            if (remaining.length) state.metaFixa[key] = remaining;
+            else delete state.metaFixa[key];
         });
         return overdue;
     }
 
     function refreshAfterReplan() {
-        const currentDate = typeof window.vDate !== 'undefined' ? window.vDate : new Date();
-        if (typeof window.save === 'function') window.save();
-        if (typeof window.renderDiario === 'function') window.renderDiario(currentDate);
-        if (typeof window.renderSemanal === 'function') window.renderSemanal();
-        if (typeof window.updateDashboard === 'function') window.updateDashboard();
-        if (typeof window.renderReplanejar === 'function') window.renderReplanejar();
+        if (typeof save === 'function') save();
+        if (typeof renderDiario === 'function') renderDiario(getViewDate());
+        if (typeof renderSemanal === 'function') renderSemanal();
+        if (typeof updateDashboard === 'function') updateDashboard();
+        if (typeof renderReplanejar === 'function') renderReplanejar();
         setTimeout(() => fixDom(), 50);
     }
 
-    window.replanejarAgora = function replanejarAgoraCorrigido() {
-        if (!window.db?.metaFixa) return;
+    function replanejarAgoraCorrigido() {
+        const state = getDb();
+        if (!state?.metaFixa) return;
         const overdue = collectOverdueTasks();
         if (!overdue.length) {
-            if (typeof window.showToast === 'function') window.showToast('Sem atrasos', 'Não encontrei matérias atrasadas para redistribuir.');
+            if (typeof showToast === 'function') showToast('Sem atrasos', 'Não encontrei matérias atrasadas para redistribuir.');
             refreshAfterReplan();
             return;
         }
         const start = todayDate();
         overdue.forEach(task => {
             const key = findSlot(task, start);
-            if (!window.db.metaFixa[key]) window.db.metaFixa[key] = [];
-            window.db.metaFixa[key].push(task);
+            if (!state.metaFixa[key]) state.metaFixa[key] = [];
+            state.metaFixa[key].push(task);
         });
         refreshAfterReplan();
-        if (typeof window.showToast === 'function') window.showToast('Atrasos replanejados', `${overdue.length} atividade(s) redistribuída(s) nos horários diários e no cronograma semanal.`);
-    };
+        if (typeof showToast === 'function') showToast('Atrasos replanejados', `${overdue.length} atividade(s) redistribuída(s) nos horários diários e no cronograma semanal.`);
+    }
+
+    function installOverrides() {
+        window.replanejarAgora = replanejarAgoraCorrigido;
+    }
 
     window.plantaoFixText = fixText;
     window.plantaoNormalizeTextData = normalize;
 
     function boot() {
         injectPolish();
+        installOverrides();
         fixDom();
         const observer = new MutationObserver(mutations => {
             mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
                 if (node.nodeType === Node.TEXT_NODE) {
                     const fixed = fixText(node.nodeValue);
                     if (fixed !== node.nodeValue) node.nodeValue = fixed;
-                } else if (node.nodeType === Node.ELEMENT_NODE) {
-                    fixDom(node);
-                }
+                } else if (node.nodeType === Node.ELEMENT_NODE) fixDom(node);
             }));
         });
         observer.observe(document.body, { childList: true, subtree: true });
-        setTimeout(fixDom, 250);
-        setTimeout(fixDom, 1000);
+        setTimeout(() => { installOverrides(); fixDom(); }, 250);
+        setTimeout(() => { installOverrides(); fixDom(); }, 1000);
     }
 
     if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', boot);
