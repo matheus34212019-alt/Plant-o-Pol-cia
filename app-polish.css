@@ -11,6 +11,7 @@ body.plantao-polished .sidebar {
 body.plantao-polished .logo-box {
     font-size: 1.35rem;
     letter-spacing: 0;
+    text-transform: uppercase;
 }
 
 body.plantao-polished .logo-box i {
@@ -18,13 +19,8 @@ body.plantao-polished .logo-box i {
     background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(34, 197, 94, 0.14));
 }
 
-body.plantao-polished .main {
-    padding: 32px;
-}
-
-body.plantao-polished .container {
-    max-width: 1240px;
-}
+body.plantao-polished .main { padding: 32px; }
+body.plantao-polished .container { max-width: 1240px; }
 
 body.plantao-polished .stat-card,
 body.plantao-polished .task-card,
@@ -45,9 +41,7 @@ body.plantao-polished .stat-card {
     background: linear-gradient(180deg, rgba(18, 27, 43, 0.98), rgba(11, 18, 32, 0.98));
 }
 
-body.plantao-polished .stat-val {
-    font-size: 1.75rem;
-}
+body.plantao-polished .stat-val { font-size: 1.75rem; }
 
 body.plantao-polished .welcome-box,
 body.plantao-polished .cycle-card {
@@ -57,7 +51,7 @@ body.plantao-polished .cycle-card {
 
 body.plantao-polished .task-card {
     min-height: 96px;
-    align-items: stretch;
+    align-items: center;
     background: linear-gradient(180deg, rgba(18, 27, 43, 0.98), rgba(12, 20, 34, 0.98));
 }
 
@@ -69,6 +63,28 @@ body.plantao-polished .task-card > div:first-child {
 
 body.plantao-polished .task-card.done {
     background: linear-gradient(180deg, rgba(6, 40, 31, 0.96), rgba(13, 44, 35, 0.96));
+}
+
+body.plantao-polished input[type="checkbox"] {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    max-width: 18px !important;
+    max-height: 18px !important;
+    padding: 0 !important;
+    margin: 0 10px 0 0 !important;
+    display: inline-block !important;
+    flex: 0 0 18px !important;
+    accent-color: #22c55e;
+}
+
+body.plantao-polished .cycle-toggle input[type="checkbox"] {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
 }
 
 body.plantao-polished .btn {
@@ -84,11 +100,9 @@ body.plantao-polished .btn-replan-primary {
     box-shadow: 0 14px 28px rgba(245, 158, 11, 0.2);
 }
 
-body.plantao-polished .btn-replan-primary:hover {
-    filter: brightness(1.08);
-}
+body.plantao-polished .btn-replan-primary:hover { filter: brightness(1.08); }
 
-body.plantao-polished input,
+body.plantao-polished input:not([type="checkbox"]),
 body.plantao-polished textarea,
 body.plantao-polished select {
     border-radius: 8px;
@@ -109,13 +123,8 @@ body.plantao-polished #grid-semanal {
     padding: 4px 2px 20px;
 }
 
-body.plantao-polished .day-column {
-    min-width: 220px;
-}
-
-body.plantao-polished .day-head {
-    background: linear-gradient(135deg, #142033, #1d2b44);
-}
+body.plantao-polished .day-column { min-width: 220px; }
+body.plantao-polished .day-head { background: linear-gradient(135deg, #142033, #1d2b44); }
 
 body.plantao-polished .sim-task {
     border-radius: 8px;
@@ -130,15 +139,11 @@ body.plantao-polished .perf-tabs {
     border-radius: 8px;
 }
 
-body.plantao-polished .perf-tab {
-    border-radius: 8px;
-}
+body.plantao-polished .perf-tab { border-radius: 8px; }
 
 body.plantao-polished .base-summary,
 body.plantao-polished .perf-kpi-grid,
-body.plantao-polished .ranking-grid {
-    gap: 14px;
-}
+body.plantao-polished .ranking-grid { gap: 14px; }
 
 body.plantao-polished .empty-state {
     border-radius: 8px;
@@ -146,33 +151,13 @@ body.plantao-polished .empty-state {
 }
 
 @media (max-width: 820px) {
-    body.plantao-polished .main {
-        padding: 18px;
-    }
-
-    body.plantao-polished .sidebar {
-        width: 100%;
-        padding: 20px 14px;
-    }
-
+    body.plantao-polished .main { padding: 18px; }
+    body.plantao-polished .sidebar { width: 100%; padding: 20px 14px; }
     body.plantao-polished .stats-grid,
-    body.plantao-polished .base-summary {
-        grid-template-columns: 1fr;
-    }
-
-    body.plantao-polished .task-card {
-        display: grid;
-        gap: 14px;
-    }
-
-    body.plantao-polished .nav-days {
-        display: grid;
-        grid-template-columns: 1fr;
-    }
-
+    body.plantao-polished .base-summary { grid-template-columns: 1fr; }
+    body.plantao-polished .task-card { display: grid; gap: 14px; }
+    body.plantao-polished .nav-days { display: grid; grid-template-columns: 1fr; }
     body.plantao-polished .btn,
-    body.plantao-polished .btn-sm {
-        width: 100%;
-        justify-content: center;
-    }
+    body.plantao-polished .btn-sm { width: 100%; justify-content: center; }
+    body.plantao-polished .task-card input[type="checkbox"] { justify-self: start; }
 }
