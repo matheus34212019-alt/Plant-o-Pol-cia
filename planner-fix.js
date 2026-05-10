@@ -23,8 +23,8 @@
     const isDone = task => task?.c === true;
     const isStudy = task => task?.k === 'E' || task?.l === 'Estudo' || !task?.k;
 
-    const replacements = [
-        ['PLANTAO', 'PLANTÃO'], ['PLANTÃƒO', 'PLANTÃO'], ['PLANT�O', 'PLANTÃO'],
+    const fixes = [
+        ['PLANTAO', 'PLANTÃO'], ['PLANTÃƒO', 'PLANTÃO'], ['PLANTÃ�O', 'PLANTÃO'], ['PLANT�O', 'PLANTÃO'],
         ['PORTUGUES', 'PORTUGUÊS'], ['PORTUGUÃŠS', 'PORTUGUÊS'], ['PORTUGU�S', 'PORTUGUÊS'],
         ['RACIOCINIO LOGICO', 'RACIOCÍNIO LÓGICO'], ['RACIOCÃ�NIO LÃ“GICO', 'RACIOCÍNIO LÓGICO'], ['RACIOC�NIO L�GICO', 'RACIOCÍNIO LÓGICO'],
         ['Compreensao', 'Compreensão'], ['CompreensÃ£o', 'Compreensão'], ['Compreens�o', 'Compreensão'],
@@ -67,10 +67,8 @@
         ['Publica', 'Pública'], ['PÃºblica', 'Pública'], ['P�blica', 'Pública'],
         ['publica', 'pública'], ['pÃºblica', 'pública'], ['p�blica', 'pública'],
         ['Administracao', 'Administração'], ['AdministraÃ§Ã£o', 'Administração'], ['Administra��o', 'Administração'],
-        ['FORCA', 'FORÇA'], ['FORÃ‡A', 'FORÇA'], ['FOR�A', 'FORÇA'],
-        ['Forca', 'Força'], ['ForÃ§a', 'Força'], ['For�a', 'Força'],
-        ['Nao', 'Não'], ['NÃ£o', 'Não'], ['N�o', 'Não'],
-        ['nao', 'não'], ['nÃ£o', 'não'], ['n�o', 'não']
+        ['FORCA', 'FORÇA'], ['FORÃ‡A', 'FORÇA'], ['FOR�A', 'FORÇA'], ['Forca', 'Força'], ['ForÃ§a', 'Força'], ['For�a', 'Força'],
+        ['Nao', 'Não'], ['NÃ£o', 'Não'], ['N�o', 'Não'], ['nao', 'não'], ['nÃ£o', 'não'], ['n�o', 'não']
     ];
 
     function decodeMojibake(value) {
@@ -91,8 +89,24 @@
     function fixText(value) {
         if (typeof value !== 'string') return value;
         let text = decodeMojibake(value);
-        replacements.forEach(([from, to]) => { text = text.split(from).join(to); });
+        fixes.forEach(([from, to]) => { text = text.split(from).join(to); });
         return text;
+    }
+
+    function maskEmailText(text) {
+        return String(text || '').replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, 'Aluno');
+    }
+
+    function hideRankingEmails() {
+        const ranking = document.getElementById('ranking-content') || document.getElementById('ranking');
+        if (!ranking) return;
+        const walker = document.createTreeWalker(ranking, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(node => {
+            const cleaned = maskEmailText(node.nodeValue);
+            if (cleaned !== node.nodeValue) node.nodeValue = cleaned;
+        });
     }
 
     function fixAttributes(root = document.body) {
@@ -113,11 +127,8 @@
     function fixVisibleText(root = document.body) {
         if (!root) return;
         document.title = APP_NAME;
-        document.querySelectorAll('.logo-box').forEach(element => {
-            if (element.textContent.trim() !== APP_NAME) {
-                const icon = element.querySelector('i')?.outerHTML || '<i class="fas fa-shield-halved"></i>';
-                element.innerHTML = `${icon} ${APP_NAME}`;
-            }
+        document.querySelectorAll('.logo-box, .login-card h2').forEach(element => {
+            if (/PLANT|PLANT�O/i.test(element.textContent)) element.textContent = APP_NAME;
         });
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
         const nodes = [];
@@ -127,15 +138,15 @@
             if (fixed !== node.nodeValue) node.nodeValue = fixed;
         });
         fixAttributes(root);
+        hideRankingEmails();
     }
 
     function fixObjectText(value, seen = new WeakSet()) {
-        if (!value || typeof value !== 'object') return value;
-        if (seen.has(value)) return value;
+        if (!value || typeof value !== 'object' || seen.has(value)) return value;
         seen.add(value);
         Object.keys(value).forEach(key => {
             if (typeof value[key] === 'string') value[key] = fixText(value[key]);
-            else if (value[key] && typeof value[key] === 'object') fixObjectText(value[key], seen);
+            else fixObjectText(value[key], seen);
         });
         return value;
     }
@@ -232,7 +243,7 @@
         if (typeof renderDiario === 'function') renderDiario(today);
         if (typeof updateDashboard === 'function') updateDashboard();
         if (typeof renderReplanejar === 'function') renderReplanejar();
-        setTimeout(() => fixVisibleText(), 0);
+        setTimeout(fixVisibleText, 0);
     }
 
     function replanejarAgoraCorrigido() {
@@ -262,14 +273,14 @@
     }
 
     function wrapRender(name) {
-        if (typeof window[name] !== 'function' || window[name].__plantaoTextFixWrapped) return;
+        if (typeof window[name] !== 'function' || window[name].__plantaoFixWrapped) return;
         const original = window[name];
         window[name] = function wrappedRender(...args) {
             const result = original.apply(this, args);
-            setTimeout(() => fixVisibleText(), 0);
+            setTimeout(fixVisibleText, 0);
             return result;
         };
-        window[name].__plantaoTextFixWrapped = true;
+        window[name].__plantaoFixWrapped = true;
     }
 
     function boot() {
@@ -282,7 +293,7 @@
         fixVisibleText();
         setTimeout(fixVisibleText, 500);
         setTimeout(fixVisibleText, 1500);
-        new MutationObserver(() => fixVisibleText()).observe(document.body, { childList: true, subtree: true });
+        new MutationObserver(fixVisibleText).observe(document.body, { childList: true, subtree: true, characterData: true });
     }
 
     if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', boot);
