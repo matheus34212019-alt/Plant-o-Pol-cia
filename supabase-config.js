@@ -6,7 +6,9 @@ window.PLANTAO_SUPABASE_CONFIG = {
 (function fixPlantaoEncoding() {
     const STORAGE_KEY = 'prf_v120';
     const STORAGE_PATCHED = '__plantao_encoding_storage_patched__';
-    const scoreMojibake = value => ((String(value).match(/[\u00c3\u0192\u00c3\u201a\ufffd]|\u00e2\u20ac|\u00c2|\u00c5|\u008d/g) || []).length);
+    const ch = (...codes) => String.fromCharCode(...codes);
+    const badCodes = new Set([0x00c3, 0x0192, 0x201a, 0xfffd, 0x00e2, 0x20ac, 0x00c2, 0x00c5, 0x008d]);
+    const scoreMojibake = value => Array.from(String(value)).filter(char => badCodes.has(char.charCodeAt(0))).length;
     const titleCase = value => String(value).toLowerCase().replace(/(^|\s)\S/g, letter => letter.toUpperCase());
 
     function replaceAll(text, from, to) {
@@ -26,14 +28,16 @@ window.PLANTAO_SUPABASE_CONFIG = {
         if (typeof value !== 'string') return value;
         let text = value;
         const replacements = [
-            ['\ufffd', ''],
-            ['\u00c3\u0192', '\u00c3'], ['\u00c3\u201a', ''],
-            ['\u00c3\u2021', '\u00c7'], ['\u00c3\u2030', '\u00c9'], ['\u00c3\u0081', '\u00c1'],
-            ['\u00c3\u008d', '\u00cd'], ['\u00c3\u201c', '\u00d3'], ['\u00c3\u0161', '\u00da'],
-            ['\u00c3\u2022', '\u00d5'], ['\u00c3\u0160', '\u00ca'],
-            ['\u00e2\u20ac\u0153', '"'], ['\u00e2\u20ac\u009d', '"'],
-            ['\u00e2\u20ac\u02dc', "'"], ['\u00e2\u20ac\u2122', "'"],
-            ['\u00e2\u20ac\u201c', '-'], ['\u00e2\u20ac\u201d', '-'], ['\u00e2\u20ac\u00a6', '...']
+            [ch(0xfffd), ''],
+            [ch(0x00c3, 0x0192), ch(0x00c3)], [ch(0x00c3, 0x201a), ''],
+            [ch(0x00c3, 0x2021), ch(0x00c7)], [ch(0x00c3, 0x2030), ch(0x00c9)],
+            [ch(0x00c3, 0x0081), ch(0x00c1)], [ch(0x00c3, 0x008d), ch(0x00cd)],
+            [ch(0x00c3, 0x201c), ch(0x00d3)], [ch(0x00c3, 0x0161), ch(0x00da)],
+            [ch(0x00c3, 0x2022), ch(0x00d5)], [ch(0x00c3, 0x0160), ch(0x00ca)],
+            [ch(0x00e2, 0x20ac, 0x0153), '"'], [ch(0x00e2, 0x20ac, 0x009d), '"'],
+            [ch(0x00e2, 0x20ac, 0x02dc), "'"], [ch(0x00e2, 0x20ac, 0x2122), "'"],
+            [ch(0x00e2, 0x20ac, 0x201c), '-'], [ch(0x00e2, 0x20ac, 0x201d), '-'],
+            [ch(0x00e2, 0x20ac, 0x00a6), '...']
         ];
 
         for (let pass = 0; pass < 4; pass++) {
@@ -42,16 +46,16 @@ window.PLANTAO_SUPABASE_CONFIG = {
         }
 
         const words = [
-            ['PORTUGUES', 'PORTUGU\u00caS'], ['RACIOCINIO LOGICO', 'RACIOC\u00cdNIO L\u00d3GICO'],
-            ['COMPREENSAO', 'COMPREENS\u00c3O'], ['INTERPRETACAO', 'INTERPRETA\u00c7\u00c3O'],
-            ['PROPOSICOES', 'PROPOSI\u00c7\u00d5ES'], ['ADMINISTRACAO PUBLICA', 'ADMINISTRA\u00c7\u00c3O P\u00daBLICA'],
-            ['MATERIA', 'MAT\u00c9RIA'], ['MATERIAS', 'MAT\u00c9RIAS'], ['REVISAO', 'REVIS\u00c3O'],
-            ['QUESTOES', 'QUEST\u00d5ES'], ['LANCAMENTO', 'LAN\u00c7AMENTO'], ['LANCAMENTOS', 'LAN\u00c7AMENTOS'],
-            ['HORARIO', 'HOR\u00c1RIO'], ['HORARIOS', 'HOR\u00c1RIOS'], ['DIARIA', 'DI\u00c1RIA'], ['DIARIAS', 'DI\u00c1RIAS'],
-            ['MISSAO', 'MISS\u00c3O'], ['PRECISAO', 'PRECIS\u00c3O'], ['VOCE', 'VOC\u00ca'], ['AMANHA', 'AMANH\u00c3'],
-            ['PROXIMO', 'PR\u00d3XIMO'], ['PROXIMOS', 'PR\u00d3XIMOS'], ['CODIGO', 'C\u00d3DIGO'], ['INICIO', 'IN\u00cdCIO'],
-            ['ESTA', 'EST\u00c1'], ['PUBLICACAO', 'PUBLICA\u00c7\u00c3O'], ['APROVACAO', 'APROVA\u00c7\u00c3O'],
-            ['SINCRONIZACAO', 'SINCRONIZA\u00c7\u00c3O'], ['DISTRIBUICAO', 'DISTRIBUI\u00c7\u00c3O'], ['SEQUENCIA', 'SEQU\u00caNCIA']
+            ['PORTUGUES', 'PORTUGU' + ch(0x00ca) + 'S'], ['RACIOCINIO LOGICO', 'RACIOC' + ch(0x00cd) + 'NIO L' + ch(0x00d3) + 'GICO'],
+            ['COMPREENSAO', 'COMPREENS' + ch(0x00c3) + 'O'], ['INTERPRETACAO', 'INTERPRETA' + ch(0x00c7) + ch(0x00c3) + 'O'],
+            ['PROPOSICOES', 'PROPOSI' + ch(0x00c7) + ch(0x00d5) + 'ES'], ['ADMINISTRACAO PUBLICA', 'ADMINISTRA' + ch(0x00c7) + ch(0x00c3) + 'O P' + ch(0x00da) + 'BLICA'],
+            ['MATERIA', 'MAT' + ch(0x00c9) + 'RIA'], ['MATERIAS', 'MAT' + ch(0x00c9) + 'RIAS'], ['REVISAO', 'REVIS' + ch(0x00c3) + 'O'],
+            ['QUESTOES', 'QUEST' + ch(0x00d5) + 'ES'], ['LANCAMENTO', 'LAN' + ch(0x00c7) + 'AMENTO'], ['LANCAMENTOS', 'LAN' + ch(0x00c7) + 'AMENTOS'],
+            ['HORARIO', 'HOR' + ch(0x00c1) + 'RIO'], ['HORARIOS', 'HOR' + ch(0x00c1) + 'RIOS'], ['DIARIA', 'DI' + ch(0x00c1) + 'RIA'], ['DIARIAS', 'DI' + ch(0x00c1) + 'RIAS'],
+            ['MISSAO', 'MISS' + ch(0x00c3) + 'O'], ['PRECISAO', 'PRECIS' + ch(0x00c3) + 'O'], ['VOCE', 'VOC' + ch(0x00ca)], ['AMANHA', 'AMANH' + ch(0x00c3)],
+            ['PROXIMO', 'PR' + ch(0x00d3) + 'XIMO'], ['PROXIMOS', 'PR' + ch(0x00d3) + 'XIMOS'], ['CODIGO', 'C' + ch(0x00d3) + 'DIGO'], ['INICIO', 'IN' + ch(0x00cd) + 'CIO'],
+            ['ESTA', 'EST' + ch(0x00c1)], ['PUBLICACAO', 'PUBLICA' + ch(0x00c7) + ch(0x00c3) + 'O'], ['APROVACAO', 'APROVA' + ch(0x00c7) + ch(0x00c3) + 'O'],
+            ['SINCRONIZACAO', 'SINCRONIZA' + ch(0x00c7) + ch(0x00c3) + 'O'], ['DISTRIBUICAO', 'DISTRIBUI' + ch(0x00c7) + ch(0x00c3) + 'O'], ['SEQUENCIA', 'SEQU' + ch(0x00ca) + 'NCIA']
         ];
 
         words.forEach(([from, to]) => {
