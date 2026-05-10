@@ -1583,6 +1583,12 @@ function getAtrasosAteHoje(hoje) {
     return atrasos;
 }
 
+function getPrimeiroDiaAtrasado(hoje = new Date()) {
+    const atrasos = getAtrasosAteHoje(hoje);
+    if(!atrasos.length) return null;
+    return atrasos[0].dia;
+}
+
 function toggleTimer(id) {
     if(timers[id]) {
         clearInterval(timers[id].interval);
@@ -3792,6 +3798,15 @@ function checkStreak() {
 }
 
 function navDay(dir) {
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+    const primeiroAtraso = getPrimeiroDiaAtrasado(hoje);
+    if(primeiroAtraso) {
+        vDate = keyToDate(primeiroAtraso);
+        showToast("Pendência ativa", `Conclua ou replaneje ${primeiroAtraso} para liberar o avanço.`);
+        renderDiario(vDate);
+        return;
+    }
     if(dir === 0) vDate = new Date();
     else {
         const am = new Date();
@@ -3817,4 +3832,5 @@ function salvarExtra() {
     updateDashboard();
 }
 //trigger deploy
+
 
