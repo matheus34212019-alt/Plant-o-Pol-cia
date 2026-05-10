@@ -20,9 +20,7 @@
     };
     const getDb = () => (typeof db !== 'undefined' ? db : window.db);
 
-    function badScore(text) {
-        return (String(text).match(/[ÃÂ�]/g) || []).length;
-    }
+    function badScore(text) { return (String(text).match(/[ÃÂ�]/g) || []).length; }
 
     function decodeIfNeeded(value) {
         if (typeof value !== 'string') return value;
@@ -38,14 +36,13 @@
     function fixText(value) {
         if (typeof value !== 'string') return value;
         let text = decodeIfNeeded(value);
-        const pairs = [
+        [
             [/PLANT(?:ÃO|AO|ÃƒO|ÃƒÃO|�O|.?O)/gi, APP_NAME],
             [/RACIOC(?:Í|I|ÃƒÂ?|�)?NIO L(?:Ó|O|ÃƒÂ?|�)?GICO/gi, 'RACIOCÍNIO LÓGICO'],
             [/Portugu(?:ê|e|Ãª|�)s/gi, 'PORTUGUÊS'],
             [/Compreens(?:ã|a|Ã£|�)o/gi, 'Compreensão'],
             [/interpreta(?:çã|cao|Ã§Ã£|�)o/gi, 'interpretação'],
-            [/mat(?:é|e|Ã©|�)ria/gi, 'matéria'],
-            [/mat(?:é|e|Ã©|�)rias/gi, 'matérias'],
+            [/mat(?:é|e|Ã©|�)rias?/gi, match => match.toLowerCase().endsWith('s') ? 'matérias' : 'matéria'],
             [/Revis(?:ã|a|Ã£|�)o/gi, 'Revisão'],
             [/Quest(?:õ|o|Ãµ|�)es/gi, 'Questões'],
             [/Exerc(?:í|i|Ã­|�)cios/gi, 'Exercícios'],
@@ -53,6 +50,7 @@
             [/Hor(?:á|a|Ã¡|�)rios/gi, 'Horários'],
             [/Di(?:á|a|Ã¡|�)rias/gi, 'Diárias'],
             [/Amanh(?:ã|a|Ã£|�)/gi, 'Amanhã'],
+            [/amanh(?:ã|a|Ã£|�)/gi, 'amanhã'],
             [/Voc(?:ê|e|Ãª|�)/gi, 'Você'],
             [/Administra(?:çã|cao|Ã§Ã£|�)o p(?:ú|u|Ãº|�)blica/gi, 'Administração pública'],
             [/Precis(?:ã|a|Ã£|�)o/gi, 'Precisão'],
@@ -60,37 +58,16 @@
             [/Miss(?:ã|a|Ã£|�)o/gi, 'Missão'],
             [/Sequ(?:ê|e|Ãª|�)ncia/gi, 'Sequência'],
             [/conclu(?:í|i|Ã­|�)das/gi, 'concluídas'],
-            [/j(?:á|a|Ã¡|�) dominados/gi, 'já dominados'],
-            [/amanh(?:ã|a|Ã£|�)/gi, 'amanhã'],
-            [/recome(?:ç|c|Ã§|�)a/gi, 'recomeça'],
-            [/lan(?:ç|c|Ã§|�)ados/gi, 'lançados']
-        ];
-        pairs.forEach(([pattern, replacement]) => { text = text.replace(pattern, replacement); });
-        text = text.replace(/\bN(?:Ã|A|�)?O\b/g, 'NÃO').replace(/\bn(?:ã|a|Ã|�)?o\b/g, 'não');
-        text = text.replace(/ATRASO\s*-\s*/gi, '');
-        return text;
+            [/recome(?:ç|c|Ã§|�)a/gi, 'recomeça']
+        ].forEach(([pattern, replacement]) => { text = text.replace(pattern, replacement); });
+        return text.replace(/\bN(?:Ã|A|�)?O\b/g, 'NÃO').replace(/\bn(?:ã|a|Ã|�)?o\b/g, 'não').replace(/ATRASO\s*-\s*/gi, '');
     }
 
-    function taskKey(task) {
-        return `${fixText(task?.m || '')}|${fixText(task?.a || '')}|${task?.k || task?.l || ''}`.toLowerCase();
-    }
-
-    function isExtra(task) {
-        return task?.extra === true || task?.l === 'Extra' || task?.k === 'Extra';
-    }
-
-    function hasAtrasoText(task) {
-        if (!task || typeof task !== 'object') return false;
-        return ['l', 'k', 'm', 'a', 'origemAtraso'].some(key => /ATRASO/i.test(String(task[key] || '')));
-    }
-
-    function isDone(task) {
-        return task?.c === true;
-    }
-
-    function isStudy(task) {
-        return task?.k === 'E' || task?.l === 'Estudo' || !task?.k;
-    }
+    function taskKey(task) { return `${fixText(task?.m || '')}|${fixText(task?.a || '')}|${task?.k || task?.l || ''}`.toLowerCase(); }
+    function isExtra(task) { return task?.extra === true || task?.l === 'Extra' || task?.k === 'Extra'; }
+    function hasAtrasoText(task) { return !!task && ['l', 'k', 'm', 'a', 'origemAtraso'].some(key => /ATRASO/i.test(String(task[key] || ''))); }
+    function isDone(task) { return task?.c === true; }
+    function isStudy(task) { return task?.k === 'E' || task?.l === 'Estudo' || !task?.k; }
 
     function hours(task) {
         if (typeof task?.h === 'number') return Math.max(0.5, task.h || 1);
@@ -142,7 +119,7 @@
     }
 
     function canPlace(dayTasks, date, task) {
-        if (isExtra(task)) return true;
+        if (isExtra(task) || isDone(task)) return true;
         const max = capacity(date);
         if (max <= 0) return false;
         const used = dayTasks.filter(t => !isExtra(t)).reduce((sum, t) => sum + hours(t), 0);
@@ -175,12 +152,7 @@
     }
 
     function needsReplan(task, key, todayKey) {
-        return !isExtra(task) && !isDone(task) && (
-            key <= todayKey ||
-            task?.replanejado === true ||
-            task?.atraso === true ||
-            hasAtrasoText(task)
-        );
+        return !isExtra(task) && !isDone(task) && (key <= todayKey || task?.replanejado === true || task?.atraso === true || hasAtrasoText(task));
     }
 
     function enforceDailyLimits(startDate) {
@@ -193,7 +165,7 @@
             const kept = [];
             (data.metaFixa[key] || []).forEach(task => {
                 const normalized = normalizeTask(task);
-                if (isDone(normalized) || canPlace(kept, date, normalized)) kept.push(normalized);
+                if (canPlace(kept, date, normalized)) kept.push(normalized);
                 else overflow.push({ ...normalized, c: false, replanejado: false, atraso: false });
             });
             if (kept.length) data.metaFixa[key] = kept;
@@ -202,13 +174,51 @@
         overflow.forEach(task => placeTask(task, startDate));
     }
 
-    function redraw(today) {
-        if (typeof vDate !== 'undefined') vDate = today;
+    function filterDailyPanel(date) {
+        const list = document.getElementById('lista-diaria');
+        if (!list) return;
+        const selectedKey = dateKey(date || (typeof vDate !== 'undefined' ? vDate : new Date()));
+        Array.from(list.children).forEach(child => {
+            const text = child.textContent || '';
+            if (/Atividades em atraso/i.test(text)) {
+                child.remove();
+                return;
+            }
+            const match = text.match(/(20\d{2})\s*-\s*(\d{2})\s*-\s*(\d{2})/);
+            if (!match) return;
+            const cardKey = `${match[1]}-${match[2]}-${match[3]}`;
+            if (cardKey !== selectedKey) child.remove();
+        });
+        const data = getDb();
+        const todayKey = dateKey(new Date());
+        if (selectedKey === todayKey && !(data?.metaFixa?.[todayKey] || []).length && !list.children.length) {
+            list.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-day"></i><h3>Dia pausado</h3><p>Hoje ficou vazio e o planejamento recomeça amanhã.</p></div>';
+        }
+    }
+
+    function fixVisibleText(root = document.body) {
+        if (!root) return;
+        document.title = APP_NAME;
+        document.querySelectorAll('.logo-box').forEach(el => {
+            const icon = el.querySelector('i')?.outerHTML || '<i class="fas fa-shield-halved"></i>';
+            el.innerHTML = `${icon} ${APP_NAME}`;
+        });
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(node => {
+            const fixed = fixText(node.nodeValue);
+            if (fixed !== node.nodeValue) node.nodeValue = fixed;
+        });
+    }
+
+    function redraw(date) {
+        if (typeof vDate !== 'undefined') vDate = date;
         if (typeof renderSemanal === 'function') renderSemanal();
-        if (typeof renderDiario === 'function') renderDiario(today);
+        if (typeof renderDiario === 'function') renderDiario(date);
         if (typeof updateDashboard === 'function') updateDashboard();
         if (typeof renderReplanejar === 'function') renderReplanejar();
-        setTimeout(fixVisibleText, 0);
+        setTimeout(() => { filterDailyPanel(date); fixVisibleText(); }, 0);
     }
 
     function replanejarCorrigido(options = {}) {
@@ -226,15 +236,7 @@
                 const move = needsReplan(rawTask, key, todayKey);
                 const task = normalizeTask({ ...rawTask });
                 if (move) {
-                    queue.push({
-                        ...task,
-                        c: false,
-                        l: 'Estudo',
-                        k: 'E',
-                        atraso: false,
-                        replanejado: false,
-                        origemAtraso: rawTask.origemAtraso || (key <= todayKey ? key : 'replanejado')
-                    });
+                    queue.push({ ...task, c: false, l: 'Estudo', k: 'E', atraso: false, replanejado: false, origemAtraso: rawTask.origemAtraso || key });
                 } else {
                     if (!keepByDay[key]) keepByDay[key] = [];
                     keepByDay[key].push(task);
@@ -244,50 +246,40 @@
 
         data.metaFixa = keepByDay;
         const seen = new Set();
-        const uniqueQueue = queue.filter(task => {
+        queue.filter(task => {
             const id = taskKey(task);
             if (seen.has(id)) return false;
             seen.add(id);
             return true;
-        });
-        uniqueQueue.forEach(task => placeTask(task, startDate));
+        }).forEach(task => placeTask(task, startDate));
         enforceDailyLimits(startDate);
         normalizeData();
         saveNow();
         redraw(today);
 
         if (!options.silent && typeof showToast === 'function') {
-            showToast('Replanejamento feito', `${uniqueQueue.length} atividade(s) realocada(s) a partir de amanhã respeitando sua meta diária.`);
+            showToast('Replanejamento feito', 'Atividades realocadas a partir de amanhã respeitando sua meta diária.');
         }
     }
 
-    function fixVisibleText(root = document.body) {
-        if (!root) return;
-        document.title = APP_NAME;
-        document.querySelectorAll('.logo-box').forEach(el => {
-            const icon = el.querySelector('i')?.outerHTML || '<i class="fas fa-shield-halved"></i>';
-            el.innerHTML = `${icon} ${APP_NAME}`;
-        });
-        document.querySelectorAll('h2, h3, h1, span, p, small, button, label, option, div').forEach(el => {
-            if (el.childNodes.length === 1 && el.firstChild?.nodeType === Node.TEXT_NODE) {
-                const fixed = fixText(el.textContent);
-                if (fixed !== el.textContent) el.textContent = fixed;
-            }
-        });
-        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-        const nodes = [];
-        while (walker.nextNode()) nodes.push(walker.currentNode);
-        nodes.forEach(node => {
-            const fixed = fixText(node.nodeValue);
-            if (fixed !== node.nodeValue) node.nodeValue = fixed;
-        });
+    function wrapRenderDiario() {
+        if (typeof window.renderDiario !== 'function' || window.renderDiario.__plantaoWrapped) return;
+        const original = window.renderDiario;
+        window.renderDiario = function wrappedRenderDiario(date) {
+            const selected = cleanDate(date || (typeof vDate !== 'undefined' ? vDate : new Date()));
+            original.call(this, selected);
+            setTimeout(() => { filterDailyPanel(selected); fixVisibleText(); }, 0);
+        };
+        window.renderDiario.__plantaoWrapped = true;
     }
 
     function boot() {
         window.replanejarAgora = () => replanejarCorrigido({ silent: false });
         const run = () => {
+            wrapRenderDiario();
             window.replanejarAgora = () => replanejarCorrigido({ silent: false });
             replanejarCorrigido({ silent: true });
+            filterDailyPanel(typeof vDate !== 'undefined' ? vDate : new Date());
             fixVisibleText();
         };
         setTimeout(run, 250);
