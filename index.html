@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plant&atilde;o v.143</title>
+    <title>PLANTÃO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="styles.css?v=143">
+    <link rel="stylesheet" href="styles.css?v=149">
+    <link rel="stylesheet" href="app-polish.css?v=149">
 </head>
 <body>
     <div id="login-screen">
         <div class="login-card">
-            <h2 style="font-weight:800; margin-bottom:20px;">PLANT&#195;O</h2>
+            <h2 style="font-weight:800; margin-bottom:20px;">PLANTÃO</h2>
             <button class="btn google-btn" style="width:100%;" onclick="loginGoogle()"><i class="fab fa-google"></i> ENTRAR COM GOOGLE</button>
             <div class="login-email-box">
                 <input type="email" id="login-email" placeholder="E-mail">
@@ -85,7 +86,7 @@
                     </select>
                 </div>
             </div>
-            <button class="btn" style="width:100%; margin-top: 25px;" onclick="salvarExtra()">INCLUIR NO PLANT&#195;O</button>
+            <button class="btn" style="width:100%; margin-top: 25px;" onclick="salvarExtra()">INCLUIR NO PLANTÃO</button>
         </div>
     </div>
 
@@ -124,7 +125,7 @@
     <div id="toast-area" class="toast-area"></div>
 
     <aside class="sidebar">
-        <div class="logo-box"><i class="fas fa-shield-halved"></i> PLANT&#195;O</div>
+        <div class="logo-box"><i class="fas fa-shield-halved"></i> PLANTÃO</div>
         <div class="nav-item active" onclick="showTab('diaria', this)"><i class="fas fa-calendar-day"></i><span>Painel Hoje</span></div>
         <div class="nav-item" onclick="showTab('semanal', this)"><i class="fas fa-calendar-week"></i><span>Cronograma</span></div>
         <div class="nav-item" onclick="showTab('performance', this)"><i class="fas fa-chart-pie"></i><span>Meu Desempenho</span></div>
@@ -170,7 +171,7 @@
                 </div>
                 <div class="nav-days">
                     <button id="btn-hoje" class="btn btn-outline btn-sm" onclick="navDay(0)" style="display:none;"><i class="fas fa-undo"></i> VOLTAR PARA HOJE</button>
-                    <button id="btn-amanha" class="btn btn-sm" onclick="navDay(1)">VER AMANH&#195; <i class="fas fa-arrow-right"></i></button>
+                    <button id="btn-amanha" class="btn btn-sm" onclick="navDay(1)">VER AMANHÃ <i class="fas fa-arrow-right"></i></button>
                 </div>
                 <div class="page-header">
                     <h1 id="view-title">Missão de Hoje</h1>
@@ -183,11 +184,11 @@
             <div id="semanal" class="page">
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
                     <div>
-                        <h2>Cronograma Plantão</h2>
+                        <h2>Cronograma PLANTÃO</h2>
                         <div style="display: flex; gap: 10px;">
                             <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #3b82f6;"></i> Estudo</span>
-                            <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #f59e0b;"></i> Revis&atilde;o</span>
-                            <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #10b981;"></i> Exerc&iacute;cio</span>
+                            <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #f59e0b;"></i> Revisão</span>
+                            <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #10b981;"></i> Exercício</span>
                             <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #ef4444;"></i> Atrasado</span>
                         </div>
                     </div>
@@ -302,8 +303,8 @@
         </div>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
-    <script src="script.js?v=143"></script>
+    <script src="supabase-config.js?v=149"></script>
+    <script src="script.js?v=149"></script>
 </body>
 </html>
-<!-- deploy: v143-login-sem-sessao-persistida -->
+<!-- deploy: v149-plantao-brand-cache-refresh -->
