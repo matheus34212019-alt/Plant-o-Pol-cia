@@ -8,11 +8,25 @@ window.PLANTAO_SUPABASE_CONFIG = {
     const STORAGE_PATCHED = '__plantao_encoding_storage_patched__';
     const ch = (...codes) => String.fromCharCode(...codes);
     const badCodes = new Set([0x00c3, 0x0192, 0x201a, 0xfffd, 0x00e2, 0x20ac, 0x00c2, 0x00c5, 0x008d]);
+    const regexSpecials = new Set(['.', '*', '+', '?', '^', '$', '{', '}', '(', ')', '|', '[', ']', '\\']);
     const scoreMojibake = value => Array.from(String(value)).filter(char => badCodes.has(char.charCodeAt(0))).length;
     const titleCase = value => String(value).toLowerCase().replace(/(^|\s)\S/g, letter => letter.toUpperCase());
+    const escapeRegExp = value => Array.from(String(value)).map(char => regexSpecials.has(char) ? '\\' + char : char).join('');
 
     function replaceAll(text, from, to) {
         return text.split(from).join(to);
+    }
+
+    function replaceWords(text, from, to) {
+        const variants = [
+            [from, to],
+            [titleCase(from), titleCase(to)],
+            [from.toLowerCase(), to.toLowerCase()]
+        ];
+        variants.forEach(([bad, good]) => {
+            text = text.replace(new RegExp(`\\b${escapeRegExp(bad)}\\b`, 'g'), good);
+        });
+        return text;
     }
 
     function decodeLatin1Utf8(text) {
@@ -54,16 +68,11 @@ window.PLANTAO_SUPABASE_CONFIG = {
             ['HORARIO', 'HOR' + ch(0x00c1) + 'RIO'], ['HORARIOS', 'HOR' + ch(0x00c1) + 'RIOS'], ['DIARIA', 'DI' + ch(0x00c1) + 'RIA'], ['DIARIAS', 'DI' + ch(0x00c1) + 'RIAS'],
             ['MISSAO', 'MISS' + ch(0x00c3) + 'O'], ['PRECISAO', 'PRECIS' + ch(0x00c3) + 'O'], ['VOCE', 'VOC' + ch(0x00ca)], ['AMANHA', 'AMANH' + ch(0x00c3)],
             ['PROXIMO', 'PR' + ch(0x00d3) + 'XIMO'], ['PROXIMOS', 'PR' + ch(0x00d3) + 'XIMOS'], ['CODIGO', 'C' + ch(0x00d3) + 'DIGO'], ['INICIO', 'IN' + ch(0x00cd) + 'CIO'],
-            ['ESTA', 'EST' + ch(0x00c1)], ['PUBLICACAO', 'PUBLICA' + ch(0x00c7) + ch(0x00c3) + 'O'], ['APROVACAO', 'APROVA' + ch(0x00c7) + ch(0x00c3) + 'O'],
+            ['PUBLICACAO', 'PUBLICA' + ch(0x00c7) + ch(0x00c3) + 'O'], ['APROVACAO', 'APROVA' + ch(0x00c7) + ch(0x00c3) + 'O'],
             ['SINCRONIZACAO', 'SINCRONIZA' + ch(0x00c7) + ch(0x00c3) + 'O'], ['DISTRIBUICAO', 'DISTRIBUI' + ch(0x00c7) + ch(0x00c3) + 'O'], ['SEQUENCIA', 'SEQU' + ch(0x00ca) + 'NCIA']
         ];
 
-        words.forEach(([from, to]) => {
-            text = replaceAll(text, from, to);
-            text = replaceAll(text, titleCase(from), titleCase(to));
-            text = replaceAll(text, from.toLowerCase(), to.toLowerCase());
-        });
-
+        words.forEach(([from, to]) => { text = replaceWords(text, from, to); });
         return text;
     }
 
