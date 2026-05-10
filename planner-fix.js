@@ -13,10 +13,6 @@
         const d = cleanDate(value);
         return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     };
-    const keyToDate = key => {
-        const [y, m, d] = String(key).split('-').map(Number);
-        return cleanDate(new Date(y, (m || 1) - 1, d || 1));
-    };
     const addDays = (date, amount) => {
         const d = cleanDate(date);
         d.setDate(d.getDate() + amount);
@@ -180,11 +176,30 @@
 
     function needsReplan(task, key, todayKey) {
         return !isExtra(task) && !isDone(task) && (
-            key < todayKey ||
+            key <= todayKey ||
             task?.replanejado === true ||
             task?.atraso === true ||
             hasAtrasoText(task)
         );
+    }
+
+    function enforceDailyLimits(startDate) {
+        const data = getDb();
+        const startKey = dateKey(startDate);
+        const overflow = [];
+        Object.keys(data.metaFixa || {}).sort().forEach(key => {
+            if (key < startKey) return;
+            const date = cleanDate(new Date(`${key}T00:00:00`));
+            const kept = [];
+            (data.metaFixa[key] || []).forEach(task => {
+                const normalized = normalizeTask(task);
+                if (isDone(normalized) || canPlace(kept, date, normalized)) kept.push(normalized);
+                else overflow.push({ ...normalized, c: false, replanejado: false, atraso: false });
+            });
+            if (kept.length) data.metaFixa[key] = kept;
+            else delete data.metaFixa[key];
+        });
+        overflow.forEach(task => placeTask(task, startDate));
     }
 
     function redraw(today) {
@@ -202,6 +217,7 @@
         data.metaFixa = data.metaFixa || {};
         const today = cleanDate(new Date());
         const todayKey = dateKey(today);
+        const startDate = addDays(today, 1);
         const queue = [];
         const keepByDay = {};
 
@@ -217,7 +233,7 @@
                         k: 'E',
                         atraso: false,
                         replanejado: false,
-                        origemAtraso: rawTask.origemAtraso || (key < todayKey ? key : 'replanejado')
+                        origemAtraso: rawTask.origemAtraso || (key <= todayKey ? key : 'replanejado')
                     });
                 } else {
                     if (!keepByDay[key]) keepByDay[key] = [];
@@ -234,13 +250,14 @@
             seen.add(id);
             return true;
         });
-        uniqueQueue.forEach(task => placeTask(task, today));
+        uniqueQueue.forEach(task => placeTask(task, startDate));
+        enforceDailyLimits(startDate);
         normalizeData();
         saveNow();
         redraw(today);
 
         if (!options.silent && typeof showToast === 'function') {
-            showToast('Replanejamento feito', `${uniqueQueue.length} atividade(s) realocada(s) respeitando sua meta diária.`);
+            showToast('Replanejamento feito', `${uniqueQueue.length} atividade(s) realocada(s) a partir de amanhã respeitando sua meta diária.`);
         }
     }
 
