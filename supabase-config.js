@@ -4,13 +4,14 @@ window.PLANTAO_SUPABASE_CONFIG = {
 };
 
 (function plantaoRuntimeFixes() {
-    const APP_NAME = 'Plantão';
+    const APP_NAME = 'PLANTÃO';
     const STORAGE_KEY = 'prf_v120';
     const ch = (...codes) => String.fromCharCode(...codes);
     const badCodes = new Set([0x00c3, 0x0192, 0x201a, 0xfffd, 0x00e2, 0x20ac, 0x00c2, 0x00c5, 0x008d]);
     const score = value => Array.from(String(value)).filter(char => badCodes.has(char.charCodeAt(0))).length;
     const getDb = () => (typeof db !== 'undefined' ? db : window.db);
     const getViewDate = () => (typeof vDate !== 'undefined' ? vDate : new Date());
+    const getMaxDailyItems = () => (typeof MAX_ESTUDO_DIA !== 'undefined' ? MAX_ESTUDO_DIA : 2);
 
     function replaceAll(text, from, to) { return text.split(from).join(to); }
 
@@ -52,7 +53,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
             text = replaceAll(text, from, to);
             text = replaceAll(text, from.toLowerCase(), to.toLowerCase());
         });
-        return text.replace(/\bPlant[oó]\b/gi, APP_NAME).replace(/\s*v\.?\s*\d+\b/gi, '').trim();
+        return text.replace(/\bPlant(?:[oóã]|ao)\b/gi, APP_NAME).replace(/\s*v\.?\s*\d+\b/gi, '').trim();
     }
 
     function normalize(value) {
@@ -88,7 +89,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
         if (!document.querySelector('link[href*="app-polish.css"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = 'app-polish.css?v=147';
+            link.href = 'app-polish.css?v=148';
             document.head.appendChild(link);
         }
     }
@@ -115,9 +116,11 @@ window.PLANTAO_SUPABASE_CONFIG = {
                 if (fixed !== el.getAttribute(attr)) el.setAttribute(attr, fixed);
             });
         });
-        root.querySelectorAll?.('.replan-btn').forEach(btn => {
+        const replanButtons = Array.from(document.querySelectorAll('.replan-btn'));
+        replanButtons.forEach((btn, index) => {
             btn.classList.add('btn-replan-primary');
             btn.title = 'Redistribuir atrasos nos próximos horários disponíveis';
+            btn.style.display = index === 0 ? '' : 'none';
         });
     }
 
@@ -142,19 +145,28 @@ window.PLANTAO_SUPABASE_CONFIG = {
 
     const taskHours = task => Math.max(0.5, parseFloat(task?.h) || 1);
     const taskIsExtra = task => task?.extra === true || task?.l === 'Extra';
+    const taskIsStudy = task => task?.k === 'E' || /estudo/i.test(String(task?.l || ''));
     const dayCapacity = date => Math.max(0, parseFloat(getDb()?.h?.[new Date(date).getDay()]) || 0);
     const usedHours = key => (getDb()?.metaFixa?.[key] || []).reduce((sum, task) => sum + taskHours(task), 0);
+    const usedStudyCount = key => (getDb()?.metaFixa?.[key] || []).filter(task => !taskIsExtra(task) && taskIsStudy(task)).length;
+
+    function dayCanReceive(key, date, task) {
+        const capacity = dayCapacity(date);
+        if (capacity <= 0) return false;
+        if (usedHours(key) + taskHours(task) > capacity) return false;
+        if (taskIsStudy(task) && usedStudyCount(key) >= getMaxDailyItems()) return false;
+        return true;
+    }
 
     function findSlot(task, startDate) {
-        let fallback = toDateKey(startDate);
-        for (let offset = 0; offset < 120; offset++) {
+        let fallback = null;
+        for (let offset = 0; offset < 180; offset++) {
             const date = addDays(startDate, offset);
             const key = toDateKey(date);
-            const capacity = dayCapacity(date);
-            if (capacity > 0 && fallback === toDateKey(startDate)) fallback = key;
-            if (capacity > 0 && usedHours(key) + taskHours(task) <= capacity) return key;
+            if (!fallback && dayCapacity(date) > 0 && (!taskIsStudy(task) || usedStudyCount(key) < getMaxDailyItems())) fallback = key;
+            if (dayCanReceive(key, date, task)) return key;
         }
-        return fallback;
+        return fallback || toDateKey(startDate);
     }
 
     function collectOverdueTasks() {
@@ -199,11 +211,42 @@ window.PLANTAO_SUPABASE_CONFIG = {
             state.metaFixa[key].push(task);
         });
         refreshAfterReplan();
-        if (typeof showToast === 'function') showToast('Atrasos replanejados', `${overdue.length} atividade(s) redistribuída(s) nos horários diários e no cronograma semanal.`);
+        if (typeof showToast === 'function') showToast('Atrasos replanejados', `${overdue.length} atividade(s) redistribuída(s) respeitando horas diárias e limite de estudos.`);
+    }
+
+    function resetStudyPromptForCard(card) {
+        const state = getDb();
+        const text = fixText(card?.innerText || '').toLowerCase();
+        if (!state?.metaFixa || !text) return;
+        Object.values(state.metaFixa).flat().forEach(task => {
+            const subject = fixText(`${task?.m || ''} ${task?.a || ''}`).toLowerCase();
+            if (!subject || !text.includes(subject.split(' ').slice(0, 3).join(' '))) return;
+            task.c = false;
+            if (task.done) task.done.E = false;
+            task.hF = 0;
+            task.teoriaRespondida = false;
+            task.teoriaPendente = false;
+            task.precisaMaisTempo = false;
+            delete task.lastInitialStudyDate;
+        });
+        if (typeof save === 'function') save();
+    }
+
+    function installCheckboxReset() {
+        if (window.__plantao_checkbox_reset_installed__) return;
+        window.__plantao_checkbox_reset_installed__ = true;
+        document.addEventListener('change', event => {
+            const input = event.target;
+            if (!(input instanceof HTMLInputElement) || input.type !== 'checkbox' || input.checked) return;
+            const card = input.closest('.task-card');
+            if (!card) return;
+            setTimeout(() => resetStudyPromptForCard(card), 30);
+        }, true);
     }
 
     function installOverrides() {
         window.replanejarAgora = replanejarAgoraCorrigido;
+        installCheckboxReset();
     }
 
     window.plantaoFixText = fixText;
