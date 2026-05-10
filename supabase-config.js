@@ -53,7 +53,11 @@ window.PLANTAO_SUPABASE_CONFIG = {
             text = replaceAll(text, from, to);
             text = replaceAll(text, from.toLowerCase(), to.toLowerCase());
         });
-        return text.replace(/\bPlant(?:[oóã]|ao)\b/gi, APP_NAME).replace(/\s*v\.?\s*\d+\b/gi, '').trim();
+        return text
+            .replace(/PLANT(?:AO|.?O)/gi, APP_NAME)
+            .replace(/\bPlant(?:[oóã]|ao)\b/gi, APP_NAME)
+            .replace(/\s*v\.?\s*\d+\b/gi, '')
+            .trim();
     }
 
     function normalize(value) {
@@ -89,9 +93,17 @@ window.PLANTAO_SUPABASE_CONFIG = {
         if (!document.querySelector('link[href*="app-polish.css"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = 'app-polish.css?v=148';
+            link.href = 'app-polish.css?v=150';
             document.head.appendChild(link);
         }
+    }
+
+    function injectOverrides() {
+        if (document.querySelector('script[src*="app-overrides.js"]')) return;
+        const script = document.createElement('script');
+        script.src = 'app-overrides.js?v=150';
+        script.defer = true;
+        document.body.appendChild(script);
     }
 
     function fixDom(root = document.body) {
@@ -102,6 +114,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
             const icon = el.querySelector('i')?.outerHTML || '<i class="fas fa-shield-halved"></i>';
             el.innerHTML = `${icon} ${APP_NAME}`;
         });
+        root.querySelectorAll?.('.login-card h2').forEach(el => { el.textContent = APP_NAME; });
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
         const nodes = [];
         while (walker.nextNode()) nodes.push(walker.currentNode);
@@ -257,16 +270,23 @@ window.PLANTAO_SUPABASE_CONFIG = {
         installOverrides();
         fixDom();
         const observer = new MutationObserver(mutations => {
-            mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
-                if (node.nodeType === Node.TEXT_NODE) {
-                    const fixed = fixText(node.nodeValue);
-                    if (fixed !== node.nodeValue) node.nodeValue = fixed;
-                } else if (node.nodeType === Node.ELEMENT_NODE) fixDom(node);
-            }));
+            mutations.forEach(mutation => {
+                if (mutation.type === 'characterData') {
+                    const fixed = fixText(mutation.target.nodeValue);
+                    if (fixed !== mutation.target.nodeValue) mutation.target.nodeValue = fixed;
+                }
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        const fixed = fixText(node.nodeValue);
+                        if (fixed !== node.nodeValue) node.nodeValue = fixed;
+                    } else if (node.nodeType === Node.ELEMENT_NODE) fixDom(node);
+                });
+            });
         });
-        observer.observe(document.body, { childList: true, subtree: true });
+        observer.observe(document.body, { childList: true, subtree: true, characterData: true });
         setTimeout(() => { installOverrides(); fixDom(); }, 250);
-        setTimeout(() => { installOverrides(); fixDom(); }, 1000);
+        setTimeout(() => { installOverrides(); fixDom(); injectOverrides(); }, 1000);
+        setTimeout(() => { fixDom(); injectOverrides(); }, 2200);
     }
 
     if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', boot);
