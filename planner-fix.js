@@ -1,9 +1,9 @@
 (function plannerFix() {
-    const APP_NAME = 'PLANT\u00c3O';
+    const APP_NAME = 'PLANTÃO';
     const STORAGE_KEY = 'prf_v120';
     const MAX_STUDY_PER_DAY = 2;
 
-    const pad = value => String(value).padStart(2, '0');
+    const pad = n => String(n).padStart(2, '0');
     const cleanDate = value => {
         const date = new Date(value || new Date());
         date.setHours(0, 0, 0, 0);
@@ -23,62 +23,61 @@
     const isDone = task => task?.c === true;
     const isStudy = task => task?.k === 'E' || task?.l === 'Estudo' || !task?.k;
 
-    const textFixes = [
-        [/\bPLANT(?:AO|\u00c3O|\u00c3\u0192O|\u00c3\u0192\u00c3O|\ufffdO)\b/gi, APP_NAME],
-        [/PORTUGU(?:ES|\u00caS|\u00c3\u0160S|\u00c3\u0192\u00c2\u00aaS|\ufffdS)/gi, 'PORTUGU\u00caS'],
-        [/RACIOC(?:INIO|\u00cdNIO|\u00c3\u008dNIO|\ufffdNIO)\s+L(?:OGICO|\u00d3GICO|\u00c3\u201cGICO|\ufffdGICO)/gi, 'RACIOC\u00cdNIO L\u00d3GICO'],
-        [/Compreens(?:ao|\u00e3o|\u00c3\u00a3o|\ufffdo)/gi, 'Compreens\u00e3o'],
-        [/compreens(?:ao|\u00e3o|\u00c3\u00a3o|\ufffdo)/gi, 'compreens\u00e3o'],
-        [/interpreta(?:cao|\u00e7\u00e3o|\u00c3\u00a7\u00c3\u00a3o|\ufffd\ufffdo)/gi, 'interpreta\u00e7\u00e3o'],
-        [/Proposi(?:coes|\u00e7\u00f5es|\u00c3\u00a7\u00c3\u00b5es|\ufffd\ufffdes)/gi, 'Proposi\u00e7\u00f5es'],
-        [/proposi(?:coes|\u00e7\u00f5es|\u00c3\u00a7\u00c3\u00b5es|\ufffd\ufffdes)/gi, 'proposi\u00e7\u00f5es'],
-        [/Conectivos/gi, 'conectivos'],
-        [/mat(?:erias|\u00e9rias|\u00c3\u00a9rias|\ufffdrias)/gi, 'mat\u00e9rias'],
-        [/Mat(?:erias|\u00e9rias|\u00c3\u00a9rias|\ufffdrias)/g, 'Mat\u00e9rias'],
-        [/mat(?:eria|\u00e9ria|\u00c3\u00a9ria|\ufffdria)/gi, 'mat\u00e9ria'],
-        [/Mat(?:eria|\u00e9ria|\u00c3\u00a9ria|\ufffdria)/g, 'Mat\u00e9ria'],
-        [/Revis(?:ao|\u00e3o|\u00c3\u00a3o|\ufffdo)/gi, 'Revis\u00e3o'],
-        [/revis(?:ao|\u00e3o|\u00c3\u00a3o|\ufffdo)/gi, 'revis\u00e3o'],
-        [/Quest(?:oes|\u00f5es|\u00c3\u00b5es|\ufffdes)/gi, 'Quest\u00f5es'],
-        [/quest(?:oes|\u00f5es|\u00c3\u00b5es|\ufffdes)/gi, 'quest\u00f5es'],
-        [/Exerc(?:icios|\u00edcios|\u00c3\u00adcios|\ufffdcios)/gi, 'Exerc\u00edcios'],
-        [/exerc(?:icios|\u00edcios|\u00c3\u00adcios|\ufffdcios)/gi, 'exerc\u00edcios'],
-        [/Lan(?:camentos|\u00e7amentos|\u00c3\u00a7amentos|\ufffdamentos)/gi, 'Lan\u00e7amentos'],
-        [/lan(?:camentos|\u00e7amentos|\u00c3\u00a7amentos|\ufffdamentos)/gi, 'lan\u00e7amentos'],
-        [/Hor(?:arios|\u00e1rios|\u00c3\u00a1rios|\ufffdrios)/gi, 'Hor\u00e1rios'],
-        [/hor(?:arios|\u00e1rios|\u00c3\u00a1rios|\ufffdrios)/gi, 'hor\u00e1rios'],
-        [/Di(?:arias|\u00e1rias|\u00c3\u00a1rias|\ufffdrias)/gi, 'Di\u00e1rias'],
-        [/di(?:arias|\u00e1rias|\u00c3\u00a1rias|\ufffdrias)/gi, 'di\u00e1rias'],
-        [/Amanh(?:a|\u00e3|\u00c3\u00a3|\ufffd)/gi, 'Amanh\u00e3'],
-        [/amanh(?:a|\u00e3|\u00c3\u00a3|\ufffd)/gi, 'amanh\u00e3'],
-        [/Voc(?:e|\u00ea|\u00c3\u00aa|\ufffd)/gi, 'Voc\u00ea'],
-        [/voc(?:e|\u00ea|\u00c3\u00aa|\ufffd)/gi, 'voc\u00ea'],
-        [/Precis(?:ao|\u00e3o|\u00c3\u00a3o|\ufffdo)/gi, 'Precis\u00e3o'],
-        [/precis(?:ao|\u00e3o|\u00c3\u00a3o|\ufffdo)/gi, 'precis\u00e3o'],
-        [/Persegui(?:cao|\u00e7\u00e3o|\u00c3\u00a7\u00c3\u00a3o|\ufffd\ufffdo)/gi, 'Persegui\u00e7\u00e3o'],
-        [/Miss(?:ao|\u00e3o|\u00c3\u00a3o|\ufffdo)/gi, 'Miss\u00e3o'],
-        [/miss(?:ao|\u00e3o|\u00c3\u00a3o|\ufffdo)/gi, 'miss\u00e3o'],
-        [/Sequ(?:encia|\u00eancia|\u00c3\u00aancia|\ufffdncia)/gi, 'Sequ\u00eancia'],
-        [/sequ(?:encia|\u00eancia|\u00c3\u00aancia|\ufffdncia)/gi, 'sequ\u00eancia'],
-        [/conclu(?:idas|\u00eddas|\u00c3\u00addas|\ufffddas)/gi, 'conclu\u00eddas'],
-        [/j(?:a|\u00e1|\u00c3\u00a1|\ufffd)\s+dominados/gi, 'j\u00e1 dominados'],
-        [/recome(?:ca|\u00e7a|\u00c3\u00a7a|\ufffda)/gi, 'recome\u00e7a'],
-        [/Pr(?:oximos|\u00f3ximos|\u00c3\u00b3ximos|\ufffdximos)/gi, 'Pr\u00f3ximos'],
-        [/pr(?:oximos|\u00f3ximos|\u00c3\u00b3ximos|\ufffdximos)/gi, 'pr\u00f3ximos'],
-        [/P(?:ublica|\u00fablica|\u00c3\u00bablica|\ufffdblica)/gi, 'P\u00fablica'],
-        [/p(?:ublica|\u00fablica|\u00c3\u00bablica|\ufffdblica)/gi, 'p\u00fablica'],
-        [/Administra(?:cao|\u00e7\u00e3o|\u00c3\u00a7\u00c3\u00a3o|\ufffd\ufffdo)/gi, 'Administra\u00e7\u00e3o'],
-        [/\bN(?:AO|\u00c3O|\u00c3\u0192O|\ufffdO)\b/g, 'N\u00c3O'],
-        [/\bn(?:ao|\u00e3o|\u00c3\u00a3o|\ufffdo)\b/g, 'n\u00e3o'],
-        [/For(?:ca|\u00e7a|\u00c3\u00a7a|\ufffda)/gi, 'For\u00e7a'],
-        [/\bFOR(?:CA|\u00c7A|\u00c3\u2021A|\ufffdA)\b/g, 'FOR\u00c7A']
+    const replacements = [
+        ['PLANTAO', 'PLANTÃO'], ['PLANTÃƒO', 'PLANTÃO'], ['PLANT�O', 'PLANTÃO'],
+        ['PORTUGUES', 'PORTUGUÊS'], ['PORTUGUÃŠS', 'PORTUGUÊS'], ['PORTUGU�S', 'PORTUGUÊS'],
+        ['RACIOCINIO LOGICO', 'RACIOCÍNIO LÓGICO'], ['RACIOCÃ�NIO LÃ“GICO', 'RACIOCÍNIO LÓGICO'], ['RACIOC�NIO L�GICO', 'RACIOCÍNIO LÓGICO'],
+        ['Compreensao', 'Compreensão'], ['CompreensÃ£o', 'Compreensão'], ['Compreens�o', 'Compreensão'],
+        ['compreensao', 'compreensão'], ['compreensÃ£o', 'compreensão'], ['compreens�o', 'compreensão'],
+        ['interpretacao', 'interpretação'], ['interpretaÃ§Ã£o', 'interpretação'], ['interpreta��o', 'interpretação'],
+        ['Proposicoes', 'Proposições'], ['ProposiÃ§Ãµes', 'Proposições'], ['Proposi��es', 'Proposições'],
+        ['proposicoes', 'proposições'], ['proposiÃ§Ãµes', 'proposições'], ['proposi��es', 'proposições'],
+        ['Materia', 'Matéria'], ['MatÃ©ria', 'Matéria'], ['Mat�ria', 'Matéria'],
+        ['materia', 'matéria'], ['matÃ©ria', 'matéria'], ['mat�ria', 'matéria'],
+        ['Materias', 'Matérias'], ['MatÃ©rias', 'Matérias'], ['Mat�rias', 'Matérias'],
+        ['materias', 'matérias'], ['matÃ©rias', 'matérias'], ['mat�rias', 'matérias'],
+        ['Revisao', 'Revisão'], ['RevisÃ£o', 'Revisão'], ['Revis�o', 'Revisão'],
+        ['revisao', 'revisão'], ['revisÃ£o', 'revisão'], ['revis�o', 'revisão'],
+        ['Questoes', 'Questões'], ['QuestÃµes', 'Questões'], ['Quest�es', 'Questões'],
+        ['questoes', 'questões'], ['questÃµes', 'questões'], ['quest�es', 'questões'],
+        ['Exercicios', 'Exercícios'], ['ExercÃ­cios', 'Exercícios'], ['Exerc�cios', 'Exercícios'],
+        ['exercicios', 'exercícios'], ['exercÃ­cios', 'exercícios'], ['exerc�cios', 'exercícios'],
+        ['Lancamentos', 'Lançamentos'], ['LanÃ§amentos', 'Lançamentos'], ['Lan�amentos', 'Lançamentos'],
+        ['lancamentos', 'lançamentos'], ['lanÃ§amentos', 'lançamentos'], ['lan�amentos', 'lançamentos'],
+        ['Horarios', 'Horários'], ['HorÃ¡rios', 'Horários'], ['Hor�rios', 'Horários'],
+        ['horarios', 'horários'], ['horÃ¡rios', 'horários'], ['hor�rios', 'horários'],
+        ['Diarias', 'Diárias'], ['DiÃ¡rias', 'Diárias'], ['Di�rias', 'Diárias'],
+        ['diarias', 'diárias'], ['diÃ¡rias', 'diárias'], ['di�rias', 'diárias'],
+        ['Amanha', 'Amanhã'], ['AmanhÃ£', 'Amanhã'], ['Amanh�', 'Amanhã'],
+        ['amanha', 'amanhã'], ['amanhÃ£', 'amanhã'], ['amanh�', 'amanhã'],
+        ['Voce', 'Você'], ['VocÃª', 'Você'], ['Voc�', 'Você'],
+        ['voce', 'você'], ['vocÃª', 'você'], ['voc�', 'você'],
+        ['Precisao', 'Precisão'], ['PrecisÃ£o', 'Precisão'], ['Precis�o', 'Precisão'],
+        ['precisao', 'precisão'], ['precisÃ£o', 'precisão'], ['precis�o', 'precisão'],
+        ['Perseguicao', 'Perseguição'], ['PerseguiÃ§Ã£o', 'Perseguição'], ['Persegui��o', 'Perseguição'],
+        ['Missao', 'Missão'], ['MissÃ£o', 'Missão'], ['Miss�o', 'Missão'],
+        ['missao', 'missão'], ['missÃ£o', 'missão'], ['miss�o', 'missão'],
+        ['Sequencia', 'Sequência'], ['SequÃªncia', 'Sequência'], ['Sequ�ncia', 'Sequência'],
+        ['sequencia', 'sequência'], ['sequÃªncia', 'sequência'], ['sequ�ncia', 'sequência'],
+        ['concluidas', 'concluídas'], ['concluÃ­das', 'concluídas'], ['conclu�das', 'concluídas'],
+        ['ja dominados', 'já dominados'], ['jÃ¡ dominados', 'já dominados'], ['j� dominados', 'já dominados'],
+        ['recomeca', 'recomeça'], ['recomeÃ§a', 'recomeça'], ['recome�a', 'recomeça'],
+        ['Proximos', 'Próximos'], ['PrÃ³ximos', 'Próximos'], ['Pr�ximos', 'Próximos'],
+        ['proximos', 'próximos'], ['prÃ³ximos', 'próximos'], ['pr�ximos', 'próximos'],
+        ['Publica', 'Pública'], ['PÃºblica', 'Pública'], ['P�blica', 'Pública'],
+        ['publica', 'pública'], ['pÃºblica', 'pública'], ['p�blica', 'pública'],
+        ['Administracao', 'Administração'], ['AdministraÃ§Ã£o', 'Administração'], ['Administra��o', 'Administração'],
+        ['FORCA', 'FORÇA'], ['FORÃ‡A', 'FORÇA'], ['FOR�A', 'FORÇA'],
+        ['Forca', 'Força'], ['ForÃ§a', 'Força'], ['For�a', 'Força'],
+        ['Nao', 'Não'], ['NÃ£o', 'Não'], ['N�o', 'Não'],
+        ['nao', 'não'], ['nÃ£o', 'não'], ['n�o', 'não']
     ];
 
     function decodeMojibake(value) {
         if (typeof value !== 'string') return value;
         let text = value;
         for (let i = 0; i < 2; i++) {
-            if (!/[\u00c2\u00c3\ufffd]/.test(text)) break;
+            if (!/[ÃÂ�]/.test(text)) break;
             try {
                 const decoded = decodeURIComponent(escape(text));
                 if (decoded && decoded !== text) text = decoded;
@@ -92,15 +91,13 @@
     function fixText(value) {
         if (typeof value !== 'string') return value;
         let text = decodeMojibake(value);
-        textFixes.forEach(([pattern, replacement]) => {
-            text = text.replace(pattern, replacement);
-        });
+        replacements.forEach(([from, to]) => { text = text.split(from).join(to); });
         return text;
     }
 
     function fixAttributes(root = document.body) {
         if (!root?.querySelectorAll) return;
-        root.querySelectorAll('[placeholder], [title], [aria-label], input[value], option').forEach(element => {
+        root.querySelectorAll('[placeholder], [title], [aria-label], option').forEach(element => {
             ['placeholder', 'title', 'aria-label'].forEach(attr => {
                 if (!element.hasAttribute(attr)) return;
                 const fixed = fixText(element.getAttribute(attr));
@@ -145,8 +142,7 @@
 
     function normalizeDataText() {
         const data = getDb();
-        if (!data) return;
-        fixObjectText(data);
+        if (data) fixObjectText(data);
     }
 
     function taskHours(task) {
@@ -161,9 +157,7 @@
     }
 
     function dayUsage(tasks) {
-        return (tasks || [])
-            .filter(task => !isExtraTask(task))
-            .reduce((total, task) => total + taskHours(task), 0);
+        return (tasks || []).filter(task => !isExtraTask(task)).reduce((total, task) => total + taskHours(task), 0);
     }
 
     function studyCount(tasks) {
@@ -171,26 +165,11 @@
     }
 
     function taskId(task) {
-        return [
-            task?.id || '',
-            task?.m || '',
-            task?.a || '',
-            task?.k || '',
-            task?.l || '',
-            task?.origemAtraso || ''
-        ].join('|').toLowerCase();
+        return [task?.id || '', task?.m || '', task?.a || '', task?.k || '', task?.l || '', task?.origemAtraso || ''].join('|').toLowerCase();
     }
 
     function normalizeTask(task, origem) {
-        return {
-            ...task,
-            c: false,
-            atraso: false,
-            replanejado: false,
-            origemAtraso: task?.origemAtraso || origem,
-            l: task?.l === 'Extra' ? task.l : (task?.l || 'Estudo'),
-            k: task?.k || 'E'
-        };
+        return { ...task, c: false, atraso: false, replanejado: false, origemAtraso: task?.origemAtraso || origem, l: task?.l === 'Extra' ? task.l : (task?.l || 'Estudo'), k: task?.k || 'E' };
     }
 
     function canFit(tasks, date, task) {
@@ -213,7 +192,6 @@
                 return key;
             }
         }
-
         const fallbackKey = dateKey(addDays(startDate, 1));
         data.metaFixa[fallbackKey] = (data.metaFixa[fallbackKey] || []).concat(task);
         return fallbackKey;
@@ -240,15 +218,12 @@
 
     function encaixarAtrasosNoCronograma(atrasos, inicioDate) {
         const seen = new Set();
-        atrasos
-            .map(({ dia, task }) => normalizeTask(task, dia))
-            .filter(task => {
-                const id = taskId(task);
-                if (seen.has(id)) return false;
-                seen.add(id);
-                return true;
-            })
-            .forEach(task => placeTask(task, inicioDate));
+        atrasos.map(({ dia, task }) => normalizeTask(task, dia)).filter(task => {
+            const id = taskId(task);
+            if (seen.has(id)) return false;
+            seen.add(id);
+            return true;
+        }).forEach(task => placeTask(task, inicioDate));
     }
 
     function refresh(today) {
@@ -264,33 +239,26 @@
         const data = getDb();
         if (!data) return;
         data.metaFixa = data.metaFixa || {};
-
         const today = cleanDate(new Date());
         const atrasos = getAtrasosAteHoje(today);
         if (!atrasos.length) {
-            if (typeof showToast === 'function') showToast('Sem atrasos', 'Nenhuma pend\u00eancia encontrada para replanejar.');
+            if (typeof showToast === 'function') showToast('Sem atrasos', 'Nenhuma pendência encontrada para replanejar.');
             return;
         }
-
         const porDia = atrasos.reduce((map, item) => {
             if (!map[item.dia]) map[item.dia] = new Set();
             map[item.dia].add(item.task);
             return map;
         }, {});
-
         Object.keys(porDia).forEach(key => {
             data.metaFixa[key] = (data.metaFixa[key] || []).filter(task => !porDia[key].has(task));
             if (!data.metaFixa[key].length) delete data.metaFixa[key];
         });
-
         encaixarAtrasosNoCronograma(atrasos, today);
         normalizeDataText();
         saveNow();
         refresh(today);
-
-        if (typeof showToast === 'function') {
-            showToast('Plant\u00e3o replanejado', 'Os atrasos foram redistribu\u00eddos respeitando as horas di\u00e1rias.');
-        }
+        if (typeof showToast === 'function') showToast('Plantão replanejado', 'Os atrasos foram redistribuídos respeitando as horas diárias.');
     }
 
     function wrapRender(name) {
