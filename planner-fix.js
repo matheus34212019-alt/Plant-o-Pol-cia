@@ -1,5 +1,5 @@
 (function plannerFix() {
-    const APP_NAME = 'PLANT\u00c3O';
+    const APP_NAME = ['PLANT', String.fromCharCode(195), 'O'].join('');
     const STORAGE_KEY = 'prf_v120';
     const MAX_STUDY_PER_DAY = 2;
     const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
@@ -132,6 +132,19 @@
     function fixVisibleText(root = document.body) {
         if (!root) return;
         document.title = APP_NAME;
+        const forceBrand = () => {
+            document.title = APP_NAME;
+            document.querySelectorAll('.logo-box').forEach(element => {
+                element.innerHTML = '<i class="fas fa-shield-halved"></i> ' + APP_NAME;
+            });
+            document.querySelectorAll('.login-card h2').forEach(element => {
+                element.textContent = APP_NAME;
+            });
+            document.querySelectorAll('h2').forEach(element => {
+                if (/Cronograma PLANT/i.test(element.textContent || '')) element.textContent = 'Cronograma ' + APP_NAME;
+            });
+        };
+        forceBrand();
         document.querySelectorAll('.logo-box').forEach(element => {
             if (/PLANT/i.test(element.textContent || '')) {
                 element.innerHTML = '<i class="fas fa-shield-halved"></i> ' + APP_NAME;
@@ -149,6 +162,7 @@
         });
         fixAttributes(root);
         hideRankingEmails();
+        forceBrand();
     }
 
     function taskHours(task) {
@@ -285,6 +299,7 @@
         fixVisibleText();
         setTimeout(fixVisibleText, 400);
         setTimeout(fixVisibleText, 1200);
+        setTimeout(fixVisibleText, 2500);
         let pending = false;
         new MutationObserver(() => {
             if (pending) return;
