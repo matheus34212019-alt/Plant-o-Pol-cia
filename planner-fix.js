@@ -184,7 +184,7 @@
         const todayKey = dateKey(today);
         const atrasos = [];
         Object.keys(data?.metaFixa || {}).sort().forEach(key => {
-            if (key > todayKey) return;
+            if (key >= todayKey) return;
             (data.metaFixa[key] || []).forEach(task => {
                 if (!isExtraTask(task) && !isDone(task)) atrasos.push({ dia: key, task });
             });
