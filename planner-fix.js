@@ -2,6 +2,7 @@
     const APP_NAME = 'PLANTÃO';
     const STORAGE_KEY = 'prf_v120';
     const MAX_STUDY_PER_DAY = 2;
+    const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 
     const pad = n => String(n).padStart(2, '0');
     const cleanDate = value => {
@@ -24,48 +25,31 @@
     const isStudy = task => task?.k === 'E' || task?.l === 'Estudo' || !task?.k;
 
     const fixes = [
-        ['PLANTAO', 'PLANTÃO'], ['PLANTÃƒO', 'PLANTÃO'], ['PLANTÃ�O', 'PLANTÃO'], ['PLANT�O', 'PLANTÃO'],
+        ['PLANTAO', 'PLANTÃO'], ['PLANTÃƒO', 'PLANTÃO'], ['PLANTÃ�O', 'PLANTÃO'], ['PLANT�O', 'PLANTÃO'], ['PLANTÃÕ', 'PLANTÃO'],
         ['PORTUGUES', 'PORTUGUÊS'], ['PORTUGUÃŠS', 'PORTUGUÊS'], ['PORTUGU�S', 'PORTUGUÊS'],
         ['RACIOCINIO LOGICO', 'RACIOCÍNIO LÓGICO'], ['RACIOCÃ�NIO LÃ“GICO', 'RACIOCÍNIO LÓGICO'], ['RACIOC�NIO L�GICO', 'RACIOCÍNIO LÓGICO'],
-        ['Compreensao', 'Compreensão'], ['CompreensÃ£o', 'Compreensão'], ['Compreens�o', 'Compreensão'],
-        ['compreensao', 'compreensão'], ['compreensÃ£o', 'compreensão'], ['compreens�o', 'compreensão'],
+        ['Compreensao', 'Compreensão'], ['CompreensÃ£o', 'Compreensão'], ['Compreens�o', 'Compreensão'], ['compreensao', 'compreensão'], ['compreensÃ£o', 'compreensão'], ['compreens�o', 'compreensão'],
         ['interpretacao', 'interpretação'], ['interpretaÃ§Ã£o', 'interpretação'], ['interpreta��o', 'interpretação'],
-        ['Proposicoes', 'Proposições'], ['ProposiÃ§Ãµes', 'Proposições'], ['Proposi��es', 'Proposições'],
-        ['proposicoes', 'proposições'], ['proposiÃ§Ãµes', 'proposições'], ['proposi��es', 'proposições'],
-        ['Materia', 'Matéria'], ['MatÃ©ria', 'Matéria'], ['Mat�ria', 'Matéria'],
-        ['materia', 'matéria'], ['matÃ©ria', 'matéria'], ['mat�ria', 'matéria'],
-        ['Materias', 'Matérias'], ['MatÃ©rias', 'Matérias'], ['Mat�rias', 'Matérias'],
-        ['materias', 'matérias'], ['matÃ©rias', 'matérias'], ['mat�rias', 'matérias'],
-        ['Revisao', 'Revisão'], ['RevisÃ£o', 'Revisão'], ['Revis�o', 'Revisão'],
-        ['revisao', 'revisão'], ['revisÃ£o', 'revisão'], ['revis�o', 'revisão'],
-        ['Questoes', 'Questões'], ['QuestÃµes', 'Questões'], ['Quest�es', 'Questões'],
-        ['questoes', 'questões'], ['questÃµes', 'questões'], ['quest�es', 'questões'],
-        ['Exercicios', 'Exercícios'], ['ExercÃ­cios', 'Exercícios'], ['Exerc�cios', 'Exercícios'],
-        ['exercicios', 'exercícios'], ['exercÃ­cios', 'exercícios'], ['exerc�cios', 'exercícios'],
-        ['Lancamentos', 'Lançamentos'], ['LanÃ§amentos', 'Lançamentos'], ['Lan�amentos', 'Lançamentos'],
-        ['lancamentos', 'lançamentos'], ['lanÃ§amentos', 'lançamentos'], ['lan�amentos', 'lançamentos'],
-        ['Horarios', 'Horários'], ['HorÃ¡rios', 'Horários'], ['Hor�rios', 'Horários'],
-        ['horarios', 'horários'], ['horÃ¡rios', 'horários'], ['hor�rios', 'horários'],
-        ['Diarias', 'Diárias'], ['DiÃ¡rias', 'Diárias'], ['Di�rias', 'Diárias'],
-        ['diarias', 'diárias'], ['diÃ¡rias', 'diárias'], ['di�rias', 'diárias'],
-        ['Amanha', 'Amanhã'], ['AmanhÃ£', 'Amanhã'], ['Amanh�', 'Amanhã'],
-        ['amanha', 'amanhã'], ['amanhÃ£', 'amanhã'], ['amanh�', 'amanhã'],
-        ['Voce', 'Você'], ['VocÃª', 'Você'], ['Voc�', 'Você'],
-        ['voce', 'você'], ['vocÃª', 'você'], ['voc�', 'você'],
-        ['Precisao', 'Precisão'], ['PrecisÃ£o', 'Precisão'], ['Precis�o', 'Precisão'],
-        ['precisao', 'precisão'], ['precisÃ£o', 'precisão'], ['precis�o', 'precisão'],
+        ['Proposicoes', 'Proposições'], ['ProposiÃ§Ãµes', 'Proposições'], ['Proposi��es', 'Proposições'], ['proposicoes', 'proposições'], ['proposiÃ§Ãµes', 'proposições'], ['proposi��es', 'proposições'],
+        ['Materia', 'Matéria'], ['MatÃ©ria', 'Matéria'], ['Mat�ria', 'Matéria'], ['materia', 'matéria'], ['matÃ©ria', 'matéria'], ['mat�ria', 'matéria'],
+        ['Materias', 'Matérias'], ['MatÃ©rias', 'Matérias'], ['Mat�rias', 'Matérias'], ['materias', 'matérias'], ['matÃ©rias', 'matérias'], ['mat�rias', 'matérias'],
+        ['Revisao', 'Revisão'], ['RevisÃ£o', 'Revisão'], ['Revis�o', 'Revisão'], ['revisao', 'revisão'], ['revisÃ£o', 'revisão'], ['revis�o', 'revisão'],
+        ['Questoes', 'Questões'], ['QuestÃµes', 'Questões'], ['Quest�es', 'Questões'], ['questoes', 'questões'], ['questÃµes', 'questões'], ['quest�es', 'questões'],
+        ['Exercicios', 'Exercícios'], ['ExercÃ­cios', 'Exercícios'], ['Exerc�cios', 'Exercícios'], ['exercicios', 'exercícios'], ['exercÃ­cios', 'exercícios'], ['exerc�cios', 'exercícios'],
+        ['Lancamentos', 'Lançamentos'], ['LanÃ§amentos', 'Lançamentos'], ['Lan�amentos', 'Lançamentos'], ['lancamentos', 'lançamentos'], ['lanÃ§amentos', 'lançamentos'], ['lan�amentos', 'lançamentos'],
+        ['Horarios', 'Horários'], ['HorÃ¡rios', 'Horários'], ['Hor�rios', 'Horários'], ['horarios', 'horários'], ['horÃ¡rios', 'horários'], ['hor�rios', 'horários'],
+        ['Diarias', 'Diárias'], ['DiÃ¡rias', 'Diárias'], ['Di�rias', 'Diárias'], ['diarias', 'diárias'], ['diÃ¡rias', 'diárias'], ['di�rias', 'diárias'],
+        ['Amanha', 'Amanhã'], ['AmanhÃ£', 'Amanhã'], ['Amanh�', 'Amanhã'], ['amanha', 'amanhã'], ['amanhÃ£', 'amanhã'], ['amanh�', 'amanhã'],
+        ['Voce', 'Você'], ['VocÃª', 'Você'], ['Voc�', 'Você'], ['voce', 'você'], ['vocÃª', 'você'], ['voc�', 'você'],
+        ['Precisao', 'Precisão'], ['PrecisÃ£o', 'Precisão'], ['Precis�o', 'Precisão'], ['precisao', 'precisão'], ['precisÃ£o', 'precisão'], ['precis�o', 'precisão'],
         ['Perseguicao', 'Perseguição'], ['PerseguiÃ§Ã£o', 'Perseguição'], ['Persegui��o', 'Perseguição'],
-        ['Missao', 'Missão'], ['MissÃ£o', 'Missão'], ['Miss�o', 'Missão'],
-        ['missao', 'missão'], ['missÃ£o', 'missão'], ['miss�o', 'missão'],
-        ['Sequencia', 'Sequência'], ['SequÃªncia', 'Sequência'], ['Sequ�ncia', 'Sequência'],
-        ['sequencia', 'sequência'], ['sequÃªncia', 'sequência'], ['sequ�ncia', 'sequência'],
+        ['Missao', 'Missão'], ['MissÃ£o', 'Missão'], ['Miss�o', 'Missão'], ['missao', 'missão'], ['missÃ£o', 'missão'], ['miss�o', 'missão'],
+        ['Sequencia', 'Sequência'], ['SequÃªncia', 'Sequência'], ['Sequ�ncia', 'Sequência'], ['sequencia', 'sequência'], ['sequÃªncia', 'sequência'], ['sequ�ncia', 'sequência'],
         ['concluidas', 'concluídas'], ['concluÃ­das', 'concluídas'], ['conclu�das', 'concluídas'],
         ['ja dominados', 'já dominados'], ['jÃ¡ dominados', 'já dominados'], ['j� dominados', 'já dominados'],
         ['recomeca', 'recomeça'], ['recomeÃ§a', 'recomeça'], ['recome�a', 'recomeça'],
-        ['Proximos', 'Próximos'], ['PrÃ³ximos', 'Próximos'], ['Pr�ximos', 'Próximos'],
-        ['proximos', 'próximos'], ['prÃ³ximos', 'próximos'], ['pr�ximos', 'próximos'],
-        ['Publica', 'Pública'], ['PÃºblica', 'Pública'], ['P�blica', 'Pública'],
-        ['publica', 'pública'], ['pÃºblica', 'pública'], ['p�blica', 'pública'],
+        ['Proximos', 'Próximos'], ['PrÃ³ximos', 'Próximos'], ['Pr�ximos', 'Próximos'], ['proximos', 'próximos'], ['prÃ³ximos', 'próximos'], ['pr�ximos', 'próximos'],
+        ['Publica', 'Pública'], ['PÃºblica', 'Pública'], ['P�blica', 'Pública'], ['publica', 'pública'], ['pÃºblica', 'pública'], ['p�blica', 'pública'],
         ['Administracao', 'Administração'], ['AdministraÃ§Ã£o', 'Administração'], ['Administra��o', 'Administração'],
         ['FORCA', 'FORÇA'], ['FORÃ‡A', 'FORÇA'], ['FOR�A', 'FORÇA'], ['Forca', 'Força'], ['ForÃ§a', 'Força'], ['For�a', 'Força'],
         ['Nao', 'Não'], ['NÃ£o', 'Não'], ['N�o', 'Não'], ['nao', 'não'], ['nÃ£o', 'não'], ['n�o', 'não']
@@ -93,22 +77,6 @@
         return text;
     }
 
-    function maskEmailText(text) {
-        return String(text || '').replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, 'Aluno');
-    }
-
-    function hideRankingEmails() {
-        const ranking = document.getElementById('ranking-content') || document.getElementById('ranking');
-        if (!ranking) return;
-        const walker = document.createTreeWalker(ranking, NodeFilter.SHOW_TEXT);
-        const nodes = [];
-        while (walker.nextNode()) nodes.push(walker.currentNode);
-        nodes.forEach(node => {
-            const cleaned = maskEmailText(node.nodeValue);
-            if (cleaned !== node.nodeValue) node.nodeValue = cleaned;
-        });
-    }
-
     function fixAttributes(root = document.body) {
         if (!root?.querySelectorAll) return;
         root.querySelectorAll('[placeholder], [title], [aria-label], option').forEach(element => {
@@ -124,11 +92,23 @@
         });
     }
 
+    function hideRankingEmails() {
+        const ranking = document.getElementById('ranking-content') || document.getElementById('ranking');
+        if (!ranking) return;
+        const walker = document.createTreeWalker(ranking, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(node => {
+            const cleaned = String(node.nodeValue || '').replace(EMAIL_RE, 'Aluno');
+            if (cleaned !== node.nodeValue) node.nodeValue = cleaned;
+        });
+    }
+
     function fixVisibleText(root = document.body) {
         if (!root) return;
         document.title = APP_NAME;
         document.querySelectorAll('.logo-box, .login-card h2').forEach(element => {
-            if (/PLANT|PLANT�O/i.test(element.textContent)) element.textContent = APP_NAME;
+            if (/PLANT/i.test(element.textContent || '')) element.textContent = APP_NAME;
         });
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
         const nodes = [];
@@ -139,21 +119,6 @@
         });
         fixAttributes(root);
         hideRankingEmails();
-    }
-
-    function fixObjectText(value, seen = new WeakSet()) {
-        if (!value || typeof value !== 'object' || seen.has(value)) return value;
-        seen.add(value);
-        Object.keys(value).forEach(key => {
-            if (typeof value[key] === 'string') value[key] = fixText(value[key]);
-            else fixObjectText(value[key], seen);
-        });
-        return value;
-    }
-
-    function normalizeDataText() {
-        const data = getDb();
-        if (data) fixObjectText(data);
     }
 
     function taskHours(task) {
@@ -266,7 +231,6 @@
             if (!data.metaFixa[key].length) delete data.metaFixa[key];
         });
         encaixarAtrasosNoCronograma(atrasos, today);
-        normalizeDataText();
         saveNow();
         refresh(today);
         if (typeof showToast === 'function') showToast('Plantão replanejado', 'Os atrasos foram redistribuídos respeitando as horas diárias.');
@@ -287,13 +251,16 @@
         window.getAtrasosAteHoje = getAtrasosAteHoje;
         window.encaixarAtrasosNoCronograma = encaixarAtrasosNoCronograma;
         window.replanejarAgora = replanejarAgoraCorrigido;
-        normalizeDataText();
-        saveNow();
         ['renderDiario', 'renderSemanal', 'updateDashboard', 'renderTree', 'renderFluxo', 'renderCiclo', 'renderReplanejar', 'renderRankingAlunos', 'renderPerfil'].forEach(wrapRender);
         fixVisibleText();
-        setTimeout(fixVisibleText, 500);
-        setTimeout(fixVisibleText, 1500);
-        new MutationObserver(fixVisibleText).observe(document.body, { childList: true, subtree: true, characterData: true });
+        setTimeout(fixVisibleText, 400);
+        setTimeout(fixVisibleText, 1200);
+        let pending = false;
+        new MutationObserver(() => {
+            if (pending) return;
+            pending = true;
+            setTimeout(() => { pending = false; fixVisibleText(); }, 50);
+        }).observe(document.body, { childList: true, subtree: true });
     }
 
     if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', boot);
