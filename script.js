@@ -1482,13 +1482,14 @@ function renderDiario(date) {
     const hoje = new Date(); hoje.setHours(0,0,0,0);
     const viewDate = new Date(date); viewDate.setHours(0,0,0,0);
     const curStr = dateKey(date);
+    const ehHoje = curStr === dateKey(hoje);
     const atrasosPendentes = getAtrasosAteHoje(hoje);
-    const temAtr = atrasosPendentes.length > 0;
+    const temAtr = ehHoje && atrasosPendentes.length > 0;
 
     const btnReplan = document.querySelector('.replan-btn');
     if(btnReplan) btnReplan.style.display = temAtr ? "inline-flex" : "none";
 
-    if(viewDate > hoje && temAtr) {
+    if(viewDate > hoje && atrasosPendentes.length > 0) {
         document.getElementById('lista-diaria').innerHTML = `
             <div class="stat-card" style="text-align:center; border:2px solid red;">
                 <h3 style="color:red;">ACESSO BLOQUEADO</h3>
@@ -1529,7 +1530,6 @@ function renderDiario(date) {
             <i class="fas fa-plus-circle"></i> ESTUDOU ALGO FORA DO PLANEJADO?
         </button>`;
 
-    const ehHoje = curStr === dateKey(hoje);
     document.getElementById('view-title').innerText = ehHoje ? "MissÃ£o de Hoje" : "MissÃ£o de AmanhÃ£";
     document.getElementById('btn-hoje').style.display = ehHoje ? "none" : "inline-flex";
 }
@@ -2932,16 +2932,21 @@ function renderSemanal() {
         const d = addDays(inicioSemana, off);
         const k = dateKey(d);
         const ehHoje = k === hojeKey;
-        let tasks = semana[k] || [];
+        const diaAtrasado = d < hoje;
+        let tasks = diaAtrasado ? tarefasPlanejadas(db.metaFixa[k] || []) : (semana[k] || []);
+        const temTarefaAtrasada = diaAtrasado && tasks.some(t => !t.c && !isExtraTask(t));
 
         const totalHoras = tasks.reduce((acc, t) => acc + (parseFloat(t.h) || 0), 0);
-        const conteudoDia = tasks.length ? tasks.map(x => `
-                    <div class="sim-task ${x.c ? 'done' : ''} tag-${x.k==='Ex'?'ex':(x.k==='Rev'?'rev':'e')}">
+        const conteudoDia = tasks.length ? tasks.map(x => {
+            const atrasada = diaAtrasado && !x.c && !isExtraTask(x);
+            return `
+                    <div class="sim-task ${x.c ? 'done' : ''} ${atrasada ? 'atrasado' : `tag-${x.k==='Ex'?'ex':(x.k==='Rev'?'rev':'e')}`}">
                         <strong>${x.m}</strong><br><span>${x.a}</span><br><em>${x.l} - ${(parseFloat(x.h) || 0).toFixed(1)}h</em>
-                    </div>`).join('') : `<div class="sim-empty">${diaPausado(k) ? 'Dia pausado' : 'Sem atividades'}</div>`;
+                    </div>`;
+        }).join('') : `<div class="sim-empty">${diaPausado(k) ? 'Dia pausado' : 'Sem atividades'}</div>`;
         return `
             <div class="day-column">
-                <div class="day-head">${dN[d.getDay()]}<br>${k.slice(0,5)}<small>${totalHoras.toFixed(1)}h / ${db.h[d.getDay()]}h</small></div>
+                <div class="day-head ${temTarefaAtrasada ? 'atrasado' : ''}">${dN[d.getDay()]}<br>${k.slice(0,5)}<small>${totalHoras.toFixed(1)}h / ${db.h[d.getDay()]}h</small></div>
                 ${conteudoDia}
             </div>`;
     }).join('');
