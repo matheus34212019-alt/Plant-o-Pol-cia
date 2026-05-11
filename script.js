@@ -2935,7 +2935,8 @@ function renderSemanal() {
         const d = addDays(inicioSemana, off);
         const k = dateKey(d);
         const ehHoje = k === hojeKey;
-        let tasks = ehHoje ? tarefasPlanejadas(db.metaFixa[k]) : (semana[k] || []);
+        const agendaSalva = Array.isArray(db.metaFixa?.[k]) ? tarefasPlanejadas(db.metaFixa[k]) : null;
+        let tasks = agendaSalva ? agendaSalva : (semana[k] || []);
 
         const totalHoras = tasks.reduce((acc, t) => acc + (parseFloat(t.h) || 0), 0);
         const conteudoDia = tasks.length ? tasks.map(x => `
