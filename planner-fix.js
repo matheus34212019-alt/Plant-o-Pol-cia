@@ -1,5 +1,5 @@
 (function plannerFix() {
-    const APP_NAME = ['PLANT', String.fromCharCode(195), 'O'].join('');
+    const APP_NAME = 'PLANTAO';
     const STORAGE_KEY = 'prf_v120';
     const MAX_STUDY_PER_DAY = 2;
     const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
@@ -25,7 +25,7 @@
     const isStudy = task => task?.k === 'E' || task?.l === 'Estudo' || !task?.k;
 
     const fixes = [
-        ['PLANT?O', 'PLANTÃO'], ['PLANTÃƒO', 'PLANTÃO'], ['PLANTÃ�O', 'PLANTÃO'], ['PLANT�O', 'PLANTÃO'], ['PLANTÃÕ', 'PLANTÃO'],
+        ['PLANT?O', 'PLANTAO'], ['PLANTÃO', 'PLANTAO'], ['PLANTÃƒO', 'PLANTAO'], ['PLANTÃ�O', 'PLANTAO'], ['PLANT�O', 'PLANTAO'], ['PLANTÃÕ', 'PLANTAO'],
         ['PORTUGUES', 'PORTUGUÊS'], ['PORTUGUÃŠS', 'PORTUGUÊS'], ['PORTUGU�S', 'PORTUGUÊS'],
         ['RACIOCINIO LOGICO', 'RACIOCÍNIO LÓGICO'], ['RACIOCÃ�NIO LÃ“GICO', 'RACIOCÍNIO LÓGICO'], ['RACIOC�NIO L�GICO', 'RACIOCÍNIO LÓGICO'],
         ['Compreensao', 'Compreensão'], ['CompreensÃ£o', 'Compreensão'], ['Compreens�o', 'Compreensão'], ['compreensao', 'compreensão'], ['compreensÃ£o', 'compreensão'], ['compreens�o', 'compreensão'],
@@ -86,8 +86,9 @@
         let text = decodeMojibake(value);
         fixes.forEach(([from, to]) => { text = text.split(from).join(to); });
         const directFixes = [
-            ['PLANT�O', 'PLANTÃO'],
-            ['PLANTÃƒO', 'PLANTÃO'],
+            ['PLANT�O', 'PLANTAO'],
+            ['PLANTÃO', 'PLANTAO'],
+            ['PLANTÃƒO', 'PLANTAO'],
             ['Miss�o', 'Missão'],
             ['Quest�es', 'Questões'],
             ['Revis�o', 'Revisão'],
