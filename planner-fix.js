@@ -1,5 +1,5 @@
 (function plannerFix() {
-    const APP_NAME = 'PLANTÃO';
+    const APP_NAME = 'PLANT\u00c3O';
     const STORAGE_KEY = 'prf_v120';
     const MAX_STUDY_PER_DAY = 2;
     const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
@@ -132,7 +132,12 @@
     function fixVisibleText(root = document.body) {
         if (!root) return;
         document.title = APP_NAME;
-        document.querySelectorAll('.logo-box, .login-card h2').forEach(element => {
+        document.querySelectorAll('.logo-box').forEach(element => {
+            if (/PLANT/i.test(element.textContent || '')) {
+                element.innerHTML = '<i class="fas fa-shield-halved"></i> ' + APP_NAME;
+            }
+        });
+        document.querySelectorAll('.login-card h2').forEach(element => {
             if (/PLANT/i.test(element.textContent || '')) element.textContent = APP_NAME;
         });
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
