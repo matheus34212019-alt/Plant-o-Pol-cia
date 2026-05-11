@@ -357,3 +357,431 @@ label { font-size: 0.8rem; font-weight: 700; }
     .lancamento-row { grid-template-columns: 1fr; align-items: start; }
     .review-header, .review-row { grid-template-columns: 1fr; align-items: start; }
 }
+
+/* Premium UI refresh - visual only, no logic changes */
+:root {
+    --primary: #070b12;
+    --accent: #67e8f9;
+    --accent-strong: #22d3ee;
+    --success: #86efac;
+    --warning: #fbbf24;
+    --danger: #fb7185;
+    --bg: #08111f;
+    --surface: rgba(15, 23, 42, 0.84);
+    --surface-2: rgba(20, 31, 49, 0.88);
+    --surface-3: rgba(30, 41, 59, 0.9);
+    --border: rgba(148, 163, 184, 0.18);
+    --border-strong: rgba(103, 232, 249, 0.34);
+    --text-main: #f8fafc;
+    --text-sec: #b9c8dc;
+    --muted: #7f91aa;
+    --color-e: linear-gradient(135deg, #60a5fa, #2563eb);
+    --color-rev: linear-gradient(135deg, #fbbf24, #d97706);
+    --color-ex: linear-gradient(135deg, #34d399, #059669);
+    --color-atraso: linear-gradient(135deg, #7f1d1d, #be123c);
+    --text-atraso: #fecdd3;
+    --radius-card: 10px;
+    --radius-control: 10px;
+    --shadow-card: 0 22px 60px rgba(0, 0, 0, 0.3);
+    --shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.22);
+}
+
+body {
+    background:
+        radial-gradient(circle at top left, rgba(34, 211, 238, 0.12), transparent 34rem),
+        radial-gradient(circle at 80% 0%, rgba(52, 211, 153, 0.08), transparent 30rem),
+        linear-gradient(180deg, #070b12 0%, #0b1220 48%, #08111f 100%);
+}
+
+.sidebar {
+    width: 300px;
+    padding: 30px 18px;
+    background: rgba(3, 7, 18, 0.88);
+    backdrop-filter: blur(18px);
+    border-right: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.logo-box {
+    font-size: 1.28rem;
+    margin-bottom: 36px;
+}
+
+.logo-box i,
+.replan-icon,
+.backup-icon,
+.empty-state i {
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 12px 24px rgba(34, 211, 238, 0.12);
+}
+
+.nav-item {
+    min-height: 48px;
+    padding: 13px 14px;
+    margin-bottom: 8px;
+    color: #b7c7dd;
+}
+
+.nav-item i {
+    width: 20px;
+    text-align: center;
+    color: #a8c7ff;
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, rgba(8, 145, 178, 0.26), rgba(5, 150, 105, 0.18));
+    border-color: rgba(103, 232, 249, 0.38);
+}
+
+.sub-link {
+    padding: 10px 18px;
+    color: #aac0da;
+}
+
+.main {
+    padding: 42px;
+}
+
+.container {
+    max-width: 1280px;
+}
+
+.stats-grid {
+    gap: 22px;
+    margin-bottom: 34px;
+}
+
+.stat-card,
+.task-card,
+.modal-box,
+.folder,
+.review-panel,
+.perf-kpi,
+.perf-subject-group,
+.profile-info-row,
+.admin-access-row,
+.base-summary-card,
+.lancamento-row,
+.flow-card,
+.replan-card,
+.backup-card {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(12, 20, 34, 0.92));
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow: var(--shadow-soft);
+}
+
+.stat-card {
+    padding: 22px;
+}
+
+.stat-card small,
+.perf-kpi small,
+.base-summary-card small,
+.backup-stats small {
+    color: #a9bdd6;
+    letter-spacing: 0.02em;
+}
+
+.stat-val {
+    font-size: 1.8rem;
+    letter-spacing: 0;
+}
+
+.bar-container,
+.road-bg,
+.mini-bar {
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.bar-fill,
+.road-fill,
+.mini-bar div {
+    background: linear-gradient(90deg, #38bdf8, #34d399);
+    box-shadow: 0 0 18px rgba(52, 211, 153, 0.22);
+}
+
+.welcome-box,
+.admin-student-banner {
+    padding: 20px 22px;
+    margin-bottom: 28px;
+}
+
+.page-header {
+    margin: 10px 0 12px;
+}
+
+.page-header h1,
+.page-header h2,
+#view-title {
+    letter-spacing: 0;
+}
+
+.meta-sub {
+    color: #adc0d8;
+    line-height: 1.55;
+}
+
+.task-card {
+    padding: 22px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+}
+
+.task-card > div:first-child {
+    min-width: 0;
+}
+
+.task-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(103, 232, 249, 0.34);
+}
+
+.task-card input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 7px;
+    accent-color: #34d399;
+}
+
+.tag,
+.cycle-badges span,
+.access-pill,
+.deadline-preview,
+.review-chips span {
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+.tag {
+    padding: 7px 13px;
+    font-size: 0.66rem;
+}
+
+.tag-e { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.tag-rev { background: linear-gradient(135deg, #f59e0b, #c2410c); }
+.tag-ex { background: linear-gradient(135deg, #10b981, #047857); }
+
+.btn {
+    min-height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #0891b2, #0f766e);
+    box-shadow: 0 14px 28px rgba(8, 145, 178, 0.18);
+}
+
+.btn-outline {
+    background: rgba(15, 23, 42, 0.62);
+    border-color: rgba(148, 163, 184, 0.26);
+}
+
+.btn-link {
+    box-shadow: none;
+    min-height: auto;
+}
+
+#grid-semanal {
+    gap: 18px;
+    padding: 4px 2px 24px;
+    scrollbar-color: rgba(103, 232, 249, 0.42) rgba(15, 23, 42, 0.7);
+}
+
+.day-column {
+    min-width: 232px;
+    background: rgba(15, 23, 42, 0.72);
+    border-color: rgba(148, 163, 184, 0.18);
+}
+
+.day-head {
+    padding: 16px 14px;
+    background: rgba(30, 41, 59, 0.76);
+    font-size: 0.76rem;
+}
+
+.day-head small {
+    color: #bdd0e8;
+}
+
+.day-head.atrasado {
+    background: linear-gradient(135deg, #7f1d1d, #be123c) !important;
+    color: #fff1f2 !important;
+}
+
+.day-head.atrasado small {
+    color: #ffe4e6;
+}
+
+.sim-task {
+    margin: 10px;
+    padding: 12px;
+    border-radius: 9px;
+    font-size: 0.68rem;
+    line-height: 1.38;
+    box-shadow: 0 10px 22px rgba(0,0,0,0.18);
+}
+
+.sim-task strong {
+    font-size: 0.72rem;
+    letter-spacing: 0.01em;
+}
+
+.sim-task span {
+    color: rgba(255,255,255,0.9);
+}
+
+.sim-task em {
+    margin-top: 7px;
+    color: rgba(255,255,255,0.88);
+}
+
+.sim-task.atrasado {
+    background: linear-gradient(135deg, #dc2626, #9f1239) !important;
+    opacity: 1;
+}
+
+.sim-empty {
+    margin: 10px;
+    padding: 20px 12px;
+}
+
+.perf-tabs {
+    gap: 12px;
+}
+
+.perf-tab {
+    padding: 11px 16px;
+    background: rgba(15, 23, 42, 0.7);
+}
+
+.perf-tab.active {
+    box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.24), 0 10px 24px rgba(34, 211, 238, 0.1);
+}
+
+.perf-kpi-grid,
+.perf-grid,
+.ranking-grid,
+.profile-grid,
+.backup-grid,
+.replan-grid {
+    gap: 20px;
+}
+
+.perf-rank-row,
+.ranking-row,
+.perf-question-row,
+.priority-row {
+    gap: 14px;
+}
+
+input,
+textarea,
+select {
+    min-height: 46px;
+    background: rgba(15, 23, 42, 0.76);
+    border-color: rgba(148, 163, 184, 0.22);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    background: rgba(15, 23, 42, 0.96);
+    border-color: rgba(103, 232, 249, 0.65);
+    box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.14);
+}
+
+#login-screen {
+    background:
+        radial-gradient(circle at 50% 18%, rgba(34, 211, 238, 0.12), transparent 24rem),
+        linear-gradient(180deg, #05070d, #0b1220);
+}
+
+.login-card {
+    width: 410px;
+    padding: 38px;
+    border-radius: 12px;
+}
+
+.login-card h2 {
+    font-size: 1.9rem;
+}
+
+.google-btn {
+    color: #0b1220;
+    background: linear-gradient(135deg, #f8fafc, #dbeafe);
+}
+
+.empty-state {
+    padding: 34px 24px;
+    background: rgba(15, 23, 42, 0.58);
+}
+
+@media (max-width: 1080px) {
+    .main { padding: 30px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .stats-grid .stat-card:last-child { grid-column: 1 / -1; }
+}
+
+@media (max-width: 820px) {
+    body {
+        background: #08111f;
+    }
+
+    .sidebar {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        padding: 18px;
+        border-right: 0;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+    }
+
+    .logo-box {
+        margin-bottom: 16px;
+    }
+
+    .nav-item {
+        min-height: 44px;
+    }
+
+    .main {
+        padding: 22px 16px 34px;
+    }
+
+    .container {
+        max-width: 100%;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .stats-grid .stat-card:last-child {
+        grid-column: auto;
+    }
+
+    .stat-card,
+    .task-card {
+        padding: 18px;
+    }
+
+    .task-card {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 14px;
+    }
+
+    #grid-semanal {
+        gap: 12px;
+        scroll-snap-type: x mandatory;
+    }
+
+    .day-column {
+        min-width: 82vw;
+        scroll-snap-align: start;
+    }
+
+    .login-card {
+        width: min(410px, 100%);
+        padding: 28px 22px;
+    }
+}
