@@ -1501,7 +1501,7 @@ function renderDiario(date) {
 
     const tasks = db.metaFixa[curStr];
     document.getElementById('meta-status').innerText = `${tasks.reduce((a,b)=>a+b.h,0).toFixed(1)}h / ${db.h[date.getDay()]}h meta`;
-    const atrasos = curStr === dateKey(hoje) ? atrasosPendentes : [];
+    const atrasos = [];
     const atrasoHtml = atrasos.length ? `
         <div class="stat-card atraso-box">
             <h3>Atividades em atraso</h3>
@@ -1522,7 +1522,7 @@ function renderDiario(date) {
             <button class="btn btn-sm btn-outline" onclick="showTab('replanejar')">VER REPLANEJAMENTO</button>
         </div>` : '';
 
-    document.getElementById('lista-diaria').innerHTML = atrasoHtml + pausaHtml + tasks.map((t, i) => renderTaskCard(t, curStr, i, false)).join('') + conclusaoHtml;
+    document.getElementById('lista-diaria').innerHTML = pausaHtml + tasks.map((t, i) => renderTaskCard(t, curStr, i, false)).join('') + conclusaoHtml;
 
     document.getElementById('lista-diaria').innerHTML += `
         <button class="btn-extra-diario" onclick="abrirModalExtra()">
