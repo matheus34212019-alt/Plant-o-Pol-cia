@@ -785,3 +785,108 @@ select:focus {
         padding: 28px 22px;
     }
 }
+
+/* v170 pronounced SaaS polish */
+body {
+    background:
+        linear-gradient(90deg, rgba(2, 132, 199, 0.08) 0 1px, transparent 1px),
+        linear-gradient(180deg, rgba(2, 132, 199, 0.06) 0 1px, transparent 1px),
+        radial-gradient(circle at 22% 12%, rgba(20, 184, 166, 0.18), transparent 28rem),
+        radial-gradient(circle at 88% 8%, rgba(59, 130, 246, 0.14), transparent 30rem),
+        linear-gradient(180deg, #06101d 0%, #091421 52%, #07111f 100%);
+    background-size: 44px 44px, 44px 44px, auto, auto, auto;
+}
+
+#login-screen {
+    background:
+        linear-gradient(90deg, rgba(103, 232, 249, 0.08) 0 1px, transparent 1px),
+        linear-gradient(180deg, rgba(103, 232, 249, 0.06) 0 1px, transparent 1px),
+        radial-gradient(circle at 50% 18%, rgba(45, 212, 191, 0.24), transparent 24rem),
+        radial-gradient(circle at 30% 80%, rgba(59, 130, 246, 0.16), transparent 28rem),
+        #06101d;
+    background-size: 48px 48px, 48px 48px, auto, auto, auto;
+}
+
+.login-card {
+    position: relative;
+    width: 430px;
+    padding: 42px 38px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(8, 15, 28, 0.94));
+    border: 1px solid rgba(125, 211, 252, 0.34);
+    box-shadow: 0 34px 90px rgba(0, 0, 0, 0.56), 0 0 0 1px rgba(255,255,255,0.04) inset;
+    overflow: hidden;
+}
+
+.login-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 5px;
+    background: linear-gradient(90deg, #67e8f9, #34d399, #a7f3d0);
+}
+
+.login-card h2 {
+    font-size: 2.05rem;
+    letter-spacing: 0.08em;
+}
+
+.login-card input {
+    min-height: 54px;
+    border-radius: 12px;
+    background: rgba(2, 6, 23, 0.34);
+}
+
+.google-btn {
+    min-height: 54px;
+    border-radius: 12px;
+    box-shadow: 0 18px 34px rgba(219, 234, 254, 0.12);
+}
+
+.sidebar {
+    background:
+        linear-gradient(180deg, rgba(2, 6, 23, 0.96), rgba(8, 15, 28, 0.96)),
+        radial-gradient(circle at top, rgba(45, 212, 191, 0.16), transparent 20rem);
+}
+
+.logo-box {
+    padding: 10px 8px;
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.stats-grid .stat-card {
+    border-top: 3px solid rgba(103, 232, 249, 0.42);
+}
+
+.stat-card,
+.task-card,
+.day-column {
+    border-radius: 14px;
+}
+
+.task-card {
+    border-left-width: 5px;
+}
+
+.day-column {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(11, 18, 32, 0.92));
+}
+
+.day-head {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.94), rgba(15, 23, 42, 0.92));
+}
+
+.sim-task {
+    border-radius: 11px;
+}
+
+.btn,
+.perf-tab,
+.nav-item,
+input,
+textarea,
+select {
+    border-radius: 12px;
+}
