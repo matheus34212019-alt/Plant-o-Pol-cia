@@ -2841,11 +2841,8 @@ function garantirDiaPlanejado(diaKey, date) {
         const feita = concluidas.find(c => c.itemId === t.itemId && c.k === t.k);
         return feita ? {...t, c: true, perf: feita.perf} : t;
     });
-    const concluidasPreservadas = concluidas.filter(c => {
-        return !planejadas.some(t => t.itemId === c.itemId && t.k === c.k);
-    });
     const limite = parseFloat(db.h[date.getDay()]) || 0;
-    db.metaFixa[diaKey] = [...limitarTarefasAoLimite([...concluidasPreservadas, ...planejadas], limite), ...extras];
+    db.metaFixa[diaKey] = [...limitarTarefasAoLimite(planejadas, limite), ...extras];
     save();
 }
 
@@ -2935,8 +2932,7 @@ function renderSemanal() {
         const d = addDays(inicioSemana, off);
         const k = dateKey(d);
         const ehHoje = k === hojeKey;
-        const agendaSalva = Array.isArray(db.metaFixa?.[k]) ? tarefasPlanejadas(db.metaFixa[k]) : null;
-        let tasks = agendaSalva ? agendaSalva : (semana[k] || []);
+        let tasks = semana[k] || [];
 
         const totalHoras = tasks.reduce((acc, t) => acc + (parseFloat(t.h) || 0), 0);
         const conteudoDia = tasks.length ? tasks.map(x => `
