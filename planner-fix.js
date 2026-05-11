@@ -172,27 +172,29 @@
 
     function fixVisibleText(root = document.body) {
         if (!root) return;
-        document.title = APP_NAME;
         const forceBrand = () => {
-            document.title = APP_NAME;
+            if (document.title !== APP_NAME) document.title = APP_NAME;
+            const brandHtml = '<i class="fas fa-shield-halved"></i> ' + APP_NAME;
             document.querySelectorAll('.logo-box').forEach(element => {
-                element.innerHTML = '<i class="fas fa-shield-halved"></i> ' + APP_NAME;
+                if (element.innerHTML !== brandHtml) element.innerHTML = brandHtml;
             });
             document.querySelectorAll('.login-card h2').forEach(element => {
-                element.textContent = APP_NAME;
+                if (element.textContent !== APP_NAME) element.textContent = APP_NAME;
             });
             document.querySelectorAll('h2').forEach(element => {
-                if (/Cronograma PLANT/i.test(element.textContent || '')) element.textContent = 'Cronograma ' + APP_NAME;
+                const desired = 'Cronograma ' + APP_NAME;
+                if (/Cronograma PLANT/i.test(element.textContent || '') && element.textContent !== desired) element.textContent = desired;
             });
         };
         forceBrand();
         document.querySelectorAll('.logo-box').forEach(element => {
             if (/PLANT/i.test(element.textContent || '')) {
-                element.innerHTML = '<i class="fas fa-shield-halved"></i> ' + APP_NAME;
+                const brandHtml = '<i class="fas fa-shield-halved"></i> ' + APP_NAME;
+                if (element.innerHTML !== brandHtml) element.innerHTML = brandHtml;
             }
         });
         document.querySelectorAll('.login-card h2').forEach(element => {
-            if (/PLANT/i.test(element.textContent || '')) element.textContent = APP_NAME;
+            if (/PLANT/i.test(element.textContent || '') && element.textContent !== APP_NAME) element.textContent = APP_NAME;
         });
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
         const nodes = [];
