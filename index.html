@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PLANTAO</title>
+    <title>PLANT&Atilde;O</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="styles.css?v=173">
+    <link rel="stylesheet" href="styles.css?v=174">
 </head>
 <body>
     <div id="login-screen">
         <div class="login-card">
-            <h2 style="font-weight:800; margin-bottom:20px;">PLANTAO</h2>
+            <h2 style="font-weight:800; margin-bottom:20px;">PLANT&Atilde;O</h2>
             <button class="btn google-btn" style="width:100%;" onclick="loginGoogle()"><i class="fab fa-google"></i> ENTRAR COM GOOGLE</button>
             <div class="login-email-box">
                 <input type="email" id="login-email" placeholder="E-mail">
@@ -85,7 +85,7 @@
                     </select>
                 </div>
             </div>
-            <button class="btn" style="width:100%; margin-top: 25px;" onclick="salvarExtra()">INCLUIR NO PLANTAO</button>
+            <button class="btn" style="width:100%; margin-top: 25px;" onclick="salvarExtra()">INCLUIR NO PLANT&Atilde;O</button>
         </div>
     </div>
 
@@ -124,7 +124,7 @@
     <div id="toast-area" class="toast-area"></div>
 
     <aside class="sidebar">
-        <div class="logo-box"><i class="fas fa-shield-halved"></i> PLANTAO</div>
+        <div class="logo-box"><i class="fas fa-shield-halved"></i> PLANT&Atilde;O</div>
         <div class="nav-item active" onclick="showTab('diaria', this)"><i class="fas fa-calendar-day"></i><span>Painel Hoje</span></div>
         <div class="nav-item" onclick="showTab('semanal', this)"><i class="fas fa-calendar-week"></i><span>Cronograma</span></div>
         <div class="nav-item" onclick="showTab('performance', this)"><i class="fas fa-chart-pie"></i><span>Meu Desempenho</span></div>
@@ -183,7 +183,7 @@
             <div id="semanal" class="page">
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
                     <div>
-                        <h2>Cronograma PLANTAO</h2>
+                        <h2>Cronograma PLANT&Atilde;O</h2>
                         <div style="display: flex; gap: 10px;">
                             <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #3b82f6;"></i> Estudo</span>
                             <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #f59e0b;"></i> RevisÃ£o</span>
@@ -302,18 +302,18 @@
         </div>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js?v=173"></script>
-    <script src="script.js?v=173"></script>
-    <script src="planner-fix.js?v=173"></script>
+    <script src="supabase-config.js?v=174"></script>
+    <script src="script.js?v=174"></script>
+    <script src="planner-fix.js?v=174"></script>
     <script>
         (function forcePlainBrand() {
             function applyBrand() {
-                document.title = 'PLANTAO';
+                document.title = 'PLANT\u00c3O';
                 document.querySelectorAll('.logo-box').forEach(function(el) {
-                    el.innerHTML = '<i class="fas fa-shield-halved"></i> PLANTAO';
+                    el.innerHTML = '<i class="fas fa-shield-halved"></i> PLANT\u00c3O';
                 });
                 document.querySelectorAll('.login-card h2').forEach(function(el) {
-                    el.textContent = 'PLANTAO';
+                    el.textContent = 'PLANT\u00c3O';
                 });
             }
             applyBrand();
@@ -324,4 +324,4 @@
     </script>
 </body>
 </html>
-<!-- deploy: v172-stop-brand-loop -->
+<!-- deploy: v174-nome-acentuado -->
