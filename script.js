@@ -1411,7 +1411,7 @@ function renderDiario(date) {
         document.getElementById('lista-diaria').innerHTML = `
             <div class="stat-card" style="text-align:center; border:2px solid red;">
                 <h3 style="color:red;">ACESSO BLOQUEADO</h3>
-                <p>Conclua os plantoes atrasados desta semana antes de avancar.</p>
+                <p>Conclua os plant\u00f5es atrasados desta semana antes de avan\u00e7ar.</p>
             </div>`;
         return;
     }
@@ -1448,7 +1448,7 @@ function renderDiario(date) {
             <i class="fas fa-plus-circle"></i> ESTUDOU ALGO FORA DO PLANEJADO?
         </button>`;
 
-    document.getElementById('view-title').innerText = ehHoje ? "MissÃ£o de Hoje" : "MissÃ£o de AmanhÃ£";
+    document.getElementById('view-title').innerText = ehHoje ? "Miss\u00e3o de Hoje" : "Miss\u00e3o de Amanh\u00e3";
     document.getElementById('btn-hoje').style.display = ehHoje ? "none" : "inline-flex";
 }
 
@@ -1461,7 +1461,7 @@ function renderMissaoCumpridaCard(ehHoje) {
                 <p>ParabÃ©ns, vocÃª concluiu todas as atividades planejadas para este dia.</p>
             </div>
             <button class="btn btn-sm" onclick="navDay(1)">
-                <i class="fas fa-arrow-right"></i> ${ehHoje ? 'ADIANTAR AMANHÃƒ' : 'VER PRÃ“XIMO DIA'}
+                <i class="fas fa-arrow-right"></i> ${ehHoje ? 'ADIANTAR AMANH\u00c3' : 'VER PR\u00d3XIMO DIA'}
             </button>
         </div>`;
 }
@@ -2520,11 +2520,11 @@ function renderReplanejamento() {
                     <p class="meta-sub">Esvazia o dia de hoje e recalcula o cronograma a partir de ${amanhaKey}, respeitando suas horas cadastradas.</p>
                 </div>
                 <div class="replan-status">
-                    <span>${pausado ? 'Hoje esta pausado' : 'Hoje ainda esta ativo'}</span>
+                    <span>${pausado ? 'Hoje est\u00e1 pausado' : 'Hoje ainda est\u00e1 ativo'}</span>
                     <strong>${horasHoje.toFixed(1)}h hoje</strong>
                 </div>
                 <button class="btn" onclick="replanejarComecarAmanha()">
-                    <i class="fas fa-forward"></i> COMEÃ‡AR AMANHA
+                    <i class="fas fa-forward"></i> COME\u00c7AR AMANH\u00c3
                 </button>
                 ${pausado ? `<button class="btn btn-outline" onclick="reativarDiaAtual()"><i class="fas fa-undo"></i> REATIVAR HOJE</button>` : ''}
             </div>
@@ -2534,7 +2534,7 @@ function renderReplanejamento() {
                     <div><i class="fas fa-check"></i><span>Hoje fica sem cards planejados.</span></div>
                     <div><i class="fas fa-check"></i><span>As atividades nÃ£o concluÃ­das voltam para a fila.</span></div>
                     <div><i class="fas fa-check"></i><span>AmanhÃ£ assume o inÃ­cio do ciclo, sem marcar nada como estudado.</span></div>
-                    <div><i class="fas fa-check"></i><span>Domingo a sabado continuam respeitando os limites diarios.</span></div>
+                    <div><i class="fas fa-check"></i><span>Domingo a s\u00e1bado continuam respeitando os limites di\u00e1rios.</span></div>
                 </div>
             </div>
         </div>`;
@@ -2836,7 +2836,7 @@ function limitarTarefasAoLimite(tasks, limite) {
 }
 
 function renderSemanal() {
-    const dN = ["DOMINGO", "SEGUNDA", "TERCA", "QUARTA", "QUINTA", "SEXTA", "SABADO"];
+    const dN = ["DOMINGO", "SEGUNDA", "TER\u00c7A", "QUARTA", "QUINTA", "SEXTA", "S\u00c1BADO"];
     const hoje = new Date(); hoje.setHours(0,0,0,0);
     const hojeKey = dateKey(hoje);
     garantirDiaPlanejado(hojeKey, hoje);
