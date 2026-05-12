@@ -40,252 +40,113 @@ const tarefasPlanejadas = tasks => (tasks || []).filter(t => !isExtraTask(t));
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
-function corrigirMojibakeValor(valor) {
-    if(typeof valor !== 'string') return valor;
-    const trocas = [
-        ['ÃƒÆ’', 'Ãƒ'],
-        ['ÃƒÂ¡', 'Ã¡'], ['ÃƒÃ ', 'Ã '], ['ÃƒÂ¢', 'Ã¢'], ['ÃƒÂ£', 'Ã£'], ['ÃƒÂ©', 'Ã©'], ['ÃƒÂª', 'Ãª'],
-        ['ÃƒÂ­', 'Ã­'], ['ÃƒÂ³', 'Ã³'], ['ÃƒÂ´', 'Ã´'], ['ÃƒÂµ', 'Ãµ'], ['ÃƒÂº', 'Ãº'], ['ÃƒÂ§', 'Ã§'],
-        ['ÃƒÃ', 'Ã'], ['ÃƒÃ‰', 'Ã‰'], ['ÃƒÃ', 'Ã'], ['ÃƒÃ“', 'Ã“'], ['ÃƒÃš', 'Ãš'], ['Ãƒâ€¡', 'Ã‡'],
-        ['Ãƒâ€¡', 'Ã‡'], ['Ãƒâ€œ', 'Ã“'], ['Ãƒâ€°', 'Ã‰'], ['ÃƒÅ ', 'ÃŠ'], ['ÃƒÅ¡', 'Ãš'],
-        ['Ã‚Âº', 'Âº'], ['Ã‚Âª', 'Âª'], ['Ã‚Â·', 'Â·'], ['Ã‚', ''],
-        ['Ã¢â‚¬â€œ', '-'], ['Ã¢â‚¬â€', '-'], ['Ã¢â‚¬Ëœ', "'"], ['Ã¢â‚¬â„¢', "'"], ['Ã¢â‚¬Å“', '"'], ['Ã¢â‚¬Â', '"'],
-        ['Ã°Å¸Å¡â€œ', '']
-    ];
-    let texto = valor;
-    for(let i = 0; i < 3; i++) {
-        trocas.forEach(([de, para]) => {
-            texto = texto.split(de).join(para);
-        });
-    }
-    const ortografia = [
-        ['PLANTAO', 'PLANTÃƒO'], ['Plantao', 'PlantÃ£o'], ['plantao', 'plantÃ£o'],
-        ['MISSAO', 'MISSÃƒO'], ['Missao', 'MissÃ£o'], ['missao', 'missÃ£o'],
-        ['FORCA', 'FORÃ‡A'], ['Forca', 'ForÃ§a'], ['forca', 'forÃ§a'],
-        ['AMANHA', 'AMANHÃƒ'], ['Amanha', 'AmanhÃ£'], ['amanha', 'amanhÃ£'],
-        ['PROXIMO', 'PRÃ“XIMO'], ['Proximo', 'PrÃ³ximo'], ['proximo', 'prÃ³ximo'],
-        ['PROXIMOS', 'PRÃ“XIMOS'], ['Proximos', 'PrÃ³ximos'], ['proximos', 'prÃ³ximos'],
-        ['LANCAMENTO', 'LANÃ‡AMENTO'], ['Lancamento', 'LanÃ§amento'], ['lancamento', 'lanÃ§amento'],
-        ['LANCAMENTOS', 'LANÃ‡AMENTOS'], ['Lancamentos', 'LanÃ§amentos'], ['lancamentos', 'lanÃ§amentos'],
-        ['DIARIAS', 'DIÃRIAS'], ['Diarias', 'DiÃ¡rias'], ['diarias', 'diÃ¡rias'],
-        ['DIARIA', 'DIÃRIA'], ['Diaria', 'DiÃ¡ria'], ['diaria', 'diÃ¡ria'],
-        ['HORARIA', 'HORÃRIA'], ['Horaria', 'HorÃ¡ria'], ['horaria', 'horÃ¡ria'],
-        ['ULTIMO', 'ÃšLTIMO'], ['Ultimo', 'Ãšltimo'], ['ultimo', 'Ãºltimo'],
-        ['CODIGO', 'CÃ“DIGO'], ['Codigo', 'CÃ³digo'], ['codigo', 'cÃ³digo'],
-        ['ESTA ATIVO', 'ESTÃ ATIVO'], ['Esta ativo', 'EstÃ¡ ativo'], ['esta ativo', 'estÃ¡ ativo'],
-        ['ESTA PAUSADO', 'ESTÃ PAUSADO'], ['Esta pausado', 'EstÃ¡ pausado'], ['esta pausado', 'estÃ¡ pausado'],
-        ['ENTRARA', 'ENTRARÃ'], ['Entrara', 'EntrarÃ¡'], ['entrara', 'entrarÃ¡'],
-        ['INICIO', 'INÃCIO'], ['Inicio', 'InÃ­cio'], ['inicio', 'inÃ­cio'],
-        ['COPIA', 'CÃ“PIA'], ['Copia', 'CÃ³pia'], ['copia', 'cÃ³pia'],
-        ['ADMINISTRACAO PUBLICA', 'ADMINISTRAÃ‡ÃƒO PÃšBLICA'],
-        ['Administracao publica', 'AdministraÃ§Ã£o pÃºblica'],
-        ['administracao publica', 'administraÃ§Ã£o pÃºblica'],
-        ['COMPREENSÃƒO E INTERPRETACAO', 'COMPREENSÃƒO E INTERPRETAÃ‡ÃƒO'],
-        ['Compreensao e interpretacao', 'CompreensÃ£o e interpretaÃ§Ã£o'],
-        ['compreensao e interpretacao', 'compreensÃ£o e interpretaÃ§Ã£o'],
-        ['PROPOSICOES', 'PROPOSIÃ‡Ã•ES'], ['Proposicoes', 'ProposiÃ§Ãµes'], ['proposicoes', 'proposiÃ§Ãµes'],
-        ['RACIOCINIO LOGICO', 'RACIOCÃNIO LÃ“GICO'],
-        ['Raciocinio Logico', 'RaciocÃ­nio LÃ³gico'],
-        ['PORTUGUES', 'PORTUGUÃŠS'], ['Portugues', 'PortuguÃªs']
-    ];
-    ortografia.forEach(([de, para]) => {
-        texto = texto.split(de).join(para);
-    });
-    perdidos.forEach(([de, para]) => {
-        texto = texto.split(de).join(para);
-    });
-    return texto;
-}
-
 function pontuarMojibake(texto) {
-    return ((String(texto).match(/[ÃƒÃ‚ï¿½]|Ã¢â‚¬|Ã°Å¸|Ã…|Ã†|Â¤|Â¢/g) || []).length);
+  return (String(texto).match(/[\u00c3\u00c2\ufffd]|\u00ef\u00bf\u00bd|\u00e2[\u0080-\u00bf]/g) || []).length;
 }
 
-function byteCp1252(ch) {
-    const mapa = {
-        'â‚¬': 0x80, 'â€š': 0x82, 'Æ’': 0x83, 'â€ž': 0x84, 'â€¦': 0x85, 'â€ ': 0x86, 'â€¡': 0x87,
-        'Ë†': 0x88, 'â€°': 0x89, 'Å ': 0x8A, 'â€¹': 0x8B, 'Å’': 0x8C, 'Å½': 0x8E,
-        'â€˜': 0x91, 'â€™': 0x92, 'â€œ': 0x93, 'â€': 0x94, 'â€¢': 0x95, 'â€“': 0x96, 'â€”': 0x97,
-        'Ëœ': 0x98, 'â„¢': 0x99, 'Å¡': 0x9A, 'â€º': 0x9B, 'Å“': 0x9C, 'Å¾': 0x9E, 'Å¸': 0x9F
-    };
-    const code = ch.charCodeAt(0);
-    if(code <= 255) return code;
-    return mapa[ch] ?? null;
+const CP1252_BYTES = {
+  0x20ac: 0x80, 0x201a: 0x82, 0x0192: 0x83, 0x201e: 0x84,
+  0x2026: 0x85, 0x2020: 0x86, 0x2021: 0x87, 0x02c6: 0x88,
+  0x2030: 0x89, 0x0160: 0x8a, 0x2039: 0x8b, 0x0152: 0x8c,
+  0x017d: 0x8e, 0x2018: 0x91, 0x2019: 0x92, 0x201c: 0x93,
+  0x201d: 0x94, 0x2022: 0x95, 0x2013: 0x96, 0x2014: 0x97,
+  0x02dc: 0x98, 0x2122: 0x99, 0x0161: 0x9a, 0x203a: 0x9b,
+  0x0153: 0x9c, 0x017e: 0x9e, 0x0178: 0x9f,
+};
+
+function byteCp1252(char) {
+  const code = char.codePointAt(0);
+  if (code <= 0xff) return code;
+  return CP1252_BYTES[code] ?? null;
 }
 
-function tentarDecodificarMojibake(texto) {
-    if(!/[ÃƒÃ‚ï¿½]|Ã¢â‚¬|Ã°Å¸|Ã…|Ã†|Â¤|Â¢/.test(texto)) return texto;
-    let atual = texto;
-    for(let tentativa = 0; tentativa < 3; tentativa++) {
-        const bytes = [];
-        for(const ch of atual) {
-            const byte = byteCp1252(ch);
-            if(byte === null) {
-                bytes.length = 0;
-                break;
-            }
-            bytes.push(byte);
-        }
-        if(!bytes.length) break;
-        const decodificado = new TextDecoder('utf-8').decode(new Uint8Array(bytes));
-        if(!decodificado || decodificado === atual) break;
-        if(pontuarMojibake(decodificado) > pontuarMojibake(atual)) break;
-        atual = decodificado;
-        if(!pontuarMojibake(atual)) break;
-    }
-    return atual;
+function decodificarMojibakeUmaVez(texto) {
+  const bytes = [];
+  for (const char of texto) {
+    const byte = byteCp1252(char);
+    if (byte === null) return texto;
+    bytes.push(byte);
+  }
+  return textDecoder.decode(new Uint8Array(bytes));
 }
 
 function corrigirMojibakeValor(valor) {
-    if(typeof valor !== 'string') return valor;
-    let texto = tentarDecodificarMojibake(valor);
-    const perdidos = [
-        ['PLANTï¿½O', 'PLANTÃƒO'], ['Plantï¿½o', 'PlantÃ£o'], ['plantï¿½o', 'plantÃ£o'],
-        ['MISSï¿½O', 'MISSÃƒO'], ['Missï¿½o', 'MissÃ£o'], ['missï¿½o', 'missÃ£o'],
-        ['QUESTï¿½ES', 'QUESTÃ•ES'], ['Questï¿½es', 'QuestÃµes'], ['questï¿½es', 'questÃµes'],
-        ['REVISï¿½O', 'REVISÃƒO'], ['Revisï¿½o', 'RevisÃ£o'], ['revisï¿½o', 'revisÃ£o'],
-        ['EXERCï¿½CIOS', 'EXERCÃCIOS'], ['Exercï¿½cios', 'ExercÃ­cios'], ['exercï¿½cios', 'exercÃ­cios'],
-        ['MATï¿½RIA', 'MATÃ‰RIA'], ['Matï¿½ria', 'MatÃ©ria'], ['matï¿½ria', 'matÃ©ria'],
-        ['MATï¿½RIAS', 'MATÃ‰RIAS'], ['Matï¿½rias', 'MatÃ©rias'], ['matï¿½rias', 'matÃ©rias'],
-        ['LANï¿½AMENTOS', 'LANÃ‡AMENTOS'], ['Lanï¿½amentos', 'LanÃ§amentos'], ['lanï¿½amentos', 'lanÃ§amentos'],
-        ['DIï¿½RIAS', 'DIÃRIAS'], ['Diï¿½rias', 'DiÃ¡rias'], ['diï¿½rias', 'diÃ¡rias'],
-        ['HORï¿½RIOS', 'HORÃRIOS'], ['Horï¿½rios', 'HorÃ¡rios'], ['horï¿½rios', 'horÃ¡rios'],
-        ['PRECISï¿½O', 'PRECISÃƒO'], ['Precisï¿½o', 'PrecisÃ£o'], ['precisï¿½o', 'precisÃ£o'],
-        ['PUBLICAï¿½ï¿½O', 'PUBLICAÃ‡ÃƒO'], ['Publicaï¿½ï¿½o', 'PublicaÃ§Ã£o'], ['publicaï¿½ï¿½o', 'publicaÃ§Ã£o'],
-        ['APROVAï¿½ï¿½O', 'APROVAÃ‡ÃƒO'], ['Aprovaï¿½ï¿½o', 'AprovaÃ§Ã£o'], ['aprovaï¿½ï¿½o', 'aprovaÃ§Ã£o'],
-        ['SINCRONIZAï¿½ï¿½O', 'SINCRONIZAÃ‡ÃƒO'], ['Sincronizaï¿½ï¿½o', 'SincronizaÃ§Ã£o'], ['sincronizaï¿½ï¿½o', 'sincronizaÃ§Ã£o']
-    ];
-    perdidos.forEach(([de, para]) => {
-        texto = texto.split(de).join(para);
-    });
-    const trocas = [
-        ['ÃƒÆ’Ã†â€™', 'ÃƒÆ’'],
-        ['ÃƒÆ’Ã‚Â¡', 'Ã¡'], ['ÃƒÆ’ÃƒÂ ', 'Ã '], ['ÃƒÆ’Ã‚Â¢', 'Ã¢'], ['ÃƒÆ’Ã‚Â£', 'Ã£'], ['ÃƒÆ’Ã‚Â©', 'Ã©'], ['ÃƒÆ’Ã‚Âª', 'Ãª'],
-        ['ÃƒÆ’Ã‚Â­', 'Ã­'], ['ÃƒÆ’Ã‚Â³', 'Ã³'], ['ÃƒÆ’Ã‚Â´', 'Ã´'], ['ÃƒÆ’Ã‚Âµ', 'Ãµ'], ['ÃƒÆ’Ã‚Âº', 'Ãº'], ['ÃƒÆ’Ã‚Â§', 'Ã§'],
-        ['ÃƒÆ’ÃƒÂ', 'Ã'], ['ÃƒÆ’Ãƒâ€°', 'Ã‰'], ['ÃƒÆ’ÃƒÂ', 'Ã'], ['ÃƒÆ’Ãƒâ€œ', 'Ã“'], ['ÃƒÆ’ÃƒÅ¡', 'Ãš'], ['ÃƒÆ’Ã¢â‚¬Â¡', 'Ã‡'],
-        ['ÃƒÆ’Ã¢â‚¬Å“', 'Ã“'], ['ÃƒÆ’Ã¢â‚¬Â°', 'Ã‰'], ['ÃƒÆ’Ã…Â ', 'ÃŠ'], ['ÃƒÆ’Ã…Â¡', 'Ãš'],
-        ['ÃƒÂ¡', 'Ã¡'], ['ÃƒÂ ', 'Ã '], ['ÃƒÂ¢', 'Ã¢'], ['ÃƒÂ£', 'Ã£'], ['ÃƒÂ©', 'Ã©'], ['ÃƒÂª', 'Ãª'],
-        ['ÃƒÂ­', 'Ã­'], ['ÃƒÂ³', 'Ã³'], ['ÃƒÂ´', 'Ã´'], ['ÃƒÂµ', 'Ãµ'], ['ÃƒÂº', 'Ãº'], ['ÃƒÂ§', 'Ã§'],
-        ['ÃƒÂ', 'Ã'], ['Ãƒâ€°', 'Ã‰'], ['ÃƒÂ', 'Ã'], ['Ãƒâ€œ', 'Ã“'], ['ÃƒÅ¡', 'Ãš'], ['Ãƒâ€¡', 'Ã‡'],
-        ['Ã‚Âº', 'Âº'], ['Ã‚Âª', 'Âª'], ['Ã‚Â·', 'Â·'], ['Ã‚', ''],
-        ['Ã¢â‚¬â€œ', '-'], ['Ã¢â‚¬â€', '-'], ['Ã¢â‚¬Ëœ', "'"], ['Ã¢â‚¬â„¢', "'"], ['Ã¢â‚¬Å“', '"'], ['Ã¢â‚¬Â', '"'],
-        ['Ã°Å¸Å¡â€œ', '']
-    ];
-    for(let i = 0; i < 3; i++) {
-        texto = tentarDecodificarMojibake(texto);
-        trocas.forEach(([de, para]) => {
-            texto = texto.split(de).join(para);
-        });
-    }
-    const ortografia = [
-        ['PLANTAO', 'PLANTÃƒO'], ['Plantao', 'PlantÃ£o'], ['plantao', 'plantÃ£o'],
-        ['MISSAO', 'MISSÃƒO'], ['Missao', 'MissÃ£o'], ['missao', 'missÃ£o'],
-        ['FORCA', 'FORÃ‡A'], ['Forca', 'ForÃ§a'], ['forca', 'forÃ§a'],
-        ['AMANHA', 'AMANHÃƒ'], ['Amanha', 'AmanhÃ£'], ['amanha', 'amanhÃ£'],
-        ['PROXIMO', 'PRÃ“XIMO'], ['Proximo', 'PrÃ³ximo'], ['proximo', 'prÃ³ximo'],
-        ['PROXIMOS', 'PRÃ“XIMOS'], ['Proximos', 'PrÃ³ximos'], ['proximos', 'prÃ³ximos'],
-        ['REVISAO', 'REVISÃƒO'], ['Revisao', 'RevisÃ£o'], ['revisao', 'revisÃ£o'],
-        ['EXERCICIOS', 'EXERCÃCIOS'], ['Exercicios', 'ExercÃ­cios'], ['exercicios', 'exercÃ­cios'],
-        ['QUESTOES', 'QUESTÃ•ES'], ['Questoes', 'QuestÃµes'], ['questoes', 'questÃµes'],
-        ['LANCAMENTO', 'LANÃ‡AMENTO'], ['Lancamento', 'LanÃ§amento'], ['lancamento', 'lanÃ§amento'],
-        ['LANCAMENTOS', 'LANÃ‡AMENTOS'], ['Lancamentos', 'LanÃ§amentos'], ['lancamentos', 'lanÃ§amentos'],
-        ['DISTRIBUICAO', 'DISTRIBUIÃ‡ÃƒO'], ['Distribuicao', 'DistribuiÃ§Ã£o'], ['distribuicao', 'distribuiÃ§Ã£o'],
-        ['MATERIA', 'MATÃ‰RIA'], ['Materia', 'MatÃ©ria'], ['materia', 'matÃ©ria'],
-        ['MATERIAS', 'MATÃ‰RIAS'], ['Materias', 'MatÃ©rias'], ['materias', 'matÃ©rias'],
-        ['PRECISAO', 'PRECISÃƒO'], ['Precisao', 'PrecisÃ£o'], ['precisao', 'precisÃ£o'],
-        ['SEQUENCIA', 'SEQUÃŠNCIA'], ['Sequencia', 'SequÃªncia'], ['sequencia', 'sequÃªncia'],
-        ['DIARIAS', 'DIÃRIAS'], ['Diarias', 'DiÃ¡rias'], ['diarias', 'diÃ¡rias'],
-        ['DIARIA', 'DIÃRIA'], ['Diaria', 'DiÃ¡ria'], ['diaria', 'diÃ¡ria'],
-        ['HORARIA', 'HORÃRIA'], ['Horaria', 'HorÃ¡ria'], ['horaria', 'horÃ¡ria'],
-        ['HORARIOS', 'HORÃRIOS'], ['Horarios', 'HorÃ¡rios'], ['horarios', 'horÃ¡rios'],
-        ['ULTIMO', 'ÃšLTIMO'], ['Ultimo', 'Ãšltimo'], ['ultimo', 'Ãºltimo'],
-        ['CODIGO', 'CÃ“DIGO'], ['Codigo', 'CÃ³digo'], ['codigo', 'cÃ³digo'],
-        ['ESTA ATIVO', 'ESTÃ ATIVO'], ['Esta ativo', 'EstÃ¡ ativo'], ['esta ativo', 'estÃ¡ ativo'],
-        ['ESTA PAUSADO', 'ESTÃ PAUSADO'], ['Esta pausado', 'EstÃ¡ pausado'], ['esta pausado', 'estÃ¡ pausado'],
-        ['ENTRARA', 'ENTRARÃ'], ['Entrara', 'EntrarÃ¡'], ['entrara', 'entrarÃ¡'],
-        ['INICIO', 'INÃCIO'], ['Inicio', 'InÃ­cio'], ['inicio', 'inÃ­cio'],
-        ['COPIA', 'CÃ“PIA'], ['Copia', 'CÃ³pia'], ['copia', 'cÃ³pia'],
-        ['NAO', 'NÃƒO'], ['Nao', 'NÃ£o'], ['nao', 'nÃ£o'],
-        ['VOCE', 'VOCÃŠ'], ['Voce', 'VocÃª'], ['voce', 'vocÃª'],
-        ['PUBLICACAO', 'PUBLICAÃ‡ÃƒO'], ['Publicacao', 'PublicaÃ§Ã£o'], ['publicacao', 'publicaÃ§Ã£o'],
-        ['APROVACAO', 'APROVAÃ‡ÃƒO'], ['Aprovacao', 'AprovaÃ§Ã£o'], ['aprovacao', 'aprovaÃ§Ã£o'],
-        ['SINCRONIZACAO', 'SINCRONIZAÃ‡ÃƒO'], ['Sincronizacao', 'SincronizaÃ§Ã£o'], ['sincronizacao', 'sincronizaÃ§Ã£o'],
-        ['ADMINISTRACAO PUBLICA', 'ADMINISTRAÃ‡ÃƒO PÃšBLICA'],
-        ['Administracao publica', 'AdministraÃ§Ã£o pÃºblica'],
-        ['administracao publica', 'administraÃ§Ã£o pÃºblica'],
-        ['COMPREENSÃƒO E INTERPRETACAO', 'COMPREENSÃƒO E INTERPRETAÃ‡ÃƒO'],
-        ['Compreensao e interpretacao', 'CompreensÃ£o e interpretaÃ§Ã£o'],
-        ['compreensao e interpretacao', 'compreensÃ£o e interpretaÃ§Ã£o'],
-        ['PROPOSICOES', 'PROPOSIÃ‡Ã•ES'], ['Proposicoes', 'ProposiÃ§Ãµes'], ['proposicoes', 'proposiÃ§Ãµes'],
-        ['RACIOCINIO LOGICO', 'RACIOCÃNIO LÃ“GICO'],
-        ['Raciocinio Logico', 'RaciocÃ­nio LÃ³gico'],
-        ['PORTUGUES', 'PORTUGUÃŠS'], ['Portugues', 'PortuguÃªs']
-    ];
-    ortografia.forEach(([de, para]) => {
-        texto = texto.split(de).join(para);
-    });
-    perdidos.forEach(([de, para]) => {
-        texto = texto.split(de).join(para);
-    });
-    return texto;
+  if (typeof valor !== 'string') return valor;
+
+  let texto = valor;
+  for (let tentativa = 0; tentativa < 5; tentativa += 1) {
+    const decodificado = decodificarMojibakeUmaVez(texto);
+    if (decodificado === texto || pontuarMojibake(decodificado) > pontuarMojibake(texto)) break;
+    texto = decodificado;
+    if (pontuarMojibake(texto) === 0) break;
+  }
+
+  return texto
+    .replace(/PLANT(?:AO|ÃƒO|[\u00c0-\u017f\ufffd]+O)/gi, 'PLANTAO')
+    .replace(/Voc\ufffd/g, 'VocÃª')
+    .replace(/n\ufffdo/g, 'nÃ£o')
+    .replace(/N\ufffdo/g, 'NÃ£o')
+    .replace(/Miss\ufffdo/g, 'MissÃ£o')
+    .replace(/Quest\ufffdes/g, 'QuestÃµes')
+    .replace(/Precis\ufffdo/g, 'PrecisÃ£o')
+    .replace(/Revis\ufffdo/g, 'RevisÃ£o')
+    .replace(/Exerc\ufffdcios/g, 'ExercÃ­cios')
+    .replace(/Mat\ufffdrias/g, 'MatÃ©rias')
+    .replace(/Publica\ufffdo/g, 'PublicaÃ§Ã£o')
+    .replace(/solicita\ufffdes/g, 'solicitaÃ§Ãµes')
+    .replace(/lan\ufffamentos/g, 'lanÃ§amentos')
+    .replace(/Hor\ufffarios/g, 'HorÃ¡rios')
+    .replace(/Di\ufffarias/g, 'DiÃ¡rias');
 }
 
 function corrigirTextosDaTela(root = document.body) {
-    if(!root) return;
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    while(walker.nextNode()) nodes.push(walker.currentNode);
-    nodes.forEach(node => {
-        const corrigido = corrigirMojibakeValor(node.nodeValue);
-        if(corrigido !== node.nodeValue) node.nodeValue = corrigido;
+  if (!root) return;
+
+  document.title = 'PLANTAO';
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode);
+  textNodes.forEach((node) => {
+    const corrigido = corrigirMojibakeValor(node.nodeValue);
+    if (corrigido !== node.nodeValue) node.nodeValue = corrigido;
+  });
+
+  root.querySelectorAll?.('[placeholder], [title], [aria-label], [data-label]').forEach((el) => {
+    ['placeholder', 'title', 'aria-label', 'data-label'].forEach((attr) => {
+      const original = el.getAttribute(attr);
+      if (!original) return;
+      const corrigido = corrigirMojibakeValor(original);
+      if (corrigido !== original) el.setAttribute(attr, corrigido);
     });
-    root.querySelectorAll?.('[placeholder], [title], [aria-label], input[value]').forEach(el => {
-        ['placeholder', 'title', 'aria-label'].forEach(attr => {
-            if(el.hasAttribute(attr)) {
-                const atual = el.getAttribute(attr);
-                const corrigido = corrigirMojibakeValor(atual);
-                if(corrigido !== atual) el.setAttribute(attr, corrigido);
-            }
-        });
-        if(el.tagName === 'INPUT' && el.type !== 'date' && typeof el.value === 'string') {
-            const atual = el.value;
-            const corrigido = corrigirMojibakeValor(atual);
-            if(corrigido !== atual) el.value = corrigido;
-        }
-    });
-    document.title = corrigirMojibakeValor(document.title)
-        .replace('v.128', 'v.132')
-        .replace('v.129', 'v.132')
-        .replace('v.130', 'v.132')
-        .replace('v.131', 'v.132');
+  });
+
+  document.querySelectorAll('.brand-text, .auth-card h1, .sidebar h1, [data-brand]').forEach((el) => {
+    if (el.textContent.trim() !== 'PLANTAO') el.textContent = 'PLANTAO';
+  });
 }
 
 let correcaoTextosAgendada = false;
 let corretorTextosAtivo = false;
 
 function agendarCorrecaoTextos() {
-    if(correcaoTextosAgendada) return;
-    correcaoTextosAgendada = true;
-    requestAnimationFrame(() => {
-        correcaoTextosAgendada = false;
-        corrigirTextosDaTela();
-    });
+  if (correcaoTextosAgendada) return;
+  correcaoTextosAgendada = true;
+  requestAnimationFrame(() => {
+    correcaoTextosAgendada = false;
+    corrigirTextosDaTela();
+  });
 }
 
 function iniciarCorretorTextosContinuo() {
-    if(corretorTextosAtivo || !document.body) return;
-    corretorTextosAtivo = true;
-    const observer = new MutationObserver(() => agendarCorrecaoTextos());
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-        characterData: true,
-        attributes: true,
-        attributeFilter: ['placeholder', 'title', 'aria-label', 'value']
-    });
-    [150, 500, 1200, 2500].forEach(ms => setTimeout(() => corrigirTextosDaTela(), ms));
+  if (corretorTextosAtivo || !document.body) return;
+  corretorTextosAtivo = true;
+  corrigirTextosDaTela();
+  new MutationObserver(agendarCorrecaoTextos).observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
 }
-
 function save() {
     localStorage.setItem('prf_v120', JSON.stringify(db));
     agendarSalvamentoNuvem();
@@ -1804,7 +1665,7 @@ function renderPerfil() {
                 <div class="admin-access-head">
                     <div>
                         <h3>Aprovar alunos</h3>
-                        <p class="meta-sub">Controle quem pode acessar o PlantÃ£o como aluno e abra o perfil para fazer ajustes.</p>
+                        <p class="meta-sub">Controle quem pode acessar o Plantao como aluno e abra o perfil para fazer ajustes.</p>
                     </div>
                     <button class="btn btn-sm btn-outline" onclick="carregarSolicitacoesAcesso()">
                         <i class="fas fa-rotate"></i> ATUALIZAR
@@ -2579,7 +2440,7 @@ function replanejarAgora() {
         if(db.metaFixa[k]) db.metaFixa[k] = db.metaFixa[k].filter(t => t.c);
     }
     save();
-    showToast("PlantÃ£o replanejado", "Os atrasos foram removidos do planejamento ativo.");
+    showToast("Plantao replanejado", "Os atrasos foram removidos do planejamento ativo.");
     init();
 }
 
@@ -3805,7 +3666,7 @@ function navDay(dir) {
     const primeiroAtraso = getPrimeiroDiaAtrasado(hoje);
     if(primeiroAtraso) {
         vDate = keyToDate(primeiroAtraso);
-        showToast("Pendência ativa", `Conclua ou replaneje ${primeiroAtraso} para liberar o avanço.`);
+        showToast("PendÃªncia ativa", `Conclua ou replaneje ${primeiroAtraso} para liberar o avanÃ§o.`);
         renderDiario(vDate);
         return;
     }
