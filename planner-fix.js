@@ -27,12 +27,16 @@ let adminStudentContext = null;
 let adminEditBackupReady = false;
 let authProcessandoRetorno = false;
 let modoRecuperacaoSenha = false;
+let sessaoPersistenteAtiva = false;
+let sessaoKeepAliveTimer = null;
 const OAUTH_LOGIN_FLAG = 'plantao_login_google_em_andamento';
 
 const ADMIN_EMAIL = 'matheus34212019@gmail.com';
 const ACCESS_TABLE = 'plantao_user_access';
 const APP_DISPLAY_NAME = 'PLANT\u00c3O';
 const revisoesIntervalos = [3, 7, 21];
+const cicloInicialDelay = 3;
+const proximosCiclosDelay = { 1: 7, 2: 21 };
 const MAX_ESTUDO_DIA = 2;
 const limitarPeso = valor => Math.min(5, Math.max(1, parseInt(valor || 1)));
 const safeId = texto => String(texto).replace(/[^a-z0-9]/gi, '-');
@@ -209,10 +213,10 @@ function criarClienteSupabase(accessToken = null) {
     if(accessToken) supabaseAccessToken = accessToken;
     const options = {
         auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-            detectSessionInUrl: false,
-            flowType: 'implicit'
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            flowType: 'pkce'
         }
     };
     if(supabaseAccessToken) {
@@ -237,6 +241,26 @@ function setCloudStatus(texto) {
 function atualizarBotaoNovaSenha() {
     const btn = document.getElementById('update-password-btn');
     if(btn) btn.style.display = modoRecuperacaoSenha ? 'inline-flex' : 'none';
+}
+
+function iniciarSessaoPersistente() {
+    if(sessaoPersistenteAtiva) return;
+    sessaoPersistenteAtiva = true;
+
+    window.addEventListener('beforeunload', () => {
+        try { localStorage.setItem('prf_v120', JSON.stringify(db)); } catch(e) {}
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if(document.visibilityState !== 'visible' || !supabaseClient || !cloudUser) return;
+        supabaseClient.auth.getSession().catch(() => {});
+    });
+
+    clearInterval(sessaoKeepAliveTimer);
+    sessaoKeepAliveTimer = setInterval(() => {
+        if(!supabaseClient || !cloudUser) return;
+        supabaseClient.auth.getSession().catch(() => {});
+    }, 240000);
 }
 
 async function limparSessaoSupabaseSilenciosa() {
@@ -406,11 +430,31 @@ function erroColunaInexistente(error, coluna) {
 }
 
 function mensagemErroSupabase(error) {
+    const bruto = [
+        error?.message,
+        error?.details,
+        error?.hint,
+        error?.code
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    if(bruto.includes('invalid login credentials')) return 'E-mail ou senha incorretos.';
+    if(bruto.includes('email not confirmed')) return 'Confirme o e-mail antes de entrar.';
+    if(bruto.includes('user already registered') || bruto.includes('already registered')) return 'Este e-mail j? est? cadastrado. Use Entrar com e-mail ou recupere a senha.';
+    if(bruto.includes('rate limit')) return 'Muitas tentativas seguidas. Aguarde alguns minutos e tente novamente.';
+    if(bruto.includes('jwt') || bruto.includes('expired')) return 'Sua sess?o expirou. Entre novamente.';
+    if(bruto.includes('plantao_user_access') || bruto.includes('schema cache') || bruto.includes('could not find the table')) {
+        return 'A tabela de aprova??o ainda n?o est? pronta no Supabase. Execute o SQL de configura??o e tente novamente.';
+    }
+    if(bruto.includes('permission denied') || bruto.includes('row-level security') || bruto.includes('rls')) {
+        return 'Permiss?o negada no Supabase. Verifique as pol?ticas de acesso.';
+    }
+    if(bruto.includes('failed to fetch') || bruto.includes('network')) return 'Falha de conex?o. Confira a internet e tente novamente.';
+
     const partes = [
         error?.message,
         error?.details,
         error?.hint,
-        error?.code ? `CÃ³digo: ${error.code}` : ''
+        error?.code ? `C?digo: ${error.code}` : ''
     ].filter(Boolean);
     return partes.join(' | ') || 'Erro desconhecido do Supabase.';
 }
@@ -696,6 +740,7 @@ async function entrarComSessaoSupabase(user) {
         bloquearAcessoPorAprovacao(accessProfile);
         return;
     }
+    iniciarSessaoPersistente();
     setCloudStatus(`Acesso liberado como ${loginUsuario()}.`);
     ocultarTelaLogin();
     atualizarPersonalizacao();
@@ -722,26 +767,31 @@ async function initSupabaseAuth() {
             || hashParams.get('error');
 
         if(authError) {
-            setCloudStatus(`Login Google nÃ£o concluÃ­do: ${decodeURIComponent(authError)}`);
+            setCloudStatus(`Login n?o conclu?do: ${decodeURIComponent(authError)}`);
             window.history.replaceState({}, document.title, window.location.pathname);
             return true;
         }
 
         if(authCode) {
             authProcessandoRetorno = true;
-            setCloudStatus('Login retornou em modo cÃ³digo. Limpando retorno antigo; clique em Entrar com Google novamente.');
-            window.history.replaceState({}, document.title, window.location.pathname);
-            authProcessandoRetorno = false;
-            return true;
+            setCloudStatus('Finalizando login...');
+            try {
+                await trocarCodigoLoginSupabase(authCode);
+            } finally {
+                window.history.replaceState({}, document.title, window.location.pathname);
+                authProcessandoRetorno = false;
+            }
         }
 
-        const veioDeCliqueGoogle = sessionStorage.getItem(OAUTH_LOGIN_FLAG) === '1';
         const temTokenNaUrl = hashParams.get('access_token');
-        const session = temTokenNaUrl ? await sessaoSupabasePeloHash(hashParams) : null;
-        authProcessandoRetorno = false;
+        const session = temTokenNaUrl
+            ? await sessaoSupabasePeloHash(hashParams)
+            : await esperarSessaoSupabase(6, 350);
+
         if(window.location.hash) {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
+
         if(session?.user) {
             supabaseAccessToken = session.access_token || supabaseAccessToken;
             if(supabaseAccessToken) supabaseClient = criarClienteSupabase(supabaseAccessToken);
@@ -750,25 +800,27 @@ async function initSupabaseAuth() {
                 cloudUser = {...session.user, provider: 'supabase'};
                 mostrarTelaLogin();
                 atualizarBotaoNovaSenha();
-                setCloudStatus('Digite sua nova senha no campo Senha e clique em Salvar nova senha.');
-                return true;
-            }
-            if(!veioDeCliqueGoogle && !temTokenNaUrl) {
-                await limparSessaoSupabaseSilenciosa();
-                setCloudStatus('Entre com Google ou e-mail para continuar.');
-                mostrarTelaLogin();
+                setCloudStatus('Digite a nova senha e clique em Salvar nova senha.');
                 return true;
             }
             sessionStorage.removeItem(OAUTH_LOGIN_FLAG);
             await entrarComSessaoSupabase(session.user);
         } else {
-            await limparSessaoSupabaseSilenciosa();
             setCloudStatus('Entre com Google ou e-mail para continuar.');
             mostrarTelaLogin();
         }
+
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
             if(event === 'INITIAL_SESSION') return;
             if(authProcessandoRetorno) return;
+            if(event === 'SIGNED_IN' && session?.user && !cloudUser) {
+                await entrarComSessaoSupabase(session.user);
+                return;
+            }
+            if(event === 'TOKEN_REFRESHED' && session?.access_token) {
+                supabaseAccessToken = session.access_token;
+                return;
+            }
             if(event === 'SIGNED_OUT') {
                 cloudUser = null;
                 accessProfile = null;
@@ -779,7 +831,8 @@ async function initSupabaseAuth() {
         });
         return true;
     } catch(e) {
-        setCloudStatus(`NÃ£o foi possÃ­vel concluir o login Supabase: ${mensagemErroSupabase(e)}`);
+        setCloudStatus(`N?o foi poss?vel concluir o login: ${mensagemErroSupabase(e)}`);
+        mostrarTelaLogin();
         return false;
     }
 }
@@ -985,6 +1038,9 @@ async function salvarNovaSenhaEmail() {
 async function sairGoogle() {
     try {
         clearTimeout(cloudSaveTimer);
+        clearInterval(sessaoKeepAliveTimer);
+        sessaoKeepAliveTimer = null;
+        sessaoPersistenteAtiva = false;
         if(supabaseClient) {
             try {
                 await comTimeout(supabaseClient.auth.signOut({ scope: 'local' }), 3500, 'Tempo esgotado ao sair.');
@@ -1203,7 +1259,7 @@ function normalizarBanco() {
         item.f = Boolean(item.f);
         if(item.sinalizado && !item.f) {
             item.f = true;
-            item.revCycle = item.revCycle || { cycle: 1, stage: 'Rev', due: dateKey(addDays(new Date(), 1)) };
+            item.revCycle = item.revCycle || { cycle: 1, stage: 'Rev', due: dateKey(addDays(new Date(), cicloInicialDelay)) };
         }
         if(item.f) {
             item.done = {E:true, Rev:true, Ex:true};
@@ -2372,7 +2428,7 @@ function reconstruirProgressoPorLancamentos() {
             item.done = {E:true, Rev:true, Ex:true};
             item.hF = item.h.E;
             item.maintDone = Boolean(item.maintDone);
-            item.revCycle = item.revCycle || { cycle: 1, stage: 'Rev', due: dateKey(addDays(new Date(), 1)) };
+            item.revCycle = item.revCycle || { cycle: 1, stage: 'Rev', due: dateKey(addDays(new Date(), cicloInicialDelay)) };
         } else {
             item.f = false;
             item.done = {E:false, Rev:false, Ex:false};
@@ -2858,19 +2914,19 @@ function concluirTaskNoState(t, dK, state) {
         item.cicloConcluidoManual = true;
         item.hF = item.h.E;
         item.maintDone = false;
-        item.revCycle = { cycle: 1, stage: 'Rev', due: dateKey(addDays(keyToDate(dK), 1)) };
+        item.revCycle = { cycle: 1, stage: 'Rev', due: dateKey(addDays(keyToDate(dK), cicloInicialDelay)) };
     } else if(t.k === 'Rev' && item.f && item.revCycle) {
         item.revCycle.stage = 'Ex';
         item.revCycle.due = dateKey(addDays(keyToDate(dK), 1));
     } else if(t.k === 'Ex' && item.f && item.revCycle) {
         if(item.revCycle.stage !== 'Ex') return;
         const cycle = item.revCycle.cycle || 1;
-        if(cycle >= 4) {
+        if(cycle >= 3) {
             item.revCycle = null;
             item.maintDone = true;
             reiniciarMateriaSeCompleta(state, item.m, dK);
         } else {
-            item.revCycle = { cycle: cycle + 1, stage: 'Rev', due: dateKey(addDays(keyToDate(dK), revisoesIntervalos[cycle - 1])) };
+            item.revCycle = { cycle: cycle + 1, stage: 'Rev', due: dateKey(addDays(keyToDate(dK), proximosCiclosDelay[cycle] || 21)) };
         }
     }
 }
@@ -2884,7 +2940,7 @@ function reiniciarMateriaSeCompleta(state, materia, dK) {
     if(!itens.length || !itens.every(x => x.f && x.maintDone)) return;
     itens.forEach(item => {
         item.maintDone = false;
-        item.revCycle = { cycle: 1, stage: 'Rev', due: dateKey(addDays(keyToDate(dK), 1)) };
+        item.revCycle = { cycle: 1, stage: 'Rev', due: dateKey(addDays(keyToDate(dK), cicloInicialDelay)) };
     });
 }
 
@@ -3531,7 +3587,7 @@ function marcarComoEstudado(item, marcado) {
     item.lastInitialRevDate = null;
     item.lastInitialStudyDate = null;
     item.maintDone = false;
-    item.revCycle = marcado ? { cycle: 1, stage: 'Rev', due: dateKey(addDays(new Date(), 1)) } : null;
+    item.revCycle = marcado ? { cycle: 1, stage: 'Rev', due: dateKey(addDays(new Date(), cicloInicialDelay)) } : null;
 }
 
 function sinalizarAssunto(idx, marcado) {
