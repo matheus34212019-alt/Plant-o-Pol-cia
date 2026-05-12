@@ -205,8 +205,40 @@ function firebaseConfigurado() {
     return Boolean(window.firebase && window.PLANTAO_FIREBASE_CONFIG && window.PLANTAO_FIREBASE_CONFIG.apiKey);
 }
 
+function supabaseBibliotecaCarregada() {
+    return Boolean(window.supabase && typeof window.supabase.createClient === 'function');
+}
+
+function supabaseConfigCarregado() {
+    return Boolean(window.PLANTAO_SUPABASE_CONFIG && window.PLANTAO_SUPABASE_CONFIG.url && window.PLANTAO_SUPABASE_CONFIG.anonKey);
+}
+
 function supabaseConfigurado() {
-    return Boolean(window.supabase && window.PLANTAO_SUPABASE_CONFIG && window.PLANTAO_SUPABASE_CONFIG.url && window.PLANTAO_SUPABASE_CONFIG.anonKey);
+    return supabaseBibliotecaCarregada() && supabaseConfigCarregado();
+}
+
+function motivoSupabaseIndisponivel() {
+    if(!supabaseBibliotecaCarregada()) {
+        return 'A biblioteca do Supabase ainda n\u00e3o carregou. Recarregue a p\u00e1gina ou tente novamente em alguns segundos.';
+    }
+    if(!window.PLANTAO_SUPABASE_CONFIG) {
+        return 'O arquivo supabase-config.js n\u00e3o carregou. Verifique se ele est\u00e1 salvo no GitHub.';
+    }
+    if(!window.PLANTAO_SUPABASE_CONFIG.url || !window.PLANTAO_SUPABASE_CONFIG.anonKey) {
+        return 'O supabase-config.js est\u00e1 incompleto. Confira a URL e a chave p\u00fablica.';
+    }
+    return 'Supabase indispon\u00edvel no momento. Tente novamente em alguns segundos.';
+}
+
+async function esperarSupabasePronto(tentativas = 28, intervalo = 250) {
+    for(let i = 0; i < tentativas; i++) {
+        if(supabaseConfigurado()) return true;
+        if(!supabaseBibliotecaCarregada() && typeof window.__plantaoLoadSupabaseFallback === 'function' && i >= 4) {
+            try { window.__plantaoLoadSupabaseFallback(); } catch(e) {}
+        }
+        await new Promise(resolve => setTimeout(resolve, intervalo));
+    }
+    return supabaseConfigurado();
 }
 
 function criarClienteSupabase(accessToken = null) {
@@ -753,7 +785,7 @@ async function entrarComSessaoSupabase(user) {
 }
 
 async function initSupabaseAuth() {
-    if(!supabaseConfigurado()) return false;
+    if(!await esperarSupabasePronto()) return false;
     try {
         supabaseClient = criarClienteSupabase();
         setCloudStatus('Supabase conectado. Verificando login...');
@@ -767,7 +799,7 @@ async function initSupabaseAuth() {
             || hashParams.get('error');
 
         if(authError) {
-            setCloudStatus(`Login n?o conclu?do: ${decodeURIComponent(authError)}`);
+            setCloudStatus(`Login n\u00e3o conclu\u00eddo: ${decodeURIComponent(authError)}`);
             window.history.replaceState({}, document.title, window.location.pathname);
             return true;
         }
@@ -831,7 +863,7 @@ async function initSupabaseAuth() {
         });
         return true;
     } catch(e) {
-        setCloudStatus(`N?o foi poss?vel concluir o login: ${mensagemErroSupabase(e)}`);
+        setCloudStatus(`N\u00e3o foi poss\u00edvel concluir o login: ${mensagemErroSupabase(e)}`);
         mostrarTelaLogin();
         return false;
     }
@@ -846,7 +878,7 @@ function initFirebaseAuth() {
 }
 
 async function loginGoogle() {
-    if(supabaseConfigurado()) {
+    if(await esperarSupabasePronto()) {
         try {
             if(!supabaseClient) await initSupabaseAuth();
             const cleanRedirect = `${window.location.origin}${window.location.pathname}`;
@@ -865,7 +897,7 @@ async function loginGoogle() {
             return;
         }
     }
-    setCloudStatus('Supabase nÃ£o configurado. Configure o supabase-config.js para usar login aprovado.');
+    setCloudStatus(motivoSupabaseIndisponivel());
 }
 
 function mostrarCadastroAluno(mostrar) {
@@ -920,8 +952,8 @@ async function registrarSolicitacaoCadastro({ userId, email, nome, telefone, con
 }
 
 async function cadastrarAluno() {
-    if(!supabaseConfigurado()) {
-        setCloudStatus('Supabase nÃ£o configurado. Configure o supabase-config.js antes de cadastrar alunos.');
+    if(!await esperarSupabasePronto()) {
+        setCloudStatus(motivoSupabaseIndisponivel());
         return;
     }
     const dados = dadosCadastroAluno();
@@ -963,8 +995,8 @@ async function cadastrarAluno() {
 }
 
 async function entrarEmailSenha() {
-    if(!supabaseConfigurado()) {
-        setCloudStatus('Supabase nÃ£o configurado. Configure o supabase-config.js para entrar.');
+    if(!await esperarSupabasePronto()) {
+        setCloudStatus(motivoSupabaseIndisponivel());
         return;
     }
     const email = String(document.getElementById('login-email')?.value || '').trim().toLowerCase();
@@ -992,8 +1024,8 @@ async function entrarEmailSenha() {
 }
 
 async function enviarRecuperacaoSenha() {
-    if(!supabaseConfigurado()) {
-        setCloudStatus('Supabase nÃ£o configurado. Configure o supabase-config.js para recuperar senha.');
+    if(!await esperarSupabasePronto()) {
+        setCloudStatus(motivoSupabaseIndisponivel());
         return;
     }
     const email = String(document.getElementById('login-email')?.value || '').trim().toLowerCase();
@@ -1013,8 +1045,8 @@ async function enviarRecuperacaoSenha() {
 }
 
 async function salvarNovaSenhaEmail() {
-    if(!supabaseConfigurado()) {
-        setCloudStatus('Supabase nÃ£o configurado. Configure o supabase-config.js para salvar senha.');
+    if(!await esperarSupabasePronto()) {
+        setCloudStatus(motivoSupabaseIndisponivel());
         return;
     }
     if(!supabaseClient) supabaseClient = criarClienteSupabase();
@@ -1310,7 +1342,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     iniciarCorretorTextosContinuo();
     const supabaseOk = await initSupabaseAuth();
     if(!supabaseOk) {
-        setCloudStatus('Supabase nÃ£o configurado ou supabase-config.js nÃ£o carregado. O acesso depende do login aprovado pelo admin.');
+        setCloudStatus(motivoSupabaseIndisponivel());
+        setTimeout(async () => {
+            if(!cloudUser) await initSupabaseAuth();
+        }, 1200);
     }
     setTimeout(() => corrigirTextosDaTela(), 800);
 });
