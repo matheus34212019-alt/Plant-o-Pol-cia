@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="styles.css?v=176">
+    <link rel="stylesheet" href="styles.css?v=177">
 </head>
 <body>
     <div id="login-screen">
@@ -301,10 +301,30 @@
             </div>
         </div>
     </main>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js?v=176"></script>
-    <script src="script.js?v=176"></script>
-    <script src="planner-fix.js?v=176"></script>
+    <script>
+        (function loadSupabaseSdk() {
+            var loadedUrls = {};
+            function load(src) {
+                if(loadedUrls[src]) return;
+                loadedUrls[src] = true;
+                var script = document.createElement('script');
+                script.src = src;
+                script.async = true;
+                script.crossOrigin = 'anonymous';
+                document.head.appendChild(script);
+            }
+            window.__plantaoLoadSupabaseFallback = function() {
+                if(window.supabase && window.supabase.createClient) return;
+                load('https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js');
+            };
+            load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js');
+            setTimeout(window.__plantaoLoadSupabaseFallback, 1200);
+            setTimeout(window.__plantaoLoadSupabaseFallback, 3500);
+        })();
+    </script>
+    <script src="supabase-config.js?v=177"></script>
+    <script src="script.js?v=177"></script>
+    <script src="planner-fix.js?v=177"></script>
     <script>
         (function forcePlainBrand() {
             function applyBrand() {
@@ -324,4 +344,4 @@
     </script>
 </body>
 </html>
-<!-- deploy: v176-textos-acento-cronograma -->
+<!-- deploy: v177-supabase-loader -->
