@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="styles.css?v=174">
+    <link rel="stylesheet" href="styles.css?v=176">
 </head>
 <body>
     <div id="login-screen">
@@ -126,7 +126,7 @@
     <aside class="sidebar">
         <div class="logo-box"><i class="fas fa-shield-halved"></i> PLANT&Atilde;O</div>
         <div class="nav-item active" onclick="showTab('diaria', this)"><i class="fas fa-calendar-day"></i><span>Painel Hoje</span></div>
-        <div class="nav-item" onclick="showTab('semanal', this)"><i class="fas fa-calendar-week"></i><span>Cronograma</span></div>
+        <div class="nav-item" onclick="showTab('semanal', this)"><i class="fas fa-calendar-week"></i><span>CRONOGRAMA</span></div>
         <div class="nav-item" onclick="showTab('performance', this)"><i class="fas fa-chart-pie"></i><span>Meu Desempenho</span></div>
         <div id="ranking-nav" class="nav-item admin-only" style="display:none;" onclick="showTab('ranking', this)"><i class="fas fa-ranking-star"></i><span>Ranking</span></div>
         <div class="nav-item" onclick="showTab('perfil', this)"><i class="fas fa-user-circle"></i><span>Meu Perfil</span></div>
@@ -161,7 +161,7 @@
                     <div id="streak-info"><i class="fas fa-fire"></i> STREAK: <span id="streak-val">0</span> DIAS</div>
                 </div>
                 <div class="stat-card cycle-card">
-                    <div style="display:flex; justify-content:space-between;"><small>PerseguiÃ§Ã£o ao Edital</small><span id="ciclo-estimativa"></span></div>
+                    <div style="display:flex; justify-content:space-between;"><small>Persegui&ccedil;&atilde;o ao Edital</small><span id="ciclo-estimativa"></span></div>
                     <div class="road-bg">
                         <div id="viatura-progresso"><i class="fas fa-car-side"></i></div>
                         <div id="bar-ciclo-total" class="road-fill"></div>
@@ -170,10 +170,10 @@
                 </div>
                 <div class="nav-days">
                     <button id="btn-hoje" class="btn btn-outline btn-sm" onclick="navDay(0)" style="display:none;"><i class="fas fa-undo"></i> VOLTAR PARA HOJE</button>
-                    <button id="btn-amanha" class="btn btn-sm" onclick="navDay(1)">VER AMANHÃƒ <i class="fas fa-arrow-right"></i></button>
+                    <button id="btn-amanha" class="btn btn-sm" onclick="navDay(1)">VER AMANH&Atilde; <i class="fas fa-arrow-right"></i></button>
                 </div>
                 <div class="page-header">
-                    <h1 id="view-title">MissÃ£o de Hoje</h1>
+                    <h1 id="view-title">Miss&atilde;o de Hoje</h1>
                     <button class="btn btn-sm btn-outline replan-btn" onclick="replanejarAgora()"><i class="fas fa-rotate"></i> REPLANEJAR ATRASOS</button>
                 </div>
                 <p id="meta-status" class="meta-sub"></p>
@@ -183,11 +183,11 @@
             <div id="semanal" class="page">
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
                     <div>
-                        <h2>Cronograma PLANT&Atilde;O</h2>
+                        <h2>CRONOGRAMA PLANT&Atilde;O</h2>
                         <div style="display: flex; gap: 10px;">
                             <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #3b82f6;"></i> Estudo</span>
-                            <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #f59e0b;"></i> RevisÃ£o</span>
-                            <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #10b981;"></i> ExercÃ­cio</span>
+                            <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #f59e0b;"></i> Revis&atilde;o</span>
+                            <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #10b981;"></i> Exerc&iacute;cio</span>
                             <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #ef4444;"></i> Atrasado</span>
                         </div>
                     </div>
@@ -302,9 +302,9 @@
         </div>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js?v=174"></script>
-    <script src="script.js?v=174"></script>
-    <script src="planner-fix.js?v=174"></script>
+    <script src="supabase-config.js?v=176"></script>
+    <script src="script.js?v=176"></script>
+    <script src="planner-fix.js?v=176"></script>
     <script>
         (function forcePlainBrand() {
             function applyBrand() {
@@ -324,4 +324,4 @@
     </script>
 </body>
 </html>
-<!-- deploy: v174-nome-acentuado -->
+<!-- deploy: v176-textos-acento-cronograma -->
