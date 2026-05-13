@@ -42,6 +42,11 @@ const limitarPeso = valor => Math.min(5, Math.max(1, parseInt(valor || 1)));
 const safeId = texto => String(texto).replace(/[^a-z0-9]/gi, '-');
 const isExtraTask = task => task?.extra === true || task?.l === 'Extra';
 const tarefasPlanejadas = tasks => (tasks || []).filter(t => !isExtraTask(t));
+function diaIgualOuAnteriorAHoje(diaKey) {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    return diaKey <= dateKey(hoje);
+}
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
@@ -2786,6 +2791,10 @@ function garantirDiaPlanejado(diaKey, date) {
         return;
     }
     const existentes = db.metaFixa[diaKey] || [];
+    if(diaIgualOuAnteriorAHoje(diaKey) && tarefasPlanejadas(existentes).length > 0) {
+        db.metaFixa[diaKey] = existentes;
+        return;
+    }
     const extras = existentes.filter(isExtraTask);
     const concluidas = tarefasPlanejadas(existentes).filter(t => t.c);
     const semana = calcularSemanaPlanejada();
