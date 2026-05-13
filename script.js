@@ -47,6 +47,104 @@ function diaIgualOuAnteriorAHoje(diaKey) {
     hoje.setHours(0, 0, 0, 0);
     return diaKey <= dateKey(hoje);
 }
+function ordemAssunto(item, fallback = 0) {
+    const ordem = Number(item?.ordem);
+    return Number.isFinite(ordem) ? ordem : fallback;
+}
+
+function aulaAnteriorBloqueadora(state, item) {
+    if(!state?.lista || !item?.id || !item?.m) return null;
+    const lista = state.lista;
+    const indiceAtual = lista.findIndex(x => x.id === item.id);
+    const ordemAtual = ordemAssunto(item, indiceAtual < 0 ? 0 : indiceAtual);
+    return lista
+        .map((x, idx) => ({...x, __idx: idx}))
+        .filter(x => x.id !== item.id && x.m === item.m && ordemAssunto(x, x.__idx) < ordemAtual && !x.f)
+        .sort((a, b) => ordemAssunto(b, b.__idx) - ordemAssunto(a, a.__idx))[0] || null;
+}
+
+function tarefaBloqueadaPorAulaAnterior(task, state = db) {
+    if(isExtraTask(task)) return null;
+    const item = state?.lista?.find(x => x.id === task?.itemId);
+    return aulaAnteriorBloqueadora(state, item);
+}
+
+function mostrarBloqueioAulaAnterior(task, anterior) {
+    const aulaAtual = corrigirMojibakeValor(task?.a || 'esta aula');
+    const aulaAnterior = corrigirMojibakeValor(anterior?.a || 'a aula anterior');
+    showToast('Aula anterior pendente', `Conclua ${aulaAnterior} antes de finalizar ${aulaAtual}.`);
+}
+
+function filtrarTarefasBloqueadasPorAulaAnterior(tasks, state = db) {
+    return (tasks || []).filter(task => task.c || isExtraTask(task) || !tarefaBloqueadaPorAulaAnterior(task, state));
+}
+
+function clonarTarefas(tasks) {
+    return JSON.parse(JSON.stringify(tasks || []));
+}
+
+function atualizarPlanoDiaTravado(diaKey) {
+    if(!diaKey) return;
+    db.planosTravados = db.planosTravados && typeof db.planosTravados === 'object' ? db.planosTravados : {};
+    db.planosTravados[diaKey] = clonarTarefas(db.metaFixa?.[diaKey] || []);
+}
+
+function restaurarPlanoDiaTravado(diaKey, fallback = null) {
+    const snapshot = db.planosTravados?.[diaKey] || fallback;
+    if(!snapshot) return false;
+    db.metaFixa[diaKey] = clonarTarefas(snapshot);
+    return true;
+}
+
+function removerTarefasBloqueadasPorAulasAnteriores() {
+    let alterou = false;
+    Object.keys(db.metaFixa || {}).forEach(dia => {
+        const atuais = db.metaFixa[dia] || [];
+        const filtradas = filtrarTarefasBloqueadasPorAulaAnterior(atuais, db);
+        if(filtradas.length !== atuais.length) {
+            db.metaFixa[dia] = filtradas;
+            alterou = true;
+        }
+    });
+    return alterou;
+}
+
+function repararDiaAtualAposRecalculoIndevido() {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const hojeKey = dateKey(hoje);
+    const tasks = db.metaFixa?.[hojeKey];
+    if(!Array.isArray(tasks) || !tasks.length) return false;
+
+    let alterou = false;
+    db.lista.forEach(item => {
+        if(item.lastInitialStudyDate !== hojeKey) return;
+        const concluidas = tasks.filter(t => t.c && t.k === 'E' && t.itemId === item.id && !isExtraTask(t));
+        if(!concluidas.length) return;
+        const somaCards = concluidas.reduce((acc, t) => acc + (parseFloat(t.h) || 0), 0);
+        const horasFeitas = Math.max(0, Math.min(parseFloat(item.hF) || 0, parseFloat(item.h?.E) || 0));
+        if(horasFeitas > somaCards + 0.01) {
+            const ultima = concluidas[concluidas.length - 1];
+            ultima.h = Math.round(((parseFloat(ultima.h) || 0) + (horasFeitas - somaCards)) * 10) / 10;
+            alterou = true;
+        }
+    });
+
+    const limite = parseFloat(db.h?.[hoje.getDay()]) || 0;
+    const horasConcluidas = tarefasPlanejadas(tasks)
+        .filter(t => t.c)
+        .reduce((acc, t) => acc + (parseFloat(t.h) || 0), 0);
+    if(limite > 0 && horasConcluidas >= limite - 0.01) {
+        const filtradas = tasks.filter(t => t.c || isExtraTask(t));
+        if(filtradas.length !== tasks.length) {
+            db.metaFixa[hojeKey] = filtradas;
+            alterou = true;
+        }
+    }
+
+    if(alterou) atualizarPlanoDiaTravado(hojeKey);
+    return alterou;
+}
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
@@ -1277,6 +1375,7 @@ function normalizarBanco() {
     if(!Array.isArray(db.lista)) db.lista = [];
     if(!Array.isArray(db.ciclo)) db.ciclo = [];
     if(!Array.isArray(db.diasPausados)) db.diasPausados = [];
+    if(!db.planosTravados || typeof db.planosTravados !== 'object' || Array.isArray(db.planosTravados)) db.planosTravados = {};
     db.perfilNome = String(db.perfilNome || '').trim();
     if(!/^\d{4}-\d{2}-\d{2}$/.test(db.editalPublicacao || '')) db.editalPublicacao = '';
     for(let i=0; i<7; i++) db.h[i] = Math.max(0, parseFloat(db.h[i] || 0));
@@ -1332,6 +1431,8 @@ function normalizarBanco() {
     });
     db.ciclo = db.ciclo.map(m => corrigirMojibakeValor(String(m || '')).toUpperCase()).filter(m => db.lista.some(x => x.m === m));
     db.diasPausados = [...new Set(db.diasPausados)].filter(Boolean);
+    removerTarefasBloqueadasPorAulasAnteriores();
+    repararDiaAtualAposRecalculoIndevido();
     save();
 }
 
@@ -1587,8 +1688,15 @@ function atualizarAssuntosExtra() {
 
 function concluirTask(t, dK) {
     if(t.c) return;
-    concluirTaskNoState(t, dK, db);
+    const anterior = tarefaBloqueadaPorAulaAnterior(t, db);
+    if(anterior) {
+        mostrarBloqueioAulaAnterior(t, anterior);
+        return false;
+    }
+    if(!concluirTaskNoState(t, dK, db)) return false;
+    atualizarPlanoDiaTravado(dK);
     if(t.k === 'E') verificarTeoriaSuficiente(t, dK);
+    return true;
 }
 
 function verificarTeoriaSuficiente(t, dK) {
@@ -1618,9 +1726,12 @@ function mostrarTempoExtraTeoria() {
 
 function aplicarTempoExtraTeoria(destino) {
     if(!teoriaPendente) return;
+    const diaOrigem = teoriaPendente.dK;
     const item = db.lista.find(x => x.id === teoriaPendente.itemId);
     const horas = Math.max(0, parseFloat(document.getElementById('teoria-extra-horas').value) || 0);
     if(!item || horas <= 0) return;
+    atualizarPlanoDiaTravado(diaOrigem);
+    const planoOriginalDia = clonarTarefas(db.planosTravados?.[diaOrigem] || db.metaFixa[diaOrigem] || []);
 
     item.h.E += horas;
     item.extraTeoria += horas;
@@ -1630,8 +1741,12 @@ function aplicarTempoExtraTeoria(destino) {
     item.f = false;
     item.revCycle = null;
 
-    if(destino === 'hoje') inserirTeoriaExtraNoDia(item, teoriaPendente.dK, horas);
-    limparPlanejamentoFuturo(teoriaPendente.dK);
+    if(destino === 'hoje') inserirTeoriaExtraNoDia(item, diaOrigem, horas);
+    limparPlanejamentoFuturo(diaOrigem);
+    if(destino !== 'hoje') restaurarPlanoDiaTravado(diaOrigem, planoOriginalDia);
+    removerTarefasBloqueadasPorAulasAnteriores();
+    repararDiaAtualAposRecalculoIndevido();
+    atualizarPlanoDiaTravado(diaOrigem);
     teoriaPendente = null;
     fecharModais();
     save();
@@ -1658,12 +1773,23 @@ function inserirTeoriaExtraNoDia(item, diaKey, horas) {
 
 function cliqueTask(dK, idx) {
     const t = db.metaFixa[dK][idx];
+    if(!t.c) {
+        const anterior = tarefaBloqueadaPorAulaAnterior(t, db);
+        if(anterior) {
+            mostrarBloqueioAulaAnterior(t, anterior);
+            renderDiarioSemRecalcular(vDate);
+            return;
+        }
+    }
     if(!t.c && t.k === 'Ex') {
         exPendente = { dK, idx };
         document.getElementById('label-ex-assunto').innerText = `${t.m} - ${t.a}`;
         document.getElementById('modal-exercicio').style.display = 'flex';
     } else if(!t.c) {
-        concluirTask(t, dK);
+        if(!concluirTask(t, dK)) {
+            renderDiarioSemRecalcular(vDate);
+            return;
+        }
         save();
         updateDashboard();
         renderDiarioSemRecalcular(vDate);
@@ -2512,13 +2638,24 @@ function calcCebraspe() {
 
 function confirmarExercicio() {
     const t = db.metaFixa[exPendente.dK][exPendente.idx];
+    const anterior = tarefaBloqueadaPorAulaAnterior(t, db);
+    if(anterior) {
+        mostrarBloqueioAulaAnterior(t, anterior);
+        fecharModais();
+        renderDiarioSemRecalcular(vDate);
+        return;
+    }
     const total = Math.max(0, parseInt(document.getElementById('ex-total').value) || 0);
     const acertosInformados = Math.max(0, parseInt(document.getElementById('ex-acertos').value) || 0);
     t.perf = {
         t: total,
         a: total > 0 ? Math.min(acertosInformados, total) : acertosInformados
     };
-    concluirTask(t, exPendente.dK);
+    if(!concluirTask(t, exPendente.dK)) {
+        fecharModais();
+        renderDiarioSemRecalcular(vDate);
+        return;
+    }
     exPendente = null;
     document.getElementById('ex-total').value = '';
     document.getElementById('ex-acertos').value = '';
@@ -2790,7 +2927,12 @@ function garantirDiaPlanejado(diaKey, date) {
         save();
         return;
     }
-    const existentes = db.metaFixa[diaKey] || [];
+    const existentesOriginais = db.metaFixa[diaKey] || [];
+    const existentes = filtrarTarefasBloqueadasPorAulaAnterior(existentesOriginais, db);
+    if(existentes.length !== existentesOriginais.length) {
+        db.metaFixa[diaKey] = existentes;
+        save();
+    }
     if(diaIgualOuAnteriorAHoje(diaKey) && tarefasPlanejadas(existentes).length > 0) {
         db.metaFixa[diaKey] = existentes;
         return;
@@ -2809,7 +2951,7 @@ function garantirDiaPlanejado(diaKey, date) {
 }
 
 function clonarPlanejadasDoBanco(diaKey) {
-    return tarefasPlanejadas(db.metaFixa?.[diaKey] || []).map(t => ({...t}));
+    return filtrarTarefasBloqueadasPorAulaAnterior(tarefasPlanejadas(db.metaFixa?.[diaKey] || []), db).map(t => ({...t}));
 }
 
 function aplicarPlanejamentoNoEstadoSimulado(tasks, diaKey, state) {
@@ -2969,7 +3111,8 @@ function getNeuralPoolSim(limit, state, date) {
 
 function concluirTaskNoState(t, dK, state) {
     const item = state.lista.find(x => x.id === t.itemId);
-    if(!item) return;
+    if(!item) return false;
+    if(aulaAnteriorBloqueadora(state, item)) return false;
     t.c = true;
     if(t.k === 'E') {
         item.hF = Math.min(item.h.E, (item.hF || 0) + t.h);
@@ -2979,12 +3122,12 @@ function concluirTaskNoState(t, dK, state) {
         }
     }
     if(t.k === 'Rev' && !item.f) {
-        if((item.hF || 0) < item.h.E - 0.01) return;
+        if((item.hF || 0) < item.h.E - 0.01) return false;
         item.done.Rev = true;
         item.lastInitialRevDate = dK;
     }
     if(t.k === 'Ex' && !item.f) {
-        if(!item.done.Rev) return;
+        if(!item.done.Rev) return false;
         item.done.Ex = true;
         item.f = true;
         item.sinalizado = true;
@@ -2996,7 +3139,7 @@ function concluirTaskNoState(t, dK, state) {
         item.revCycle.stage = 'Ex';
         item.revCycle.due = dateKey(addDays(keyToDate(dK), 1));
     } else if(t.k === 'Ex' && item.f && item.revCycle) {
-        if(item.revCycle.stage !== 'Ex') return;
+        if(item.revCycle.stage !== 'Ex') return false;
         const cycle = item.revCycle.cycle || 1;
         if(cycle >= 3) {
             item.revCycle = null;
@@ -3006,6 +3149,7 @@ function concluirTaskNoState(t, dK, state) {
             item.revCycle = { cycle: cycle + 1, stage: 'Rev', due: dateKey(addDays(keyToDate(dK), proximosCiclosDelay[cycle] || 21)) };
         }
     }
+    return true;
 }
 
 function concluirTaskSim(t, dK, state) {
@@ -3103,7 +3247,7 @@ function planejarDia(state, date, limit, mutarEstado) {
     };
 
     const candidatos = (materia, callback) => state.lista
-        .filter(x => x.m === materia && assuntoPodeEntrarNoCicloInicial(state, x) && callback(x))
+        .filter(x => x.m === materia && !aulaAnteriorBloqueadora(state, x) && assuntoPodeEntrarNoCicloInicial(state, x) && callback(x))
         .sort((a, b) => {
             const stageRank = item => {
                 if(!item.f && item.done.Rev && !item.done.Ex && item.lastInitialRevDate && item.lastInitialRevDate !== curKey) return 0;
@@ -3180,7 +3324,7 @@ function planejarDia(state, date, limit, mutarEstado) {
             materiasVisitadas.add(materia);
 
             const exercicioInicial = state.lista
-                .filter(x => x.m === materia && !x.f && x.done.Rev && !x.done.Ex && x.lastInitialRevDate && x.lastInitialRevDate !== curKey)
+                .filter(x => x.m === materia && !aulaAnteriorBloqueadora(state, x) && !x.f && x.done.Rev && !x.done.Ex && x.lastInitialRevDate && x.lastInitialRevDate !== curKey)
                 .sort((a, b) => {
                     const aOntem = a.lastInitialRevDate === prevKey ? 0 : 1;
                     const bOntem = b.lastInitialRevDate === prevKey ? 0 : 1;
@@ -3193,7 +3337,7 @@ function planejarDia(state, date, limit, mutarEstado) {
             }
 
             const exercicioCiclo = state.lista
-                .filter(x => x.m === materia && x.f && x.revCycle && x.revCycle.stage === 'Ex' && isDue(x.revCycle.due, curKey))
+                .filter(x => x.m === materia && !aulaAnteriorBloqueadora(state, x) && x.f && x.revCycle && x.revCycle.stage === 'Ex' && isDue(x.revCycle.due, curKey))
                 .sort((a, b) => {
                     const aOntem = a.revCycle?.due === prevKey ? 0 : 1;
                     const bOntem = b.revCycle?.due === prevKey ? 0 : 1;
