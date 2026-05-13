@@ -1,10 +1,10 @@
 let db = JSON.parse(localStorage.getItem('prf_v120')) || {
     lista: [
-        { m: "PORTUGUÃŠS", a: "CompreensÃ£o e interpretaÃ§Ã£o de textos", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 },
-        { m: "RACIOCÃNIO LÃ“GICO", a: "ProposiÃ§Ãµes e conectivos", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 },
-        { m: "DIREITO PENAL", a: "Crimes contra a administraÃ§Ã£o pÃºblica", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 }
+        { m: "PORTUGUÊS", a: "Compreensão e interpretação de textos", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 },
+        { m: "RACIOCÍNIO LÓGICO", a: "Proposições e conectivos", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 },
+        { m: "DIREITO PENAL", a: "Crimes contra a administração pública", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 }
     ],
-    ciclo: ["PORTUGUÃŠS", "RACIOCÃNIO LÃ“GICO", "DIREITO PENAL"],
+    ciclo: ["PORTUGUÊS", "RACIOCÍNIO LÓGICO", "DIREITO PENAL"],
     h: {1:4, 2:4, 3:4, 4:4, 5:4, 6:4, 0:4},
     metaFixa: {}
 };
@@ -97,7 +97,7 @@ function mostrarBloqueioTarefa(task, bloqueio) {
     if(bloqueio.tipo === 'teoria-pendente') {
         showToast(
             'Estudo extra pendente',
-            `Conclua o estudo extra de ${corrigirMojibakeValor(bloqueio.item?.a || 'esta aula')} antes da revisÃ£o ou dos exercÃ­cios.`
+            `Conclua o estudo extra de ${corrigirMojibakeValor(bloqueio.item?.a || 'esta aula')} antes da revisão ou dos exercícios.`
         );
         return;
     }
@@ -220,20 +220,20 @@ function corrigirMojibakeValor(valor) {
 
   return texto
     .replace(/PLANT(?:AO|\u00c3O|[\u00c0-\u017f\ufffd]+O)/gi, APP_DISPLAY_NAME)
-    .replace(/Voc\ufffd/g, 'VocÃª')
-    .replace(/n\ufffdo/g, 'nÃ£o')
-    .replace(/N\ufffdo/g, 'NÃ£o')
-    .replace(/Miss\ufffdo/g, 'MissÃ£o')
-    .replace(/Quest\ufffdes/g, 'QuestÃµes')
-    .replace(/Precis\ufffdo/g, 'PrecisÃ£o')
-    .replace(/Revis\ufffdo/g, 'RevisÃ£o')
-    .replace(/Exerc\ufffdcios/g, 'ExercÃ­cios')
-    .replace(/Mat\ufffdrias/g, 'MatÃ©rias')
-    .replace(/Publica\ufffdo/g, 'PublicaÃ§Ã£o')
-    .replace(/solicita\ufffdes/g, 'solicitaÃ§Ãµes')
-    .replace(/lan\ufffamentos/g, 'lanÃ§amentos')
-    .replace(/Hor\ufffarios/g, 'HorÃ¡rios')
-    .replace(/Di\ufffarias/g, 'DiÃ¡rias');
+    .replace(/Voc\ufffd/g, 'Você')
+    .replace(/n\ufffdo/g, 'não')
+    .replace(/N\ufffdo/g, 'Não')
+    .replace(/Miss\ufffdo/g, 'Missão')
+    .replace(/Quest\ufffdes/g, 'Questões')
+    .replace(/Precis\ufffdo/g, 'Precisão')
+    .replace(/Revis\ufffdo/g, 'Revisão')
+    .replace(/Exerc\ufffdcios/g, 'Exercícios')
+    .replace(/Mat\ufffdrias/g, 'Matérias')
+    .replace(/Publica\ufffdo/g, 'Publicação')
+    .replace(/solicita\ufffdes/g, 'solicitações')
+    .replace(/lan\ufffamentos/g, 'lançamentos')
+    .replace(/Hor\ufffarios/g, 'Horários')
+    .replace(/Di\ufffarias/g, 'Diárias');
 }
 
 function corrigirTextosDaTela(root = document.body) {
@@ -461,7 +461,7 @@ function garantirRankingInterface() {
                     <div class="page-header">
                         <div>
                             <h2>Ranking dos Alunos</h2>
-                            <p class="meta-sub">Comparativo de horas estudadas, precisÃ£o e sequÃªncia de dias.</p>
+                            <p class="meta-sub">Comparativo de horas estudadas, precisão e sequência de dias.</p>
                         </div>
                         <button class="btn btn-sm btn-outline" onclick="renderRankingAlunos()">
                             <i class="fas fa-rotate"></i> ATUALIZAR
@@ -637,7 +637,7 @@ async function esperarSessaoSupabase(tentativas = 8, intervaloMs = 450) {
             const { data, error } = await comTimeout(
                 supabaseClient.auth.getSession(),
                 2500,
-                'Tempo esgotado ao verificar a sessÃ£o Supabase.'
+                'Tempo esgotado ao verificar a sessão Supabase.'
             );
             if(error) throw error;
             if(data?.session?.user) return data.session;
@@ -695,7 +695,7 @@ async function sessaoSupabasePeloHash(hashParams) {
     if(!accessToken) return null;
 
     supabaseClient = criarClienteSupabase(accessToken);
-    setCloudStatus('Login Google recebido. Preparando sua sessÃ£o...');
+    setCloudStatus('Login Google recebido. Preparando sua sessão...');
     if(refreshToken) {
         try {
             const { data, error } = await comTimeout(
@@ -704,14 +704,14 @@ async function sessaoSupabasePeloHash(hashParams) {
                     refresh_token: refreshToken
                 }),
                 6000,
-                'Tempo esgotado ao salvar a sessÃ£o Supabase.'
+                'Tempo esgotado ao salvar a sessão Supabase.'
             );
             if(error) throw error;
             supabaseAccessToken = data?.session?.access_token || accessToken;
             supabaseClient = criarClienteSupabase(supabaseAccessToken);
             if(data?.session?.user) return data.session;
         } catch(e) {
-            setCloudStatus('SessÃ£o Supabase demorou; liberando pelo token Google validado...');
+            setCloudStatus('Sessão Supabase demorou; liberando pelo token Google validado...');
             supabaseClient = criarClienteSupabase(accessToken);
         }
     }
@@ -741,7 +741,7 @@ function parseDataISO(valor) {
 
 function formatarDataBR(valor) {
     const data = parseDataISO(valor);
-    if(!data) return 'NÃ£o definida';
+    if(!data) return 'Não definida';
     return data.toLocaleDateString('pt-BR');
 }
 
@@ -758,7 +758,7 @@ function textoDataEdital() {
     if(dias === null) return '';
     const data = formatarDataBR(db.editalPublicacao);
     if(dias > 1) return `Edital em ${dias} dias (${data})`;
-    if(dias === 1) return `Edital amanhÃ£ (${data})`;
+    if(dias === 1) return `Edital amanhã (${data})`;
     if(dias === 0) return `Edital hoje (${data})`;
     return `Edital publicado em ${data}`;
 }
@@ -766,7 +766,7 @@ function textoDataEdital() {
 function atualizarPersonalizacao() {
     garantirRankingInterface();
     const welcome = document.getElementById('welcome-title');
-    if(welcome) welcome.innerText = `FORÃ‡A E HONRA, ${nomeUsuario().toUpperCase()}!`;
+    if(welcome) welcome.innerText = `FORÇA E HONRA, ${nomeUsuario().toUpperCase()}!`;
     document.querySelectorAll('[data-student-name]').forEach(el => {
         el.innerText = nomeUsuario();
     });
@@ -867,7 +867,7 @@ async function verificarAcessoSupabase() {
             .eq('email', email)
             .maybeSingle(),
         8000,
-        'Tempo esgotado ao verificar aprovaÃ§Ã£o.'
+        'Tempo esgotado ao verificar aprovação.'
     );
     if(error) throw error;
 
@@ -883,7 +883,7 @@ function bloquearAcessoPorAprovacao(profile) {
     const status = profile?.status || 'pending';
     const texto = status === 'rejected'
         ? 'Seu acesso foi recusado pelo administrador.'
-        : 'Seu acesso foi solicitado. Aguarde aprovaÃ§Ã£o do administrador.';
+        : 'Seu acesso foi solicitado. Aguarde aprovação do administrador.';
     setCloudStatus(texto);
     atualizarPersonalizacao();
     mostrarTelaLogin();
@@ -891,12 +891,12 @@ function bloquearAcessoPorAprovacao(profile) {
 
 async function entrarComSessaoSupabase(user) {
     cloudUser = {...user, provider: 'supabase'};
-    setCloudStatus(`Conectado como ${cloudUser.email || 'Google'}. Verificando aprovaÃ§Ã£o...`);
+    setCloudStatus(`Conectado como ${cloudUser.email || 'Google'}. Verificando aprovação...`);
     try {
         accessProfile = await verificarAcessoSupabase();
     } catch(e) {
         accessProfile = null;
-        setCloudStatus(`NÃ£o foi possÃ­vel solicitar/verificar aprovaÃ§Ã£o: ${mensagemErroSupabase(e)}`);
+        setCloudStatus(`Não foi possível solicitar/verificar aprovação: ${mensagemErroSupabase(e)}`);
         mostrarTelaLogin();
         return;
     }
@@ -912,7 +912,7 @@ async function entrarComSessaoSupabase(user) {
     comTimeout(carregarDadosDaNuvem(), 7000, 'Tempo esgotado ao carregar dados da nuvem.').then(() => {
         init();
     }).catch(() => {
-        showToast('Nuvem lenta', 'A plataforma foi aberta com os dados locais e tentarÃ¡ sincronizar depois.');
+        showToast('Nuvem lenta', 'A plataforma foi aberta com os dados locais e tentará sincronizar depois.');
     });
 }
 
@@ -1005,7 +1005,7 @@ function initFirebaseAuth() {
     firebaseApp = null;
     firebaseAuth = null;
     firebaseStore = null;
-    setCloudStatus('Firebase desativado. Este projeto usa Supabase com aprovaÃ§Ã£o do admin.');
+    setCloudStatus('Firebase desativado. Este projeto usa Supabase com aprovação do admin.');
     return false;
 }
 
@@ -1022,7 +1022,7 @@ async function loginGoogle() {
                     queryParams: { prompt: 'select_account' }
                 }
             });
-            if(error) setCloudStatus('NÃ£o foi possÃ­vel iniciar login Google no Supabase.');
+            if(error) setCloudStatus('Não foi possível iniciar login Google no Supabase.');
             return;
         } catch(e) {
             setCloudStatus('Login Google cancelado ou bloqueado pelo navegador.');
@@ -1035,7 +1035,7 @@ async function loginGoogle() {
 function mostrarCadastroAluno(mostrar) {
     const box = document.getElementById('cadastro-aluno-box');
     if(box) box.style.display = mostrar ? 'grid' : 'none';
-    setCloudStatus(mostrar ? 'Preencha o cadastro. O acesso sÃ³ entra apÃ³s aprovaÃ§Ã£o do admin.' : 'Entre com Google ou e-mail para continuar.');
+    setCloudStatus(mostrar ? 'Preencha o cadastro. O acesso só entra após aprovação do admin.' : 'Entre com Google ou e-mail para continuar.');
 }
 
 function dadosCadastroAluno() {
@@ -1095,7 +1095,7 @@ async function cadastrarAluno() {
     }
     try {
         if(!supabaseClient) supabaseClient = criarClienteSupabase();
-        setCloudStatus('Criando cadastro e enviando para aprovaÃ§Ã£o...');
+        setCloudStatus('Criando cadastro e enviando para aprovação...');
         const { data, error } = await supabaseClient.auth.signUp({
             email: dados.email,
             password: dados.senha,
@@ -1120,9 +1120,9 @@ async function cadastrarAluno() {
         limparCadastroAluno();
         mostrarCadastroAluno(false);
         try { await supabaseClient.auth.signOut({ scope: 'local' }); } catch(e) {}
-        setCloudStatus('Cadastro enviado. Aguarde aprovaÃ§Ã£o do administrador para entrar.');
+        setCloudStatus('Cadastro enviado. Aguarde aprovação do administrador para entrar.');
     } catch(e) {
-        setCloudStatus(`NÃ£o foi possÃ­vel cadastrar: ${mensagemErroSupabase(e)}`);
+        setCloudStatus(`Não foi possível cadastrar: ${mensagemErroSupabase(e)}`);
     }
 }
 
@@ -1148,10 +1148,10 @@ async function entrarEmailSenha() {
     } catch(e) {
         const msg = mensagemErroSupabase(e);
         if(email === ADMIN_EMAIL) {
-            setCloudStatus(`NÃ£o foi possÃ­vel entrar como admin: ${msg}. Se a senha ainda nÃ£o foi criada, clique em Criar ou recuperar senha.`);
+            setCloudStatus(`Não foi possível entrar como admin: ${msg}. Se a senha ainda não foi criada, clique em Criar ou recuperar senha.`);
             return;
         }
-        setCloudStatus(`NÃ£o foi possÃ­vel entrar: ${msg}`);
+        setCloudStatus(`Não foi possível entrar: ${msg}`);
     }
 }
 
@@ -1172,7 +1172,7 @@ async function enviarRecuperacaoSenha() {
         if(error) throw error;
         setCloudStatus('Enviamos um link para seu e-mail. Abra o link, digite a nova senha aqui e clique em Salvar nova senha.');
     } catch(e) {
-        setCloudStatus(`NÃ£o foi possÃ­vel enviar recuperaÃ§Ã£o de senha: ${mensagemErroSupabase(e)}`);
+        setCloudStatus(`Não foi possível enviar recuperação de senha: ${mensagemErroSupabase(e)}`);
     }
 }
 
@@ -1196,7 +1196,7 @@ async function salvarNovaSenhaEmail() {
         setCloudStatus('Senha salva. Entrando na plataforma...');
         if(data?.user) await entrarComSessaoSupabase(data.user);
     } catch(e) {
-        setCloudStatus(`NÃ£o foi possÃ­vel salvar a nova senha: ${mensagemErroSupabase(e)}`);
+        setCloudStatus(`Não foi possível salvar a nova senha: ${mensagemErroSupabase(e)}`);
     }
 }
 async function sairGoogle() {
@@ -1220,7 +1220,7 @@ async function sairGoogle() {
             if(key.startsWith('sb-') || key.includes('supabase.auth.token')) sessionStorage.removeItem(key);
         });
     } catch(e) {
-        setCloudStatus('SessÃ£o local encerrada. Entre novamente com Google.');
+        setCloudStatus('Sessão local encerrada. Entre novamente com Google.');
     } finally {
         cloudUser = null;
         supabaseAccessToken = null;
@@ -1234,7 +1234,7 @@ async function sairGoogle() {
         renderPerfil();
         mostrarTelaLogin();
         window.history.replaceState({}, document.title, window.location.pathname);
-        setCloudStatus('VocÃª saiu do login. Entre novamente com Google.');
+        setCloudStatus('Você saiu do login. Entre novamente com Google.');
     }
 }
 
@@ -1260,7 +1260,7 @@ async function carregarDadosDaNuvem() {
             showToast('Nuvem ativada', 'Seus dados locais foram salvos na sua conta Google.');
         }
     } catch(e) {
-        showToast('SincronizaÃ§Ã£o indisponÃ­vel', 'O site continuarÃ¡ usando a cÃ³pia local neste dispositivo.');
+        showToast('Sincronização indisponível', 'O site continuará usando a cópia local neste dispositivo.');
     } finally {
         carregandoNuvem = false;
     }
@@ -1285,7 +1285,7 @@ async function salvarDadosNaNuvem(imediato) {
             email: cloudUser.email || null
         }, { merge: true });
     } catch(e) {
-        showToast('Falha ao salvar na nuvem', 'A cÃ³pia local continua preservada no navegador.');
+        showToast('Falha ao salvar na nuvem', 'A cópia local continua preservada no navegador.');
     }
 }
 
@@ -1293,7 +1293,7 @@ async function carregarDadosSupabase() {
     if(!supabaseClient || !cloudUser) return false;
     const alvo = alvoDadosNuvem();
     if(!alvo.user_id) {
-        showToast('Aluno sem dados ainda', 'Esse aluno precisa entrar uma vez pelo Google antes de vocÃª editar o perfil dele.');
+        showToast('Aluno sem dados ainda', 'Esse aluno precisa entrar uma vez pelo Google antes de você editar o perfil dele.');
         return false;
     }
     carregandoNuvem = true;
@@ -1318,7 +1318,7 @@ async function carregarDadosSupabase() {
             return true;
         } else {
             if(editandoAlunoComoAdmin()) {
-                showToast('Aluno sem planejamento', 'O aluno ainda nÃ£o tem dados salvos no Supabase.');
+                showToast('Aluno sem planejamento', 'O aluno ainda não tem dados salvos no Supabase.');
                 return false;
             }
             aplicarPreferenciasLocais();
@@ -1327,7 +1327,7 @@ async function carregarDadosSupabase() {
             return true;
         }
     } catch(e) {
-        showToast('SincronizaÃ§Ã£o indisponÃ­vel', 'Confira a tabela e as regras do Supabase.');
+        showToast('Sincronização indisponível', 'Confira a tabela e as regras do Supabase.');
         return false;
     } finally {
         carregandoNuvem = false;
@@ -1350,13 +1350,13 @@ async function garantirBackupEdicaoAdmin(alvo) {
                 student_user_id: alvo.user_id,
                 student_email: alvo.email || null,
                 before_data: cloneDados(data?.data || db),
-                note: 'Backup automÃ¡tico antes de ediÃ§Ã£o pelo admin'
+                note: 'Backup automático antes de edição pelo admin'
             });
         if(backupError) throw backupError;
         adminEditBackupReady = true;
-        showToast('Backup do aluno criado', 'Uma cÃ³pia dos dados anteriores foi salva antes da sua ediÃ§Ã£o.');
+        showToast('Backup do aluno criado', 'Uma cópia dos dados anteriores foi salva antes da sua edição.');
     } catch(e) {
-        showToast('Backup nÃ£o confirmado', 'Confira a tabela plantao_admin_backups antes de editar este aluno.');
+        showToast('Backup não confirmado', 'Confira a tabela plantao_admin_backups antes de editar este aluno.');
         throw e;
     }
 }
@@ -1378,7 +1378,7 @@ async function salvarDadosSupabase(imediato) {
             }, { onConflict: 'user_id' });
         if(error) throw error;
     } catch(e) {
-        showToast('Falha ao salvar na nuvem', 'A cÃ³pia local continua preservada no navegador.');
+        showToast('Falha ao salvar na nuvem', 'A cópia local continua preservada no navegador.');
     }
 }
 
@@ -1468,7 +1468,7 @@ function normalizarBanco() {
 normalizarBanco();
 
 function checkAccess() {
-    setCloudStatus('Acesso local desativado. Entre com Google e aguarde aprovaÃ§Ã£o do admin.');
+    setCloudStatus('Acesso local desativado. Entre com Google e aguarde aprovação do admin.');
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1497,7 +1497,7 @@ function showTab(id, el) {
     const paginasAdmin = ['ranking'];
     if(id === 'backup') id = 'perfil';
     if(paginasAdmin.includes(id) && !usuarioAdmin()) {
-        showToast('Acesso restrito', 'Esta Ã¡rea aparece somente para administradores.');
+        showToast('Acesso restrito', 'Esta área aparece somente para administradores.');
         id = 'diaria';
         el = document.querySelector(".nav-item[onclick*='diaria']");
     }
@@ -1594,7 +1594,7 @@ function renderDiario(date) {
     const atrasoHtml = atrasos.length ? `
         <div class="stat-card atraso-box">
             <h3>Atividades em atraso</h3>
-            <p>VocÃª tem atividade(s) anterior(es) nÃ£o finalizada(s). Deseja replanejar os atrasos?</p>
+            <p>Você tem atividade(s) anterior(es) não finalizada(s). Deseja replanejar os atrasos?</p>
             <button class="btn btn-sm btn-outline" onclick="replanejarAgora()">REPLANEJAR ATRASOS</button>
         </div>
         ${atrasos.map(({task, dia}) => renderTaskCard(task, dia, `atraso-${dia}-${task.itemId || task.m}`, true)).join('')}
@@ -1607,7 +1607,7 @@ function renderDiario(date) {
         <div class="empty-state replan-empty">
             <i class="fas fa-calendar-minus"></i>
             <strong>Dia pausado</strong>
-            <span>Hoje ficou vazio e o planejamento recomeÃ§a amanhÃ£.</span>
+            <span>Hoje ficou vazio e o planejamento recomeça amanhã.</span>
             <button class="btn btn-sm btn-outline" onclick="showTab('replanejar')">VER REPLANEJAMENTO</button>
         </div>` : '';
 
@@ -1627,8 +1627,8 @@ function renderMissaoCumpridaCard(ehHoje) {
         <div class="mission-complete-card">
             <div class="mission-complete-icon"><i class="fas fa-check"></i></div>
             <div>
-                <h3>MissÃ£o cumprida</h3>
-                <p>ParabÃ©ns, vocÃª concluiu todas as atividades planejadas para este dia.</p>
+                <h3>Missão cumprida</h3>
+                <p>Parabéns, você concluiu todas as atividades planejadas para este dia.</p>
             </div>
             <button class="btn btn-sm" onclick="navDay(1)">
                 <i class="fas fa-arrow-right"></i> ${ehHoje ? 'ADIANTAR AMANH\u00c3' : 'VER PR\u00d3XIMO DIA'}
@@ -1703,7 +1703,7 @@ function fecharModais() {
 function abrirModalExtra() {
     const selectMat = document.getElementById('extra-mat');
     const materiasUnicas = [...new Set(db.lista.map(x => x.m))];
-    selectMat.innerHTML = '<option value="">Selecione a MatÃ©ria</option>' + materiasUnicas.map(m => `<option value="${m}">${m}</option>`).join('');
+    selectMat.innerHTML = '<option value="">Selecione a Matéria</option>' + materiasUnicas.map(m => `<option value="${m}">${m}</option>`).join('');
     document.getElementById('modal-extra').style.display = 'flex';
 }
 
@@ -1780,7 +1780,7 @@ function aplicarTempoExtraTeoria(destino) {
     teoriaPendente = null;
     fecharModais();
     save();
-    showToast("Tempo extra planejado", destino === 'hoje' ? "O reforÃ§o foi tentado no dia atual." : "Os prÃ³ximos dias foram recalculados sem alterar dias anteriores.");
+    showToast("Tempo extra planejado", destino === 'hoje' ? "O reforço foi tentado no dia atual." : "Os próximos dias foram recalculados sem alterar dias anteriores.");
     updateDashboard();
     renderDiarioSemRecalcular(vDate);
 }
@@ -1792,7 +1792,7 @@ function inserirTeoriaExtraNoDia(item, diaKey, horas) {
     const total = tarefasPlanejadas(tasks).reduce((acc, t) => acc + (parseFloat(t.h) || 0), 0);
     const livre = Math.max(0, limite - total);
     if(livre <= 0.01) {
-        showToast("Sem espaÃ§o hoje", "A teoria extra entrarÃ¡ no prÃ³ximo dia disponÃ­vel do cronograma.");
+        showToast("Sem espaço hoje", "A teoria extra entrará no próximo dia disponível do cronograma.");
         return;
     }
     const horasHoje = Math.min(livre, horas);
@@ -1874,8 +1874,8 @@ function renderLancamentos() {
         alvo.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-database"></i>
-                <strong>Nenhum lanÃ§amento registrado</strong>
-                <span>Quando vocÃª marcar uma atividade como feita, ela aparecerÃ¡ aqui.</span>
+                <strong>Nenhum lançamento registrado</strong>
+                <span>Quando você marcar uma atividade como feita, ela aparecerá aqui.</span>
             </div>`;
         return;
     }
@@ -1933,9 +1933,9 @@ function renderPerfil() {
         .slice(0, 2)
         .map(p => p[0]?.toUpperCase())
         .join('') || 'P';
-    const sincronizado = cloudUser ? 'SincronizaÃ§Ã£o ativa' : 'Acesso local';
+    const sincronizado = cloudUser ? 'Sincronização ativa' : 'Acesso local';
     const detalhe = cloudUser
-        ? (editandoAlunoComoAdmin() ? `VocÃª estÃ¡ editando os dados de ${adminStudentContext.email}.` : 'Este perfil usa sua conta Google para carregar e salvar os dados no Supabase.')
+        ? (editandoAlunoComoAdmin() ? `Você está editando os dados de ${adminStudentContext.email}.` : 'Este perfil usa sua conta Google para carregar e salvar os dados no Supabase.')
         : 'Entre com Google para sincronizar seus dados entre celular, tablet e computador.';
     const statusAcesso = accessProfile?.status === 'approved' ? 'Aprovado' : (accessProfile?.status === 'pending' ? 'Pendente' : (accessProfile?.status === 'rejected' ? 'Recusado' : sincronizado));
     const adminHtml = usuarioAdmin() ? `
@@ -1950,7 +1950,7 @@ function renderPerfil() {
                     </button>
                 </div>
                 <div id="admin-access-list" class="admin-access-list">
-                    <div class="empty-state">Carregando solicitaÃ§Ãµes...</div>
+                    <div class="empty-state">Carregando solicitações...</div>
                 </div>
             </div>` : '';
 
@@ -1986,7 +1986,7 @@ function renderPerfil() {
             </div>
             <div class="stat-card profile-actions-card">
                 <h3>Nome na plataforma</h3>
-                <p class="meta-sub">Esse nome aparece no painel, no ranking e nas Ã¡reas de acompanhamento.</p>
+                <p class="meta-sub">Esse nome aparece no painel, no ranking e nas áreas de acompanhamento.</p>
                 <label for="perfil-nome-aluno">Nome exibido</label>
                 <input type="text" id="perfil-nome-aluno" value="${nomeSeguro}" maxlength="80" placeholder="Nome do aluno">
                 <button class="btn" onclick="salvarNomePerfil()">
@@ -2002,8 +2002,8 @@ function renderPerfil() {
             </div>
             <div class="stat-card profile-deadline-card">
                 <h3>Data do edital</h3>
-                <p class="meta-sub">Informe a data prevista de publicaÃ§Ã£o para o painel acompanhar a contagem.</p>
-                <label for="edital-publicacao">PublicaÃ§Ã£o do edital</label>
+                <p class="meta-sub">Informe a data prevista de publicação para o painel acompanhar a contagem.</p>
+                <label for="edital-publicacao">Publicação do edital</label>
                 <input type="date" id="edital-publicacao" value="${escapeHtml(db.editalPublicacao || '')}">
                 <div class="deadline-preview">${escapeHtml(textoDataEdital() || 'Nenhuma data definida.')}</div>
                 <button class="btn" onclick="salvarDataEdital()">
@@ -2019,7 +2019,7 @@ function renderPerfil() {
 async function carregarSolicitacoesAcesso() {
     const alvo = document.getElementById('admin-access-list');
     if(!alvo || !supabaseClient || !usuarioAdmin()) return;
-    alvo.innerHTML = '<div class="empty-state">Carregando solicitaÃ§Ãµes...</div>';
+    alvo.innerHTML = '<div class="empty-state">Carregando solicitações...</div>';
     try {
         const adminEmailAtual = emailUsuario();
         try {
@@ -2031,7 +2031,7 @@ async function carregarSolicitacoesAcesso() {
                 .select('*')
                 .order('requested_at', { ascending: false }),
             8000,
-            'Tempo esgotado ao carregar solicitaÃ§Ãµes.'
+            'Tempo esgotado ao carregar solicitações.'
         );
         if(error) throw error;
         adminAccessList = data || [];
@@ -2039,10 +2039,10 @@ async function carregarSolicitacoesAcesso() {
     } catch(e) {
         alvo.innerHTML = `
             <div class="empty-state">
-                <strong>NÃ£o foi possÃ­vel carregar os alunos</strong>
+                <strong>Não foi possível carregar os alunos</strong>
                 <span>${escapeHtml(mensagemErroSupabase(e))}</span>
-                <span>SessÃ£o admin: ${escapeHtml(emailUsuario())} | token ${supabaseAccessToken ? 'ativo' : 'ausente'}</span>
-                <span>Rode novamente o SQL de acesso no Supabase e depois peÃ§a para o aluno sair e entrar com Google.</span>
+                <span>Sessão admin: ${escapeHtml(emailUsuario())} | token ${supabaseAccessToken ? 'ativo' : 'ausente'}</span>
+                <span>Rode novamente o SQL de acesso no Supabase e depois peça para o aluno sair e entrar com Google.</span>
                 <button class="btn btn-sm btn-outline" onclick="carregarSolicitacoesAcesso()">TENTAR NOVAMENTE</button>
             </div>`;
     }
@@ -2055,9 +2055,9 @@ function renderAdminAccessList(adminEmailAtual = '') {
     if(!alunos.length) {
         alvo.innerHTML = `
             <div class="empty-state">
-                <strong>Nenhuma solicitaÃ§Ã£o de aluno por enquanto</strong>
+                <strong>Nenhuma solicitação de aluno por enquanto</strong>
                 <span>Admin conectado: ${escapeHtml(adminEmailAtual || emailUsuario())}</span>
-                <span>Para aparecer aqui, o aluno precisa clicar em Entrar com Google. Se ele jÃ¡ testou, rode o SQL atualizado no Supabase.</span>
+                <span>Para aparecer aqui, o aluno precisa clicar em Entrar com Google. Se ele já testou, rode o SQL atualizado no Supabase.</span>
             </div>`;
         return;
     }
@@ -2066,8 +2066,8 @@ function renderAdminAccessList(adminEmailAtual = '') {
         const emailParam = encodeURIComponent(item.email || '');
         const nome = escapeHtml(item.name || item.email || 'Aluno');
         const telefone = escapeHtml(item.phone || 'Sem telefone');
-        const concurso = escapeHtml(item.contest || 'Concurso nÃ£o informado');
-        const idade = item.age ? `${escapeHtml(item.age)} anos` : 'Idade nÃ£o informada';
+        const concurso = escapeHtml(item.contest || 'Concurso não informado');
+        const idade = item.age ? `${escapeHtml(item.age)} anos` : 'Idade não informada';
         const status = escapeHtml(item.status || 'pending');
         const role = escapeHtml(item.role || 'aluno');
         const statusLabel = item.status === 'approved' ? 'Aprovado' : (item.status === 'rejected' ? 'Recusado' : 'Pendente');
@@ -2121,11 +2121,11 @@ async function entrarPerfilAluno(email) {
     const cleanEmail = decodeURIComponent(String(email || '')).toLowerCase();
     const aluno = adminAccessList.find(item => String(item.email || '').toLowerCase() === cleanEmail);
     if(!aluno || aluno.status !== 'approved') {
-        showToast('Aluno nÃ£o aprovado', 'Aprove o aluno antes de abrir o perfil.');
+        showToast('Aluno não aprovado', 'Aprove o aluno antes de abrir o perfil.');
         return;
     }
     if(!aluno.user_id) {
-        showToast('Aluno sem login completo', 'Esse aluno precisa entrar pelo Google uma vez antes de vocÃª editar os dados dele.');
+        showToast('Aluno sem login completo', 'Esse aluno precisa entrar pelo Google uma vez antes de você editar os dados dele.');
         return;
     }
     await salvarDadosSupabase(true);
@@ -2156,7 +2156,7 @@ async function voltarPerfilAdmin() {
     renderAdminStudentBanner();
     renderPerfil();
     showTab('perfil', document.querySelector(".nav-item[onclick*='perfil']"));
-    showToast('Perfil admin restaurado', 'VocÃª voltou para os seus dados.');
+    showToast('Perfil admin restaurado', 'Você voltou para os seus dados.');
 }
 
 async function restaurarBackupAluno(email) {
@@ -2164,7 +2164,7 @@ async function restaurarBackupAluno(email) {
     const cleanEmail = decodeURIComponent(String(email || '')).toLowerCase();
     const aluno = adminAccessList.find(item => String(item.email || '').toLowerCase() === cleanEmail);
     if(!aluno?.user_id) {
-        showToast('Aluno sem registro', 'NÃ£o encontrei o usuÃ¡rio do aluno para restaurar.');
+        showToast('Aluno sem registro', 'Não encontrei o usuário do aluno para restaurar.');
         return;
     }
     try {
@@ -2177,7 +2177,7 @@ async function restaurarBackupAluno(email) {
             .maybeSingle();
         if(error) throw error;
         if(!data?.before_data) {
-            showToast('Sem backup encontrado', 'Ainda nÃ£o existe backup salvo para este aluno.');
+            showToast('Sem backup encontrado', 'Ainda não existe backup salvo para este aluno.');
             return;
         }
         const { error: saveError } = await supabaseClient
@@ -2195,9 +2195,9 @@ async function restaurarBackupAluno(email) {
             normalizarBanco();
             init();
         }
-        showToast('Backup restaurado', `Dados de ${cleanEmail} voltaram para o Ãºltimo backup.`);
+        showToast('Backup restaurado', `Dados de ${cleanEmail} voltaram para o último backup.`);
     } catch(e) {
-        showToast('Falha ao restaurar backup', 'Confira as permissÃµes da tabela plantao_admin_backups.');
+        showToast('Falha ao restaurar backup', 'Confira as permissões da tabela plantao_admin_backups.');
     }
 }
 
@@ -2220,7 +2220,7 @@ async function alterarAcessoAluno(email, status) {
         showToast(status === 'approved' ? 'Aluno aprovado' : 'Acesso atualizado', cleanEmail);
         await carregarSolicitacoesAcesso();
     } catch(e) {
-        showToast('Falha ao atualizar acesso', 'Confira as permissÃµes da tabela no Supabase.');
+        showToast('Falha ao atualizar acesso', 'Confira as permissões da tabela no Supabase.');
     }
 }
 
@@ -2229,7 +2229,7 @@ async function excluirAlunoPlataforma(email) {
     const cleanEmail = decodeURIComponent(String(email || '')).toLowerCase();
     if(!cleanEmail || cleanEmail === ADMIN_EMAIL) return;
     const aluno = adminAccessList.find(item => String(item.email || '').toLowerCase() === cleanEmail);
-    if(!confirm(`Excluir ${cleanEmail} da plataforma? Os dados de planejamento deste aluno tambÃ©m serÃ£o removidos.`)) return;
+    if(!confirm(`Excluir ${cleanEmail} da plataforma? Os dados de planejamento deste aluno também serão removidos.`)) return;
     try {
         if(aluno?.user_id) {
             const { error: dataError } = await supabaseClient
@@ -2246,10 +2246,10 @@ async function excluirAlunoPlataforma(email) {
         if(editandoAlunoComoAdmin() && adminStudentContext?.email === cleanEmail) {
             await voltarPerfilAdmin();
         }
-        showToast('Aluno excluÃ­do', `${cleanEmail} foi removido da plataforma.`);
+        showToast('Aluno excluído', `${cleanEmail} foi removido da plataforma.`);
         await carregarSolicitacoesAcesso();
     } catch(e) {
-        showToast('Falha ao excluir aluno', 'Confira as permissÃµes de exclusÃ£o no SQL do Supabase.');
+        showToast('Falha ao excluir aluno', 'Confira as permissões de exclusão no SQL do Supabase.');
     }
 }
 
@@ -2258,7 +2258,7 @@ async function salvarNomePerfil() {
     if(!input) return;
     const nome = input.value.trim();
     if(nome.length < 2) {
-        showToast('Nome nÃ£o salvo', 'Informe pelo menos 2 letras.');
+        showToast('Nome não salvo', 'Informe pelo menos 2 letras.');
         return;
     }
     db.perfilNome = nome;
@@ -2276,7 +2276,7 @@ async function salvarNomePerfil() {
         }
         await salvarDadosSupabase(true);
     } catch(e) {}
-    showToast('Nome atualizado', `${nome} serÃ¡ usado na plataforma.`);
+    showToast('Nome atualizado', `${nome} será usado na plataforma.`);
 }
 
 function salvarDataEdital() {
@@ -2356,19 +2356,19 @@ function renderPerfGeral(data) {
     el.innerHTML = `
         <div class="perf-kpi-grid">
             <div class="perf-kpi"><small>Horas estudadas</small><strong>${total.horas.toFixed(1)}h</strong></div>
-            <div class="perf-kpi"><small>QuestÃµes feitas</small><strong>${total.questoes}</strong></div>
-            <div class="perf-kpi"><small>QuestÃµes acertadas</small><strong>${total.acertos}</strong></div>
-            <div class="perf-kpi"><small>PrecisÃ£o geral</small><strong>${taxa(total)}%</strong></div>
+            <div class="perf-kpi"><small>Questões feitas</small><strong>${total.questoes}</strong></div>
+            <div class="perf-kpi"><small>Questões acertadas</small><strong>${total.acertos}</strong></div>
+            <div class="perf-kpi"><small>Precisão geral</small><strong>${taxa(total)}%</strong></div>
         </div>
         <div class="perf-grid">
             <div class="stat-card">
-                <h3>DistribuiÃ§Ã£o dos lanÃ§amentos</h3>
+                <h3>Distribuição dos lançamentos</h3>
                 ${perfMetricBar('Estudo', total.estudos, total.atividades)}
-                ${perfMetricBar('RevisÃ£o', total.revisoes, total.atividades)}
-                ${perfMetricBar('ExercÃ­cios', total.exercicios, total.atividades)}
+                ${perfMetricBar('Revisão', total.revisoes, total.atividades)}
+                ${perfMetricBar('Exercícios', total.exercicios, total.atividades)}
             </div>
             <div class="stat-card">
-                <h3>MatÃ©rias mais trabalhadas</h3>
+                <h3>Matérias mais trabalhadas</h3>
                 ${renderRankList(data.materias.sort((a,b) => b.horas - a.horas).slice(0,5), 'horas')}
             </div>
         </div>`;
@@ -2384,13 +2384,13 @@ function perfMetricBar(label, value, total) {
 }
 
 function renderRankList(items, mode) {
-    if(!items.length) return perfEmpty('Marque atividades como concluÃ­das para gerar anÃ¡lise.');
+    if(!items.length) return perfEmpty('Marque atividades como concluídas para gerar análise.');
     return `<div class="perf-rank-list">${items.map((item, idx) => `
         <div class="perf-rank-row">
             <span>${idx + 1}</span>
             <div>
                 <b>${item.assunto || item.nome}</b>
-                <small>${item.materia ? item.materia + ' | ' : ''}${item.horas.toFixed(1)}h | ${item.questoes} questÃµes | ${taxa(item)}%</small>
+                <small>${item.materia ? item.materia + ' | ' : ''}${item.horas.toFixed(1)}h | ${item.questoes} questões | ${taxa(item)}%</small>
             </div>
             <strong>${mode === 'taxa' ? taxa(item) + '%' : item.horas.toFixed(1) + 'h'}</strong>
         </div>`).join('')}</div>`;
@@ -2403,8 +2403,8 @@ function renderPerfQuestoes(data) {
     el.innerHTML = `
         <div class="perf-grid">
             <div class="stat-card">
-                <h3>QuestÃµes por matÃ©ria</h3>
-                ${materiasComQuestoes.length ? materiasComQuestoes.map(m => perfQuestionRow(m.nome, m.questoes, m.acertos)).join('') : perfEmpty('Registre exercÃ­cios para ver questÃµes por matÃ©ria.')}
+                <h3>Questões por matéria</h3>
+                ${materiasComQuestoes.length ? materiasComQuestoes.map(m => perfQuestionRow(m.nome, m.questoes, m.acertos)).join('') : perfEmpty('Registre exercícios para ver questões por matéria.')}
             </div>
             <div class="stat-card">
                 <h3>Melhores assuntos</h3>
@@ -2412,7 +2412,7 @@ function renderPerfQuestoes(data) {
             </div>
             <div class="stat-card perf-subject-card">
                 <h3>Desempenho por assunto</h3>
-                <p class="meta-sub">Cada assunto aparece dentro da sua matÃ©ria com questÃµes feitas, acertos e precisÃ£o.</p>
+                <p class="meta-sub">Cada assunto aparece dentro da sua matéria com questões feitas, acertos e precisão.</p>
                 ${renderAssuntosQuestoesPorMateria(data)}
             </div>
         </div>`;
@@ -2432,10 +2432,10 @@ function renderAssuntosQuestoesPorMateria(data) {
     const assuntos = data.assuntos
         .filter(x => x.questoes > 0)
         .sort((a,b) => String(a.materia).localeCompare(String(b.materia), 'pt-BR') || taxa(b) - taxa(a) || String(a.assunto).localeCompare(String(b.assunto), 'pt-BR'));
-    if(!assuntos.length) return perfEmpty('Registre exercÃ­cios para ver seu desempenho por assunto.');
+    if(!assuntos.length) return perfEmpty('Registre exercícios para ver seu desempenho por assunto.');
 
     const porMateria = assuntos.reduce((acc, item) => {
-        const materia = item.materia || 'MatÃ©ria nÃ£o informada';
+        const materia = item.materia || 'Matéria não informada';
         if(!acc[materia]) acc[materia] = [];
         acc[materia].push(item);
         return acc;
@@ -2455,7 +2455,7 @@ function renderAssuntosQuestoesPorMateria(data) {
                         <small>${total.acertos}/${total.questoes} acertos | ${taxa(total)}%</small>
                     </div>
                 </div>
-                ${itens.map(item => perfQuestionRow(escapeHtml(item.assunto || 'Assunto nÃ£o informado'), item.questoes, item.acertos)).join('')}
+                ${itens.map(item => perfQuestionRow(escapeHtml(item.assunto || 'Assunto não informado'), item.questoes, item.acertos)).join('')}
             </div>`;
     }).join('');
 }
@@ -2467,8 +2467,8 @@ function renderPerfMelhores(data) {
     const melhoresAssuntos = data.assuntos.filter(x => x.questoes > 0).sort((a,b) => taxa(b) - taxa(a) || b.questoes - a.questoes).slice(0,8);
     el.innerHTML = `
         <div class="perf-grid">
-            <div class="stat-card"><h3>MatÃ©rias em que vocÃª estÃ¡ melhor</h3>${renderRankList(melhoresMaterias, 'taxa')}</div>
-            <div class="stat-card"><h3>Assuntos em que vocÃª estÃ¡ melhor</h3>${renderRankList(melhoresAssuntos, 'taxa')}</div>
+            <div class="stat-card"><h3>Matérias em que você está melhor</h3>${renderRankList(melhoresMaterias, 'taxa')}</div>
+            <div class="stat-card"><h3>Assuntos em que você está melhor</h3>${renderRankList(melhoresAssuntos, 'taxa')}</div>
         </div>`;
 }
 
@@ -2485,9 +2485,9 @@ function renderPerfPrioridades(data) {
     const prioridades = materias.sort((a,b) => prioridadeScore(b) - prioridadeScore(a)).slice(0,8);
     el.innerHTML = `
         <div class="stat-card">
-            <h3>Em quais matÃ©rias devo estudar</h3>
-            <p class="meta-sub">Prioridade calculada por baixa precisÃ£o, poucas questÃµes, poucas horas e assuntos pendentes.</p>
-            ${prioridades.length ? prioridades.map(renderPrioridadeRow).join('') : perfEmpty('Ative matÃ©rias no ciclo para gerar prioridades.')}
+            <h3>Em quais matérias devo estudar</h3>
+            <p class="meta-sub">Prioridade calculada por baixa precisão, poucas questões, poucas horas e assuntos pendentes.</p>
+            ${prioridades.length ? prioridades.map(renderPrioridadeRow).join('') : perfEmpty('Ative matérias no ciclo para gerar prioridades.')}
         </div>`;
 }
 
@@ -2501,7 +2501,7 @@ function prioridadeScore(item) {
 
 function renderPrioridadeRow(item) {
     const pct = Math.min(100, prioridadeScore(item));
-    const motivo = item.questoes === 0 ? 'sem questÃµes registradas' : `${taxa(item)}% de precisÃ£o`;
+    const motivo = item.questoes === 0 ? 'sem questões registradas' : `${taxa(item)}% de precisão`;
     return `
         <div class="priority-row">
             <div>
@@ -2574,10 +2574,10 @@ function rankingLista(titulo, subtitulo, alunos, criterio, unidade) {
                     <span class="ranking-pos">${idx + 1}</span>
                     <div>
                         <b>${escapeHtml(aluno.nome)}</b>
-                        <small>${aluno.horas.toFixed(1)}h | ${aluno.questoes} questÃµes | ${aluno.taxa}%</small>
+                        <small>${aluno.horas.toFixed(1)}h | ${aluno.questoes} questões | ${aluno.taxa}%</small>
                     </div>
                     <strong>${criterio === 'horas' ? aluno[criterio].toFixed(1) : aluno[criterio]}${unidade}</strong>
-                </div>`).join('') : perfEmpty('Ainda nÃ£o hÃ¡ alunos com dados para ranquear.')}
+                </div>`).join('') : perfEmpty('Ainda não há alunos com dados para ranquear.')}
         </div>`;
 }
 
@@ -2585,7 +2585,7 @@ async function renderRankingAlunos() {
     const alvo = document.getElementById('ranking-content');
     if(!alvo) return;
     if(!usuarioAdmin()) {
-        alvo.innerHTML = perfEmpty('O ranking fica disponÃ­vel somente para o admin.');
+        alvo.innerHTML = perfEmpty('O ranking fica disponível somente para o admin.');
         return;
     }
     alvo.innerHTML = '<div class="empty-state">Carregando ranking dos alunos...</div>';
@@ -2610,14 +2610,14 @@ async function renderRankingAlunos() {
         const ranking = alunos.map(aluno => resumoRankingAluno(aluno, dadosPorId.get(aluno.user_id)));
         alvo.innerHTML = `
             <div class="ranking-grid">
-                ${rankingLista('Horas estudadas', 'Soma de atividades concluÃ­das.', ranking, 'horas', 'h')}
-                ${rankingLista('PrecisÃ£o de acertos', 'Percentual geral de acertos em questÃµes.', ranking.filter(a => a.questoes > 0), 'taxa', '%')}
-                ${rankingLista('Dias sem falhar', 'SequÃªncia atual de dias com todas as metas concluÃ­das.', ranking, 'streak', ' dias')}
+                ${rankingLista('Horas estudadas', 'Soma de atividades concluídas.', ranking, 'horas', 'h')}
+                ${rankingLista('Precisão de acertos', 'Percentual geral de acertos em questões.', ranking.filter(a => a.questoes > 0), 'taxa', '%')}
+                ${rankingLista('Dias sem falhar', 'Sequência atual de dias com todas as metas concluídas.', ranking, 'streak', ' dias')}
             </div>`;
     } catch(e) {
         alvo.innerHTML = `
             <div class="empty-state">
-                <strong>NÃ£o foi possÃ­vel carregar o ranking</strong>
+                <strong>Não foi possível carregar o ranking</strong>
                 <span>${escapeHtml(mensagemErroSupabase(e))}</span>
                 <span>Confira se o SQL do Supabase permite o admin ler plantao_user_data.</span>
             </div>`;
@@ -2638,7 +2638,7 @@ function desmarcarLancamento(dia, idx, voltarParaBase) {
     updateDashboard();
     if(voltarParaBase) {
         renderLancamentos();
-        showToast("LanÃ§amento removido", "A atividade voltou para pendente e o progresso foi recalculado.");
+        showToast("Lançamento removido", "A atividade voltou para pendente e o progresso foi recalculado.");
     }
 }
 
@@ -2685,10 +2685,10 @@ function calcCebraspe() {
     const acertosInformados = Math.max(0, parseInt(document.getElementById('ex-acertos').value) || 0);
     const acertos = total > 0 ? Math.min(acertosInformados, total) : acertosInformados;
     const perc = total > 0 ? Math.round((acertos / total) * 100) : 0;
-    const aviso = acertosInformados > total && total > 0 ? '<br><small>Acertos ajustados ao total de questÃµes.</small>' : '';
+    const aviso = acertosInformados > total && total > 0 ? '<br><small>Acertos ajustados ao total de questões.</small>' : '';
     document.getElementById('cebraspe-feedback').innerHTML = total
         ? `Acertos: ${acertos}/${total} | Aproveitamento: ${perc}%${aviso}`
-        : 'Informe as questÃµes e os acertos.';
+        : 'Informe as questões e os acertos.';
 }
 
 function confirmarExercicio() {
@@ -2748,7 +2748,7 @@ function renderReplanejamento() {
             <div class="stat-card replan-card ${pausado ? 'active' : ''}">
                 <div class="replan-icon"><i class="fas fa-calendar-plus"></i></div>
                 <div>
-                    <h3>ComeÃ§ar a semana amanhÃ£</h3>
+                    <h3>Começar a semana amanhã</h3>
                     <p class="meta-sub">Esvazia o dia de hoje e recalcula o cronograma a partir de ${amanhaKey}, respeitando suas horas cadastradas.</p>
                 </div>
                 <div class="replan-status">
@@ -2764,8 +2764,8 @@ function renderReplanejamento() {
                 <h3>O que acontece</h3>
                 <div class="replan-steps">
                     <div><i class="fas fa-check"></i><span>Hoje fica sem cards planejados.</span></div>
-                    <div><i class="fas fa-check"></i><span>As atividades nÃ£o concluÃ­das voltam para a fila.</span></div>
-                    <div><i class="fas fa-check"></i><span>AmanhÃ£ assume o inÃ­cio do ciclo, sem marcar nada como estudado.</span></div>
+                    <div><i class="fas fa-check"></i><span>As atividades não concluídas voltam para a fila.</span></div>
+                    <div><i class="fas fa-check"></i><span>Amanhã assume o início do ciclo, sem marcar nada como estudado.</span></div>
                     <div><i class="fas fa-check"></i><span>Domingo a s\u00e1bado continuam respeitando os limites di\u00e1rios.</span></div>
                 </div>
             </div>
@@ -2780,7 +2780,7 @@ function replanejarComecarAmanha() {
     db.metaFixa[hojeKey] = [];
     limparPlanejamentoFuturo(hojeKey);
     save();
-    showToast("Dia pausado", "Hoje ficou vazio e o cronograma recomeÃ§a amanhÃ£.");
+    showToast("Dia pausado", "Hoje ficou vazio e o cronograma recomeça amanhã.");
     renderReplanejamento();
     renderDiario(vDate);
     updateDashboard();
@@ -2804,14 +2804,14 @@ function renderBackup() {
     if(!content) return;
     const totalAssuntos = db.lista.length;
     const totalLancamentos = listarLancamentos().length;
-    const ultimaCopia = db.ultimoBackup ? new Date(db.ultimoBackup).toLocaleString() : 'Nenhuma cÃ³pia registrada';
+    const ultimaCopia = db.ultimoBackup ? new Date(db.ultimoBackup).toLocaleString() : 'Nenhuma cópia registrada';
 
     content.innerHTML = `
         <div class="backup-grid">
             <div class="stat-card backup-card">
                 <div class="backup-icon"><i class="fas fa-lock"></i></div>
                 <h3>Exportar backup seguro</h3>
-                <p class="meta-sub">Crie um arquivo criptografado. Guarde a senha, porque sem ela nÃ£o serÃ¡ possÃ­vel restaurar.</p>
+                <p class="meta-sub">Crie um arquivo criptografado. Guarde a senha, porque sem ela não será possível restaurar.</p>
                 <label for="backup-pass">Senha do backup</label>
                 <input type="password" id="backup-pass" placeholder="Digite uma senha forte">
                 <button class="btn" onclick="exportarBackupSeguro()"><i class="fas fa-download"></i> BAIXAR BACKUP SEGURO</button>
@@ -2830,8 +2830,8 @@ function renderBackup() {
                 <h3>Dados protegidos</h3>
                 <div class="backup-stats">
                     <div><small>Assuntos</small><strong>${totalAssuntos}</strong></div>
-                    <div><small>LanÃ§amentos</small><strong>${totalLancamentos}</strong></div>
-                    <div><small>Ãšltimo backup</small><strong>${ultimaCopia}</strong></div>
+                    <div><small>Lançamentos</small><strong>${totalLancamentos}</strong></div>
+                    <div><small>Último backup</small><strong>${ultimaCopia}</strong></div>
                 </div>
             </div>
         </div>`;
@@ -2863,7 +2863,7 @@ async function gerarChaveBackup(senha, salt) {
 
 async function exportarBackupSeguro() {
     try {
-        if(!crypto?.subtle) return showToast('Criptografia indisponÃ­vel', 'Abra o site no Chrome ou Edge atualizado para usar backup seguro.');
+        if(!crypto?.subtle) return showToast('Criptografia indisponível', 'Abra o site no Chrome ou Edge atualizado para usar backup seguro.');
         const pass = document.getElementById('backup-pass').value;
         if(!pass || pass.length < 6) return showToast('Senha curta', 'Use pelo menos 6 caracteres para proteger o backup.');
 
@@ -2903,13 +2903,13 @@ async function exportarBackupSeguro() {
         renderBackup();
         showToast('Backup criado', 'Arquivo criptografado baixado com sucesso.');
     } catch(e) {
-        showToast('Erro no backup', 'NÃ£o foi possÃ­vel gerar o arquivo seguro.');
+        showToast('Erro no backup', 'Não foi possível gerar o arquivo seguro.');
     }
 }
 
 async function restaurarBackupSeguro() {
     try {
-        if(!crypto?.subtle) return showToast('Criptografia indisponÃ­vel', 'Abra o site no Chrome ou Edge atualizado para restaurar backup seguro.');
+        if(!crypto?.subtle) return showToast('Criptografia indisponível', 'Abra o site no Chrome ou Edge atualizado para restaurar backup seguro.');
         const file = document.getElementById('restore-file').files[0];
         const pass = document.getElementById('restore-pass').value;
         if(!file) return showToast('Selecione o arquivo', 'Escolha o backup criptografado para restaurar.');
@@ -2918,7 +2918,7 @@ async function restaurarBackupSeguro() {
         const raw = await file.text();
         const backup = JSON.parse(raw);
         if(backup.type !== 'encrypted-backup' || !backup.salt || !backup.iv || !backup.data) {
-            return showToast('Arquivo invÃ¡lido', 'Este arquivo nÃ£o parece ser um backup seguro do sistema.');
+            return showToast('Arquivo inválido', 'Este arquivo não parece ser um backup seguro do sistema.');
         }
 
         const key = await gerarChaveBackup(pass, base64ToBytes(backup.salt));
@@ -2929,7 +2929,7 @@ async function restaurarBackupSeguro() {
         );
         const payload = JSON.parse(textDecoder.decode(decrypted));
         if(payload.app !== 'plantao-policia' || !payload.data) {
-            return showToast('Backup invÃ¡lido', 'O conteÃºdo restaurado nÃ£o pertence a este sistema.');
+            return showToast('Backup inválido', 'O conteúdo restaurado não pertence a este sistema.');
         }
 
         db = payload.data;
@@ -2990,6 +2990,14 @@ function garantirDiaPlanejado(diaKey, date) {
     }
     if(diaIgualOuAnteriorAHoje(diaKey) && tarefasPlanejadas(existentes).length > 0) {
         db.metaFixa[diaKey] = existentes;
+        const planejadas = tarefasPlanejadas(existentes);
+        const limite = parseFloat(db.h[date.getDay()]) || 0;
+        const total = totalHorasPlanejadas(planejadas);
+        const temConclusao = planejadas.some(t => t.c);
+        if(!temConclusao && total < limite - 0.01) {
+            completarDiaReal(diaKey, date);
+            save();
+        }
         return;
     }
     const extras = existentes.filter(isExtraTask);
@@ -3015,6 +3023,48 @@ function aplicarPlanejamentoNoEstadoSimulado(tasks, diaKey, state) {
     });
 }
 
+function totalHorasPlanejadas(tasks) {
+    return tarefasPlanejadas(tasks || []).reduce((acc, t) => acc + (parseFloat(t.h) || 0), 0);
+}
+
+function mesclarComplementoPlanejado(tasks, extras) {
+    const base = [...(tasks || [])];
+    (extras || []).forEach(extra => {
+        const existente = base.find(t => t.itemId === extra.itemId && t.k === extra.k && (extra.k === 'E' || extra.k === 'Rev'));
+        if(existente) {
+            existente.h = Math.round(((parseFloat(existente.h) || 0) + (parseFloat(extra.h) || 0)) * 10) / 10;
+            return;
+        }
+        if(!base.some(t => t.itemId === extra.itemId && t.k === extra.k)) {
+            base.push(extra);
+        }
+    });
+    return base;
+}
+
+function completarTarefasPlanejadasNoEstado(tasks, diaKey, date, state) {
+    const limite = parseFloat(state.h?.[date.getDay()]) || 0;
+    let planejadas = [...(tasks || [])];
+    let total = totalHorasPlanejadas(planejadas);
+    if(limite <= 0 || total >= limite - 0.01) {
+        aplicarPlanejamentoNoEstadoSimulado(planejadas, diaKey, state);
+        return planejadas;
+    }
+
+    aplicarPlanejamentoNoEstadoSimulado(planejadas, diaKey, state);
+    let safety = 0;
+    while(total < limite - 0.01 && safety < 20) {
+        safety++;
+        const extras = getNeuralPoolSim(limite - total, state, date);
+        if(!extras.length) break;
+        planejadas = mesclarComplementoPlanejado(planejadas, extras);
+        const novoTotal = totalHorasPlanejadas(planejadas);
+        if(novoTotal <= total + 0.01) break;
+        total = novoTotal;
+    }
+    return limitarTarefasAoLimite(planejadas, limite);
+}
+
 function calcularSemanaPlanejada() {
     const hoje = new Date(); hoje.setHours(0,0,0,0);
     const inicioSemana = new Date(hoje);
@@ -3032,8 +3082,11 @@ function calcularSemanaPlanejada() {
         if(diaPausado(k)) {
             tasks = [];
         } else if(fixadas.length) {
-            tasks = fixadas;
-            if(!ehPassado) aplicarPlanejamentoNoEstadoSimulado(tasks, k, simDb);
+            const temConclusao = fixadas.some(t => t.c);
+            tasks = !ehPassado && !temConclusao
+                ? completarTarefasPlanejadasNoEstado(fixadas, k, d, simDb)
+                : fixadas;
+            if(!ehPassado && temConclusao) aplicarPlanejamentoNoEstadoSimulado(tasks, k, simDb);
         } else if(ehPassado) {
             tasks = clonarPlanejadasDoBanco(k);
         } else {
@@ -3055,7 +3108,11 @@ function fixarSemanaPlanejada(semana, inicioSemana, hoje) {
         const k = dateKey(d);
         if(diaPausado(k)) continue;
         const existentes = db.metaFixa[k] || [];
-        if(tarefasPlanejadas(existentes).length > 0) continue;
+        const planejadasExistentes = tarefasPlanejadas(existentes);
+        const temConclusao = planejadasExistentes.some(t => t.c);
+        const limite = parseFloat(db.h[d.getDay()]) || 0;
+        const totalExistente = totalHorasPlanejadas(planejadasExistentes);
+        if(planejadasExistentes.length > 0 && (temConclusao || totalExistente >= limite - 0.01)) continue;
         const planejadas = (semana[k] || []).map(t => ({...t}));
         const extras = existentes.filter(isExtraTask);
         if(!planejadas.length && !extras.length) continue;
@@ -3238,7 +3295,7 @@ function montarCicloPonderado() {
 }
 
 function criarTask(item, tipo, horas, dataKey) {
-    const labels = { E: 'Estudo', Rev: 'RevisÃ£o', Ex: 'ExercÃ­cios' };
+    const labels = { E: 'Estudo', Rev: 'Revisão', Ex: 'Exercícios' };
     const ciclo = item.f && item.revCycle ? ` - Ciclo ${String(item.revCycle.cycle || 1).padStart(2, '0')}` : '';
     return { itemId: item.id, m: item.m, a: item.a, l: `${labels[tipo]}${ciclo}`, k: tipo, h: horas, c: false, data: dataKey };
 }
@@ -3455,7 +3512,7 @@ function planejarDia(state, date, limit, mutarEstado) {
         if(!added) break;
     }
 
-    if(pool.length && pool.every(t => t.k === 'E') && restanteDia() >= 1 && !existeExercicioPendente()) encaixarRevisoes(true);
+    if(pool.length && pool.every(t => t.k === 'E') && restanteDia() >= 1 && !existeExercicioPendente()) encaixarRevisoes(false);
 
     let dueSafety = 0;
     while(restanteDia() > 0.01 && dueSafety < 80) {
@@ -3533,7 +3590,7 @@ function planejarDia(state, date, limit, mutarEstado) {
             if(teoria) { added = adicionarSemRegraMateria(teoria, 'E', Math.max(0, teoria.h.E - (teoria.hF || 0))) || added; continue; }
             const exercicio = candidatos(materia, x => !x.f && x.done.Rev && !x.done.Ex && x.lastInitialRevDate && x.lastInitialRevDate !== curKey)[0];
             if(exercicio) { added = adicionarSemRegraMateria(exercicio, 'Ex', 1) || added; continue; }
-            const manutencao = candidatos(materia, x => x.f && x.revCycle)[0];
+            const manutencao = candidatos(materia, x => x.f && x.revCycle && isDue(x.revCycle.due, curKey))[0];
             if(manutencao) added = adicionarSemRegraMateria(manutencao, manutencao.revCycle.stage, 1) || added;
             if(added) continue;
             const revisao = candidatos(materia, x => !x.f && estudoCompleto(x) && !x.done.Rev && x.lastInitialStudyDate !== curKey)[0];
@@ -3571,7 +3628,7 @@ function impEdital() {
     const peso = limitarPeso(pesoEl.value);
     pesoEl.value = peso;
     if(!m || !txt) {
-        showToast("Preencha a matÃ©ria", "Informe a matÃ©ria e pelo menos um assunto.");
+        showToast("Preencha a matéria", "Informe a matéria e pelo menos um assunto.");
         return;
     }
 
@@ -3598,7 +3655,7 @@ function impEdital() {
     assEl.value = '';
     horasEl.value = '1.5';
     pesoEl.value = '1';
-    showToast("MatÃ©ria salva", `${m} entrou no edital com ${assuntos.length} assunto(s).`);
+    showToast("Matéria salva", `${m} entrou no edital com ${assuntos.length} assunto(s).`);
 }
 
 function renderTree() {
@@ -3652,7 +3709,7 @@ function renderTree() {
                     <div class="sinal-row ${a.sinalizado ? 'done' : ''}">
                         <div class="sinal-info">
                             <span>${a.a}</span>
-                            <small>${a.sinalizado ? 'Sinalizado como estudado' : 'EntrarÃ¡ no ciclo inicial'}</small>
+                            <small>${a.sinalizado ? 'Sinalizado como estudado' : 'Entrará no ciclo inicial'}</small>
                         </div>
                         <label class="cycle-toggle" title="Sinalizar assunto">
                             <input type="checkbox" ${a.sinalizado?'checked':''} onchange="sinalizarAssunto(${a.idx}, this.checked)">
@@ -3705,7 +3762,7 @@ function renderReverSinalizados() {
                 <div class="empty-state">
                     <i class="fas fa-book-open"></i>
                     <strong>Nenhum assunto sinalizado</strong>
-                    <span>Os assuntos marcados como estudados aparecerÃ£o aqui.</span>
+                    <span>Os assuntos marcados como estudados aparecerão aqui.</span>
                 </div>`}
         </div>`;
 }
@@ -3720,7 +3777,7 @@ function renderFluxo() {
                 <div class="flow-row flow-toggle-head" onclick="toggleFluxoBox(this)">
                     <div class="flow-info">
                         <b>${m}</b>
-                        <small style="display:block; color:var(--text-sec); margin-top:4px;">${assuntos.length} assunto(s) | peso ${item.peso}x | ${item.h.E}h padrÃ£o</small>
+                        <small style="display:block; color:var(--text-sec); margin-top:4px;">${assuntos.length} assunto(s) | peso ${item.peso}x | ${item.h.E}h padrão</small>
                     </div>
                     <button type="button" class="flow-expand-btn" onclick="event.stopPropagation(); toggleFluxoBox(this.closest('.flow-toggle-head'))">
                         <i class="fas fa-chevron-down"></i>
@@ -3730,11 +3787,11 @@ function renderFluxo() {
                     <div class="flow-row flow-row-inner">
                         <div class="flow-info">
                             <b>Ajuste geral</b>
-                            <small style="display:block; color:var(--text-sec); margin-top:4px;">O peso vale para todos os assuntos desta matÃ©ria.</small>
+                            <small style="display:block; color:var(--text-sec); margin-top:4px;">O peso vale para todos os assuntos desta matéria.</small>
                         </div>
                     <div class="flow-grid">
                         <div>
-                            <label>Horas de estudo da matÃ©ria</label>
+                            <label>Horas de estudo da matéria</label>
                             <input type="number" id="fluxo-h-${safeId(m)}" min="0.5" step="0.5" value="${item.h.E}">
                         </div>
                         <div>
@@ -3742,7 +3799,7 @@ function renderFluxo() {
                             <input type="number" id="fluxo-p-${safeId(m)}" min="1" max="5" step="1" value="${item.peso}">
                         </div>
                     </div>
-                    <button class="btn btn-sm" onclick="salvarFluxoMateria('${encodeURIComponent(m)}')">SALVAR MATÃ‰RIA</button>
+                    <button class="btn btn-sm" onclick="salvarFluxoMateria('${encodeURIComponent(m)}')">SALVAR MATÉRIA</button>
                     </div>
                     <div class="subject-flow-list">
                         <div class="subject-flow-head">
@@ -3793,7 +3850,7 @@ function renderCiclo() {
                     <span>${ativo ? 'Ativa' : 'Fora do ciclo'}</span>
                 </div>
                 <div class="ciclo-actions">
-                    <button class="icon-danger-btn" title="Remover matÃ©ria do site" onclick="removerMateria('${encodeURIComponent(m)}')">
+                    <button class="icon-danger-btn" title="Remover matéria do site" onclick="removerMateria('${encodeURIComponent(m)}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -3807,12 +3864,12 @@ function saveC() {
     save();
     renderCiclo();
     updateDashboard();
-    showToast("Ciclo ativado", `${db.ciclo.length} matÃ©ria(s) em giro no planejamento.`);
+    showToast("Ciclo ativado", `${db.ciclo.length} matéria(s) em giro no planejamento.`);
 }
 
 function removerMateria(materia) {
     materia = decodeURIComponent(materia);
-    if(!confirm(`Remover ${materia} do site? Isso apaga os assuntos dessa matÃ©ria e refaz o planejamento.`)) return;
+    if(!confirm(`Remover ${materia} do site? Isso apaga os assuntos dessa matéria e refaz o planejamento.`)) return;
     db.lista = db.lista.filter(x => x.m !== materia);
     db.ciclo = db.ciclo.filter(x => x !== materia);
     Object.keys(db.metaFixa).forEach(dia => {
@@ -3836,7 +3893,7 @@ function renderHInputs() {
                 <label>Horas no fim de semana</label>
                 <input type="number" id="h-fds" min="0" step="0.5" value="${db.h[6] || 0}">
             </div>
-            <button type="button" class="btn btn-outline" style="grid-column:1 / -1;" onclick="aplicarHorasGrupo()">APLICAR NAS DIÃRIAS</button>
+            <button type="button" class="btn btn-outline" style="grid-column:1 / -1;" onclick="aplicarHorasGrupo()">APLICAR NAS DIÁRIAS</button>
         </div>
         ${dN.map((n,i) => `<div><small>${n}</small><br><input type="number" min="0" step="0.5" id="h-in-${i}" value="${db.h[i]}" style="width:70px;"></div>`).join('')}`;
 }
@@ -3846,7 +3903,7 @@ function saveH() {
     db.metaFixa = {};
     save();
     updateDashboard();
-    showToast("Horas salvas", "A carga diÃ¡ria foi atualizada no planejamento.");
+    showToast("Horas salvas", "A carga diária foi atualizada no planejamento.");
 }
 
 function aplicarHorasGrupo() {
@@ -4001,7 +4058,7 @@ function navDay(dir) {
     const primeiroAtraso = getPrimeiroDiaAtrasado(hoje);
     if(primeiroAtraso) {
         vDate = keyToDate(primeiroAtraso);
-        showToast("PendÃªncia ativa", `Conclua ou replaneje ${primeiroAtraso} para liberar o avanÃ§o.`);
+        showToast("Pendência ativa", `Conclua ou replaneje ${primeiroAtraso} para liberar o avanço.`);
         renderDiario(vDate);
         return;
     }
@@ -4030,5 +4087,4 @@ function salvarExtra() {
     updateDashboard();
 }
 //trigger deploy
-
 
