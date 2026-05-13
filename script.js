@@ -2808,6 +2808,16 @@ function garantirDiaPlanejado(diaKey, date) {
     save();
 }
 
+function clonarPlanejadasDoBanco(diaKey) {
+    return tarefasPlanejadas(db.metaFixa?.[diaKey] || []).map(t => ({...t}));
+}
+
+function aplicarPlanejamentoNoEstadoSimulado(tasks, diaKey, state) {
+    (tasks || []).filter(t => !isExtraTask(t)).forEach(task => {
+        concluirTaskSim({...task, c: false}, diaKey, state);
+    });
+}
+
 function calcularSemanaPlanejada() {
     const hoje = new Date(); hoje.setHours(0,0,0,0);
     const inicioSemana = new Date(hoje);
@@ -2819,12 +2829,16 @@ function calcularSemanaPlanejada() {
         const d = addDays(inicioSemana, off);
         const k = dateKey(d);
         const ehPassado = d < hoje;
+        const fixadas = clonarPlanejadasDoBanco(k);
         let tasks;
 
         if(diaPausado(k)) {
             tasks = [];
+        } else if(fixadas.length) {
+            tasks = fixadas;
+            if(!ehPassado) aplicarPlanejamentoNoEstadoSimulado(tasks, k, simDb);
         } else if(ehPassado) {
-            tasks = tarefasPlanejadas(db.metaFixa[k]).map(t => ({...t}));
+            tasks = clonarPlanejadasDoBanco(k);
         } else {
             const limiteDia = parseFloat(simDb.h[d.getDay()]) || 0;
             tasks = getNeuralPoolSim(limiteDia, simDb, d);
@@ -2834,6 +2848,24 @@ function calcularSemanaPlanejada() {
     }
 
     return planejados;
+}
+
+function fixarSemanaPlanejada(semana, inicioSemana, hoje) {
+    let alterou = false;
+    for(let off=0; off<7; off++) {
+        const d = addDays(inicioSemana, off);
+        if(d < hoje) continue;
+        const k = dateKey(d);
+        if(diaPausado(k)) continue;
+        const existentes = db.metaFixa[k] || [];
+        if(tarefasPlanejadas(existentes).length > 0) continue;
+        const planejadas = (semana[k] || []).map(t => ({...t}));
+        const extras = existentes.filter(isExtraTask);
+        if(!planejadas.length && !extras.length) continue;
+        db.metaFixa[k] = [...planejadas, ...extras];
+        alterou = true;
+    }
+    if(alterou) save();
 }
 
 function compactarTarefas(tasks) {
@@ -2889,6 +2921,7 @@ function renderSemanal() {
     inicioSemana.setDate(hoje.getDate() - hoje.getDay());
     const dias = Array.from({ length: 7 }, (_, i) => i);
     const semana = calcularSemanaPlanejada();
+    fixarSemanaPlanejada(semana, inicioSemana, hoje);
 
     document.getElementById('grid-semanal').innerHTML = dias.map(off => {
         const d = addDays(inicioSemana, off);
