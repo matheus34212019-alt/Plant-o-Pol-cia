@@ -69,14 +69,43 @@ function tarefaBloqueadaPorAulaAnterior(task, state = db) {
     return aulaAnteriorBloqueadora(state, item);
 }
 
+function tarefaBloqueadaPorTeoriaPendente(task, state = db) {
+    if(isExtraTask(task) || task?.k === 'E') return null;
+    const item = state?.lista?.find(x => x.id === task?.itemId);
+    if(!item || item.f) return null;
+    const horasFeitas = parseFloat(item.hF) || 0;
+    const horasNecessarias = parseFloat(item.h?.E) || 0;
+    return horasFeitas < horasNecessarias - 0.01 ? item : null;
+}
+
+function obterBloqueioTarefa(task, state = db) {
+    const anterior = tarefaBloqueadaPorAulaAnterior(task, state);
+    if(anterior) return { tipo: 'aula-anterior', item: anterior };
+    const teoria = tarefaBloqueadaPorTeoriaPendente(task, state);
+    if(teoria) return { tipo: 'teoria-pendente', item: teoria };
+    return null;
+}
+
 function mostrarBloqueioAulaAnterior(task, anterior) {
     const aulaAtual = corrigirMojibakeValor(task?.a || 'esta aula');
     const aulaAnterior = corrigirMojibakeValor(anterior?.a || 'a aula anterior');
     showToast('Aula anterior pendente', `Conclua ${aulaAnterior} antes de finalizar ${aulaAtual}.`);
 }
 
+function mostrarBloqueioTarefa(task, bloqueio) {
+    if(!bloqueio) return;
+    if(bloqueio.tipo === 'teoria-pendente') {
+        showToast(
+            'Estudo extra pendente',
+            `Conclua o estudo extra de ${corrigirMojibakeValor(bloqueio.item?.a || 'esta aula')} antes da revisÃ£o ou dos exercÃ­cios.`
+        );
+        return;
+    }
+    mostrarBloqueioAulaAnterior(task, bloqueio.item);
+}
+
 function filtrarTarefasBloqueadasPorAulaAnterior(tasks, state = db) {
-    return (tasks || []).filter(task => task.c || isExtraTask(task) || !tarefaBloqueadaPorAulaAnterior(task, state));
+    return (tasks || []).filter(task => task.c || isExtraTask(task) || !obterBloqueioTarefa(task, state));
 }
 
 function clonarTarefas(tasks) {
@@ -1688,9 +1717,9 @@ function atualizarAssuntosExtra() {
 
 function concluirTask(t, dK) {
     if(t.c) return;
-    const anterior = tarefaBloqueadaPorAulaAnterior(t, db);
-    if(anterior) {
-        mostrarBloqueioAulaAnterior(t, anterior);
+    const bloqueio = obterBloqueioTarefa(t, db);
+    if(bloqueio) {
+        mostrarBloqueioTarefa(t, bloqueio);
         return false;
     }
     if(!concluirTaskNoState(t, dK, db)) return false;
@@ -1733,8 +1762,8 @@ function aplicarTempoExtraTeoria(destino) {
     atualizarPlanoDiaTravado(diaOrigem);
     const planoOriginalDia = clonarTarefas(db.planosTravados?.[diaOrigem] || db.metaFixa[diaOrigem] || []);
 
-    item.h.E += horas;
-    item.extraTeoria += horas;
+    item.h.E = (parseFloat(item.h.E) || 0) + horas;
+    item.extraTeoria = (parseFloat(item.extraTeoria) || 0) + horas;
     item.done.E = false;
     item.done.Rev = false;
     item.done.Ex = false;
@@ -1744,6 +1773,7 @@ function aplicarTempoExtraTeoria(destino) {
     if(destino === 'hoje') inserirTeoriaExtraNoDia(item, diaOrigem, horas);
     limparPlanejamentoFuturo(diaOrigem);
     if(destino !== 'hoje') restaurarPlanoDiaTravado(diaOrigem, planoOriginalDia);
+    if(destino !== 'hoje') agendarTeoriaExtraFutura(item, diaOrigem, horas);
     removerTarefasBloqueadasPorAulasAnteriores();
     repararDiaAtualAposRecalculoIndevido();
     atualizarPlanoDiaTravado(diaOrigem);
@@ -1771,12 +1801,37 @@ function inserirTeoriaExtraNoDia(item, diaKey, horas) {
     showToast("Teoria extra adicionada", `${horasHoje.toFixed(1)}h foram encaixadas hoje.`);
 }
 
+function agendarTeoriaExtraFutura(item, diaOrigem, horas) {
+    let restante = Math.max(0, parseFloat(horas) || 0);
+    const inicio = keyToDate(diaOrigem);
+    for(let offset = 1; restante > 0.01 && offset <= 365; offset++) {
+        const data = addDays(inicio, offset);
+        const key = dateKey(data);
+        if(diaPausado(key)) continue;
+        const limite = parseFloat(db.h[data.getDay()]) || 0;
+        if(limite <= 0) continue;
+        const tasks = db.metaFixa[key] || [];
+        const ocupado = tarefasPlanejadas(tasks).reduce((acc, t) => acc + (parseFloat(t.h) || 0), 0);
+        const livre = Math.max(0, limite - ocupado);
+        if(livre <= 0.01) continue;
+        const bloco = Math.min(restante, livre, MAX_ESTUDO_DIA);
+        if(bloco < 0.5 && restante >= 0.5) continue;
+        tasks.push({...criarTask(item, 'E', Math.round(bloco * 10) / 10, key), extraTeoriaContinuidade: true});
+        db.metaFixa[key] = tasks;
+        atualizarPlanoDiaTravado(key);
+        restante = Math.round((restante - bloco) * 10) / 10;
+    }
+    if(restante > 0.01) {
+        showToast('Tempo extra pendente', 'Nao encontrei espaco suficiente nos proximos dias. Ajuste as horas diarias ou replaneje.');
+    }
+}
+
 function cliqueTask(dK, idx) {
     const t = db.metaFixa[dK][idx];
     if(!t.c) {
-        const anterior = tarefaBloqueadaPorAulaAnterior(t, db);
-        if(anterior) {
-            mostrarBloqueioAulaAnterior(t, anterior);
+        const bloqueio = obterBloqueioTarefa(t, db);
+        if(bloqueio) {
+            mostrarBloqueioTarefa(t, bloqueio);
             renderDiarioSemRecalcular(vDate);
             return;
         }
@@ -2638,9 +2693,9 @@ function calcCebraspe() {
 
 function confirmarExercicio() {
     const t = db.metaFixa[exPendente.dK][exPendente.idx];
-    const anterior = tarefaBloqueadaPorAulaAnterior(t, db);
-    if(anterior) {
-        mostrarBloqueioAulaAnterior(t, anterior);
+    const bloqueio = obterBloqueioTarefa(t, db);
+    if(bloqueio) {
+        mostrarBloqueioTarefa(t, bloqueio);
         fecharModais();
         renderDiarioSemRecalcular(vDate);
         return;
@@ -3113,6 +3168,7 @@ function concluirTaskNoState(t, dK, state) {
     const item = state.lista.find(x => x.id === t.itemId);
     if(!item) return false;
     if(aulaAnteriorBloqueadora(state, item)) return false;
+    if(t.k !== 'E' && tarefaBloqueadaPorTeoriaPendente(t, state)) return false;
     t.c = true;
     if(t.k === 'E') {
         item.hF = Math.min(item.h.E, (item.hF || 0) + t.h);
@@ -3289,6 +3345,7 @@ function planejarDia(state, date, limit, mutarEstado) {
 
     const deveFocarTeoriaPendente = item => {
         if(!temTeoriaPendenteAtiva(item)) return false;
+        if((parseFloat(item.extraTeoria) || 0) > 0) return true;
         return !item.lastInitialStudyDate || item.lastInitialStudyDate !== prevKey;
     };
 
@@ -3973,4 +4030,5 @@ function salvarExtra() {
     updateDashboard();
 }
 //trigger deploy
+
 
