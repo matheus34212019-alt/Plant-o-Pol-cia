@@ -3261,7 +3261,15 @@ function garantirDiaPlanejado(diaKey, date) {
         const limite = parseFloat(db.h[date.getDay()]) || 0;
         const total = totalHorasPlanejadas(planejadas);
         const temConclusao = planejadas.some(t => t.c);
-        if(!temConclusao && total < limite - 0.01) {
+        if(temConclusao) {
+            const hojeKey = dateKey(new Date());
+            const extras = existentes.filter(isExtraTask);
+            const ajustadas = diaKey === hojeKey
+                ? completarDiaComLancamentosConcluidos(planejadas, diaKey, date, JSON.parse(JSON.stringify(db)))
+                : limitarPreservandoConcluidas(planejadas, limite);
+            db.metaFixa[diaKey] = [...ajustadas, ...extras];
+            save();
+        } else if(total < limite - 0.01) {
             completarDiaReal(diaKey, date);
             save();
         }
@@ -3294,6 +3302,17 @@ function totalHorasPlanejadas(tasks) {
     return tarefasPlanejadas(tasks || []).reduce((acc, t) => acc + (parseFloat(t.h) || 0), 0);
 }
 
+function limitarPreservandoConcluidas(tasks, limite) {
+    const planejadas = tarefasPlanejadas(tasks || []);
+    if(limite <= 0) return planejadas.filter(t => t.c);
+    const concluidas = planejadas.filter(t => t.c).map(t => ({...t}));
+    const pendentes = planejadas.filter(t => !t.c);
+    const horasConcluidas = totalHorasPlanejadas(concluidas);
+    const restante = Math.max(0, limite - horasConcluidas);
+    if(restante <= 0.01) return concluidas;
+    return [...concluidas, ...limitarTarefasAoLimite(pendentes, restante)];
+}
+
 function mesmaTarefaPlanejada(a, b) {
     if(a?.recoveryId && b?.recoveryId && a.recoveryId === b.recoveryId) return true;
     if(a?.itemId && b?.itemId && a.itemId === b.itemId && a.k === b.k) return true;
@@ -3318,6 +3337,29 @@ function mesclarLancamentosConcluidosNoDia(tasks, diaKey) {
         }
     });
     return base;
+}
+
+function completarDiaComLancamentosConcluidos(tasks, diaKey, date, state) {
+    const limite = parseFloat(state.h?.[date.getDay()]) || 0;
+    let planejadas = limitarPreservandoConcluidas(tasks, limite);
+    let total = totalHorasPlanejadas(planejadas);
+    if(limite <= 0 || total >= limite - 0.01) {
+        aplicarPlanejamentoNoEstadoSimulado(planejadas, diaKey, state);
+        return planejadas;
+    }
+
+    aplicarPlanejamentoNoEstadoSimulado(planejadas, diaKey, state);
+    let safety = 0;
+    while(total < limite - 0.01 && safety < 20) {
+        safety++;
+        const complemento = getNeuralPoolSim(limite - total, state, date);
+        if(!complemento.length) break;
+        planejadas = limitarPreservandoConcluidas(mesclarComplementoPlanejado(planejadas, complemento), limite);
+        const novoTotal = totalHorasPlanejadas(planejadas);
+        if(novoTotal <= total + 0.01) break;
+        total = novoTotal;
+    }
+    return planejadas;
 }
 
 function mesclarComplementoPlanejado(tasks, extras) {
@@ -3372,22 +3414,26 @@ function calcularSemanaPlanejada() {
         const fixadas = clonarPlanejadasDoBanco(k);
         let tasks;
 
+        const limiteDia = parseFloat(simDb.h[d.getDay()]) || 0;
+
         if(diaPausado(k)) {
             tasks = [];
         } else if(fixadas.length) {
             const temConclusao = fixadas.some(t => t.c);
-            tasks = !ehPassado && !temConclusao
-                ? completarTarefasPlanejadasNoEstado(fixadas, k, d, simDb)
-                : fixadas;
-            if(!ehPassado && temConclusao) aplicarPlanejamentoNoEstadoSimulado(tasks, k, simDb);
+            if(ehPassado) {
+                tasks = limitarPreservandoConcluidas(fixadas, limiteDia);
+            } else if(temConclusao) {
+                tasks = completarDiaComLancamentosConcluidos(fixadas, k, d, simDb);
+            } else {
+                tasks = completarTarefasPlanejadasNoEstado(fixadas, k, d, simDb);
+            }
         } else if(ehPassado) {
-            tasks = clonarPlanejadasDoBanco(k);
+            tasks = limitarPreservandoConcluidas(clonarPlanejadasDoBanco(k), limiteDia);
         } else {
-            const limiteDia = parseFloat(simDb.h[d.getDay()]) || 0;
             tasks = getNeuralPoolSim(limiteDia, simDb, d);
         }
 
-        planejados[k] = mesclarLancamentosConcluidosNoDia(tasks, k);
+        planejados[k] = limitarPreservandoConcluidas(mesclarLancamentosConcluidosNoDia(tasks, k), limiteDia);
     }
 
     return planejados;
@@ -3405,7 +3451,17 @@ function fixarSemanaPlanejada(semana, inicioSemana, hoje) {
         const temConclusao = planejadasExistentes.some(t => t.c);
         const limite = parseFloat(db.h[d.getDay()]) || 0;
         const totalExistente = totalHorasPlanejadas(planejadasExistentes);
-        if(planejadasExistentes.length > 0 && (temConclusao || totalExistente >= limite - 0.01)) continue;
+        if(planejadasExistentes.length > 0 && temConclusao) {
+            const extras = existentes.filter(isExtraTask);
+            const ajustadas = limitarPreservandoConcluidas(planejadasExistentes, limite);
+            const novoDia = [...ajustadas, ...extras];
+            if(JSON.stringify(novoDia) !== JSON.stringify(existentes)) {
+                db.metaFixa[k] = novoDia;
+                alterou = true;
+            }
+            continue;
+        }
+        if(planejadasExistentes.length > 0 && totalExistente >= limite - 0.01) continue;
         const planejadas = (semana[k] || []).map(t => ({...t}));
         const extras = existentes.filter(isExtraTask);
         if(!planejadas.length && !extras.length) continue;
@@ -3477,6 +3533,7 @@ function renderSemanal() {
         const diaAtrasado = d < hoje;
         let tasks = diaAtrasado ? tarefasPlanejadas(db.metaFixa[k] || []) : (semana[k] || []);
         tasks = mesclarLancamentosConcluidosNoDia(tasks, k);
+        tasks = limitarPreservandoConcluidas(tasks, parseFloat(db.h[d.getDay()]) || 0);
         const temTarefaAtrasada = diaAtrasado && tasks.some(t => !t.c && !isExtraTask(t));
 
         const totalHoras = tasks.reduce((acc, t) => acc + (parseFloat(t.h) || 0), 0);
