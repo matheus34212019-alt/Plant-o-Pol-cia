@@ -21,6 +21,7 @@ let supabaseAccessToken = null;
 let cloudUser = null;
 let cloudSaveTimer = null;
 let carregandoNuvem = false;
+let dadosSupabaseCarregados = false;
 let accessProfile = null;
 let adminAccessList = [];
 let adminStudentContext = null;
@@ -52,15 +53,6 @@ function ordemAssunto(item, fallback = 0) {
     return Number.isFinite(ordem) ? ordem : fallback;
 }
 
-function cicloInicialPosteriorConcluido(item) {
-    if(!item) return false;
-    const temExtraTeoriaPendente = (parseFloat(item.extraTeoria) || 0) > 0.01 && (parseFloat(item.hF) || 0) < (parseFloat(item.h?.E) || 0) - 0.01;
-    if(temExtraTeoriaPendente) return false;
-    if(!item.f) return false;
-    if(!item.revCycle || item.maintDone) return true;
-    return (item.revCycle.cycle || 1) > 1;
-}
-
 function aulaAnteriorBloqueadora(state, item) {
     if(!state?.lista || !item?.id || !item?.m) return null;
     const lista = state.lista;
@@ -68,7 +60,7 @@ function aulaAnteriorBloqueadora(state, item) {
     const ordemAtual = ordemAssunto(item, indiceAtual < 0 ? 0 : indiceAtual);
     return lista
         .map((x, idx) => ({...x, __idx: idx}))
-        .filter(x => x.id !== item.id && x.m === item.m && ordemAssunto(x, x.__idx) < ordemAtual && !cicloInicialPosteriorConcluido(x))
+        .filter(x => x.id !== item.id && x.m === item.m && ordemAssunto(x, x.__idx) < ordemAtual && !x.f)
         .sort((a, b) => ordemAssunto(b, b.__idx) - ordemAssunto(a, a.__idx))[0] || null;
 }
 
@@ -349,35 +341,6 @@ function limparPlanejamentoFuturo(baseKey) {
     const base = keyToDate(baseKey);
     Object.keys(db.metaFixa).forEach(k => {
         if(keyToDate(k) > base) delete db.metaFixa[k];
-    });
-}
-
-function limparPlanejamentoRecalculavel(baseKey = dateKey(new Date())) {
-    const base = keyToDate(baseKey);
-    Object.keys(db.metaFixa || {}).forEach(k => {
-        const data = keyToDate(k);
-        const tasks = Array.isArray(db.metaFixa[k]) ? db.metaFixa[k] : [];
-        if(data < base) return;
-
-        const preservadas = tasks.filter(t => {
-            if(isExtraTask(t)) return true;
-            if(t.extraTeoriaContinuidade) return true;
-            return t.c === true;
-        });
-
-        if(preservadas.length) db.metaFixa[k] = preservadas;
-        else delete db.metaFixa[k];
-    });
-}
-
-function ajustarHorasTarefasEstudo(itemIds, horas) {
-    const ids = itemIds instanceof Set ? itemIds : new Set(itemIds || []);
-    Object.values(db.metaFixa || {}).forEach(tasks => {
-        if(!Array.isArray(tasks)) return;
-        tasks.forEach(task => {
-            if(isExtraTask(task) || task.extraTeoriaContinuidade) return;
-            if(task.k === 'E' && ids.has(task.itemId)) task.h = horas;
-        });
     });
 }
 
@@ -1283,6 +1246,7 @@ async function sairGoogle() {
     } finally {
         cloudUser = null;
         supabaseAccessToken = null;
+        dadosSupabaseCarregados = false;
         accessProfile = null;
         adminAccessList = [];
         adminStudentContext = null;
@@ -1328,6 +1292,7 @@ async function carregarDadosDaNuvem() {
 function agendarSalvamentoNuvem() {
     const nuvemDisponivel = (supabaseClient && cloudUser?.provider === 'supabase') || firebaseStore;
     if(carregandoNuvem || !cloudUser || !nuvemDisponivel) return;
+    if(supabaseClient && cloudUser?.provider === 'supabase' && !dadosSupabaseCarregados) return;
     clearTimeout(cloudSaveTimer);
     cloudSaveTimer = setTimeout(() => salvarDadosNaNuvem(false), 1200);
 }
@@ -1346,6 +1311,29 @@ async function salvarDadosNaNuvem(imediato) {
     } catch(e) {
         showToast('Falha ao salvar na nuvem', 'A c?pia local continua preservada no navegador.');
     }
+}
+
+function resumoPersistencia(dados) {
+    const meta = dados?.metaFixa && typeof dados.metaFixa === 'object' ? dados.metaFixa : {};
+    const tarefas = Object.values(meta).flat().filter(Boolean);
+    return {
+        assuntos: Array.isArray(dados?.lista) ? dados.lista.length : 0,
+        dias: Object.keys(meta).length,
+        tarefas: tarefas.length,
+        concluidas: tarefas.filter(t => t?.c === true).length,
+        lancamentos: Array.isArray(dados?.lancamentos) ? dados.lancamentos.length : 0
+    };
+}
+
+function salvariaPerdaCritica(local, remoto) {
+    const atual = resumoPersistencia(local);
+    const nuvem = resumoPersistencia(remoto);
+    if(nuvem.assuntos > 0 && atual.assuntos === 0) return true;
+    if(nuvem.dias > 0 && atual.dias === 0) return true;
+    if(nuvem.tarefas >= 3 && atual.tarefas < Math.floor(nuvem.tarefas * 0.5)) return true;
+    if(nuvem.concluidas > 0 && atual.concluidas < nuvem.concluidas) return true;
+    if(nuvem.lancamentos > 0 && atual.lancamentos < nuvem.lancamentos) return true;
+    return false;
 }
 
 async function carregarDadosSupabase() {
@@ -1373,6 +1361,7 @@ async function carregarDadosSupabase() {
             normalizarBanco();
             aplicarPreferenciasLocais();
             localStorage.setItem('prf_v120', JSON.stringify(db));
+            dadosSupabaseCarregados = true;
             showToast('Dados sincronizados', editandoAlunoComoAdmin() ? `Perfil de ${alvo.email} carregado.` : 'Seu planejamento foi carregado do Supabase.');
             return true;
         } else {
@@ -1381,6 +1370,7 @@ async function carregarDadosSupabase() {
                 return false;
             }
             aplicarPreferenciasLocais();
+            dadosSupabaseCarregados = true;
             await salvarDadosSupabase(true);
             showToast('Nuvem ativada', 'Seus dados locais foram salvos no Supabase.');
             return true;
@@ -1422,11 +1412,25 @@ async function garantirBackupEdicaoAdmin(alvo) {
 
 async function salvarDadosSupabase(imediato) {
     if(!supabaseClient || !cloudUser) return;
+    if(!dadosSupabaseCarregados) return;
     const alvo = alvoDadosNuvem();
     if(!alvo.user_id) return;
     if(!imediato) clearTimeout(cloudSaveTimer);
     try {
         await garantirBackupEdicaoAdmin(alvo);
+        const atual = await supabaseClient
+            .from('plantao_user_data')
+            .select('data')
+            .eq('user_id', alvo.user_id)
+            .maybeSingle();
+        if(atual.error) throw atual.error;
+        if(atual.data?.data && salvariaPerdaCritica(db, atual.data.data)) {
+            showToast(
+                'Salvamento bloqueado',
+                'O Supabase tem mais dados que esta tela. Recarregue a p?gina antes de salvar para evitar perda de aulas.'
+            );
+            return;
+        }
         const { error } = await supabaseClient
             .from('plantao_user_data')
             .upsert({
@@ -1455,7 +1459,6 @@ function normalizarTextosProfundo(valor) {
 function normalizarBanco() {
     normalizarTextosProfundo(db);
     if(db.schemaVersion !== 23) {
-        db.metaFixa = {};
         db.schemaVersion = 23;
     }
     if(!db.metaFixa) db.metaFixa = {};
@@ -1898,7 +1901,7 @@ function agendarTeoriaExtraFutura(item, diaOrigem, horas) {
         restante = Math.round((restante - bloco) * 10) / 10;
     }
     if(restante > 0.01) {
-        showToast('Tempo extra pendente', 'N?o encontrei espa?o suficiente nos pr?ximos dias. Ajuste as horas di?rias ou replaneje.');
+        showToast('Tempo extra pendente', 'Nao encontrei espaco suficiente nos proximos dias. Ajuste as horas diarias ou replaneje.');
     }
 }
 
@@ -3038,11 +3041,11 @@ function completarDiaReal(diaKey, date) {
         if(!extras.length) break;
         extras.forEach(extra => {
             if(total + extra.h > limite + 0.01) return;
-            const existente = tasks.find(t => t.itemId === extra.itemId && t.k === extra.k && Boolean(t.extraTeoriaContinuidade) === Boolean(extra.extraTeoriaContinuidade) && (extra.k === 'E' || extra.k === 'Rev'));
+            const existente = tasks.find(t => t.itemId === extra.itemId && t.k === extra.k && (extra.k === 'E' || extra.k === 'Rev'));
             if(existente) {
                 existente.h = (parseFloat(existente.h) || 0) + extra.h;
                 total += extra.h;
-            } else if(!tasks.some(t => t.itemId === extra.itemId && t.k === extra.k && Boolean(t.extraTeoriaContinuidade) === Boolean(extra.extraTeoriaContinuidade))) {
+            } else if(!tasks.some(t => t.itemId === extra.itemId && t.k === extra.k)) {
                 tasks.push(extra);
                 total += extra.h;
             }
@@ -3106,12 +3109,12 @@ function totalHorasPlanejadas(tasks) {
 function mesclarComplementoPlanejado(tasks, extras) {
     const base = [...(tasks || [])];
     (extras || []).forEach(extra => {
-        const existente = base.find(t => t.itemId === extra.itemId && t.k === extra.k && Boolean(t.extraTeoriaContinuidade) === Boolean(extra.extraTeoriaContinuidade) && (extra.k === 'E' || extra.k === 'Rev'));
+        const existente = base.find(t => t.itemId === extra.itemId && t.k === extra.k && (extra.k === 'E' || extra.k === 'Rev'));
         if(existente) {
             existente.h = Math.round(((parseFloat(existente.h) || 0) + (parseFloat(extra.h) || 0)) * 10) / 10;
             return;
         }
-        if(!base.some(t => t.itemId === extra.itemId && t.k === extra.k && Boolean(t.extraTeoriaContinuidade) === Boolean(extra.extraTeoriaContinuidade))) {
+        if(!base.some(t => t.itemId === extra.itemId && t.k === extra.k)) {
             base.push(extra);
         }
     });
@@ -3203,7 +3206,7 @@ function compactarTarefas(tasks) {
     for(let i=tasks.length - 1; i>=0; i--) {
         const t = tasks[i];
         if(isExtraTask(t)) continue;
-        const chave = `${t.itemId || t.m}-${t.k}-${t.extraTeoriaContinuidade ? 'extra' : 'normal'}`;
+        const chave = `${t.itemId || t.m}-${t.k}`;
         if(vistos.has(chave)) {
             const alvo = vistos.get(chave);
             if(t.k === 'E' || t.k === 'Rev') alvo.h = (parseFloat(alvo.h) || 0) + (parseFloat(t.h) || 0);
@@ -3380,10 +3383,8 @@ function montarCicloPonderado() {
 
 function criarTask(item, tipo, horas, dataKey) {
     const labels = { E: 'Estudo', Rev: 'Revis?o', Ex: 'Exerc?cios' };
-    const teoriaExtra = tipo === 'E' && (parseFloat(item.extraTeoria) || 0) > 0.01;
-    const label = teoriaExtra ? 'Estudo extra' : labels[tipo];
     const ciclo = item.f && item.revCycle ? ` - Ciclo ${String(item.revCycle.cycle || 1).padStart(2, '0')}` : '';
-    return { itemId: item.id, m: item.m, a: item.a, l: `${label}${ciclo}`, k: tipo, h: horas, c: false, data: dataKey, extraTeoriaContinuidade: teoriaExtra };
+    return { itemId: item.id, m: item.m, a: item.a, l: `${labels[tipo]}${ciclo}`, k: tipo, h: horas, c: false, data: dataKey };
 }
 
 function planejarDia(state, date, limit, mutarEstado) {
@@ -4040,18 +4041,15 @@ function salvarFluxoMateria(materia) {
     const id = safeId(materia);
     const horas = Math.max(0.5, parseFloat(document.getElementById(`fluxo-h-${id}`).value) || 1.5);
     const peso = limitarPeso(document.getElementById(`fluxo-p-${id}`).value);
-    const itemIds = new Set();
     db.lista.forEach(item => {
         if(item.m === materia) {
-            itemIds.add(item.id);
             item.h.E = horas;
             item.h.Rev = 1;
             item.h.Ex = 1;
             item.peso = peso;
         }
     });
-    ajustarHorasTarefasEstudo(itemIds, horas);
-    limparPlanejamentoRecalculavel(dateKey(new Date()));
+    db.metaFixa = {};
     save();
     renderFluxo();
     updateDashboard();
@@ -4066,8 +4064,7 @@ function salvarFluxoAssunto(idx) {
     item.h.Rev = 1;
     item.h.Ex = 1;
     if(!item.f) item.hF = Math.min(item.hF || 0, horas);
-    ajustarHorasTarefasEstudo(new Set([item.id]), horas);
-    limparPlanejamentoRecalculavel(dateKey(new Date()));
+    db.metaFixa = {};
     save();
     renderFluxo();
     updateDashboard();
@@ -4171,5 +4168,6 @@ function salvarExtra() {
     updateDashboard();
 }
 //trigger deploy
+
 
 
