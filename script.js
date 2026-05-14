@@ -1,10 +1,10 @@
 let db = JSON.parse(localStorage.getItem('prf_v120')) || {
     lista: [
-        { m: "PORTUGU?S", a: "Compreens?o e interpreta??o de textos", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 },
-        { m: "RACIOC?NIO L?GICO", a: "Proposi??es e conectivos", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 },
-        { m: "DIREITO PENAL", a: "Crimes contra a administra??o p?blica", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 }
+        { m: "PORTUGUÊS", a: "Compreensão e interpretação de textos", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 },
+        { m: "RACIOCÍNIO LÓGICO", a: "Proposições e conectivos", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 },
+        { m: "DIREITO PENAL", a: "Crimes contra a administração pública", peso: 1, h: {E:1.5, Rev:1, Ex:1}, f: false, done: {E:false, Rev:false, Ex:false}, hF: 0 }
     ],
-    ciclo: ["PORTUGU?S", "RACIOC?NIO L?GICO", "DIREITO PENAL"],
+    ciclo: ["PORTUGUÊS", "RACIOCÍNIO LÓGICO", "DIREITO PENAL"],
     h: {1:4, 2:4, 3:4, 4:4, 5:4, 6:4, 0:4},
     metaFixa: {}
 };
@@ -34,7 +34,7 @@ const OAUTH_LOGIN_FLAG = 'plantao_login_google_em_andamento';
 
 const ADMIN_EMAIL = 'matheus34212019@gmail.com';
 const ACCESS_TABLE = 'plantao_user_access';
-const APP_DISPLAY_NAME = 'PLANT\u00c3O';
+const APP_DISPLAY_NAME = 'PLANTÃO';
 const revisoesIntervalos = [3, 7, 21];
 const cicloInicialDelay = 3;
 const proximosCiclosDelay = { 1: 7, 2: 21 };
@@ -46,7 +46,7 @@ const tarefasPlanejadas = tasks => (tasks || []).filter(t => !isExtraTask(t));
 function diaIgualOuAnteriorAHoje(diaKey) {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
-    return diaKey <= dateKey(hoje);
+    return keyToDate(diaKey) <= hoje;
 }
 function ordemAssunto(item, fallback = 0) {
     const ordem = Number(item?.ordem);
@@ -240,22 +240,82 @@ function corrigirMojibakeValor(valor) {
     if (pontuarMojibake(texto) === 0) break;
   }
 
+  const trocasLiterais = [
+    ['PLANT�O', APP_DISPLAY_NAME], ['PLANT?O', APP_DISPLAY_NAME], ['PLANTAO', APP_DISPLAY_NAME],
+    ['Plant�o', 'Plantão'], ['Plant?o', 'Plantão'], ['Plantao', 'Plantão'],
+    ['plant�o', 'plantão'], ['plant?o', 'plantão'], ['plantao', 'plantão'],
+    ['PORTUGU?S', 'PORTUGUÊS'], ['PORTUGUES', 'PORTUGUÊS'], ['Portugues', 'Português'], ['portugues', 'português'],
+    ['RACIOC?NIO L?GICO', 'RACIOCÍNIO LÓGICO'], ['RACIOCINIO LOGICO', 'RACIOCÍNIO LÓGICO'],
+    ['Raciocinio Logico', 'Raciocínio Lógico'], ['raciocinio logico', 'raciocínio lógico'],
+    ['Compreens?o', 'Compreensão'], ['compreens?o', 'compreensão'], ['COMPREENS?O', 'COMPREENSÃO'],
+    ['interpreta??o', 'interpretação'], ['Interpreta??o', 'Interpretação'], ['INTERPRETA??O', 'INTERPRETAÇÃO'],
+    ['Proposi??es', 'Proposições'], ['proposi??es', 'proposições'], ['PROPOSI??ES', 'PROPOSIÇÕES'],
+    ['administra??o', 'administração'], ['Administra??o', 'Administração'], ['ADMINISTRA??O', 'ADMINISTRAÇÃO'],
+    ['p?blica', 'pública'], ['P?blica', 'Pública'], ['P?BLICA', 'PÚBLICA'],
+    ['Miss?o', 'Missão'], ['miss?o', 'missão'], ['MISS?O', 'MISSÃO'],
+    ['Quest?es', 'Questões'], ['quest?es', 'questões'], ['QUEST?ES', 'QUESTÕES'],
+    ['Precis?o', 'Precisão'], ['precis?o', 'precisão'], ['PRECIS?O', 'PRECISÃO'],
+    ['Revis?o', 'Revisão'], ['revis?o', 'revisão'], ['REVIS?O', 'REVISÃO'],
+    ['Exerc?cios', 'Exercícios'], ['exerc?cios', 'exercícios'], ['EXERC?CIOS', 'EXERCÍCIOS'],
+    ['Exerc?cio', 'Exercício'], ['exerc?cio', 'exercício'], ['EXERC?CIO', 'EXERCÍCIO'],
+    ['Mat?rias', 'Matérias'], ['mat?rias', 'matérias'], ['MAT?RIAS', 'MATÉRIAS'],
+    ['Mat?ria', 'Matéria'], ['mat?ria', 'matéria'], ['MAT?RIA', 'MATÉRIA'],
+    ['Publica??o', 'Publicação'], ['publica??o', 'publicação'], ['PUBLICA??O', 'PUBLICAÇÃO'],
+    ['Aprova??o', 'Aprovação'], ['aprova??o', 'aprovação'], ['APROVA??O', 'APROVAÇÃO'],
+    ['Sincroniza??o', 'Sincronização'], ['sincroniza??o', 'sincronização'], ['SINCRONIZA??O', 'SINCRONIZAÇÃO'],
+    ['solicita??es', 'solicitações'], ['Solicita??es', 'Solicitações'], ['SOLICITA??ES', 'SOLICITAÇÕES'],
+    ['lan?amentos', 'lançamentos'], ['Lan?amentos', 'Lançamentos'], ['LAN?AMENTOS', 'LANÇAMENTOS'],
+    ['lan?amento', 'lançamento'], ['Lan?amento', 'Lançamento'], ['LAN?AMENTO', 'LANÇAMENTO'],
+    ['Hor?rios', 'Horários'], ['hor?rios', 'horários'], ['HOR?RIOS', 'HORÁRIOS'],
+    ['Di?rias', 'Diárias'], ['di?rias', 'diárias'], ['DI?RIAS', 'DIÁRIAS'],
+    ['Voc?', 'Você'], ['voc?', 'você'], ['VOC?', 'VOCÊ'],
+    ['n?o', 'não'], ['N?o', 'Não'], ['N?O', 'NÃO'],
+    ['c?pia', 'cópia'], ['C?pia', 'Cópia'], ['C?PIA', 'CÓPIA'],
+    ['pr?ximos', 'próximos'], ['Pr?ximos', 'Próximos'], ['PR?XIMOS', 'PRÓXIMOS'],
+    ['pr?ximo', 'próximo'], ['Pr?ximo', 'Próximo'], ['PR?XIMO', 'PRÓXIMO'],
+    ['amanh?', 'amanhã'], ['Amanh?', 'Amanhã'], ['AMANH?', 'AMANHÃ'],
+    ['est?', 'está'], ['Est?', 'Está'], ['EST?', 'ESTÁ'],
+    ['ser?', 'será'], ['Ser?', 'Será'], ['SER?', 'SERÁ'],
+    ['?rea', 'área'], ['?rea', 'Área'], ['inv?lido', 'inválido'], ['Inv?lido', 'Inválido'],
+    ['conte?do', 'conteúdo'], ['Conte?do', 'Conteúdo'], ['conte?dos', 'conteúdos'], ['Conte?dos', 'Conteúdos'],
+    ['?ltimo', 'último'], ['?ltima', 'última'], ['in?cio', 'início'], ['In?cio', 'Início'],
+    ['distribui??o', 'distribuição'], ['Distribui??o', 'Distribuição'], ['DISTRIBUI??O', 'DISTRIBUIÇÃO'],
+    ['sequ?ncia', 'sequência'], ['Sequ?ncia', 'Sequência'], ['SEQU?NCIA', 'SEQUÊNCIA'],
+    ['atualiza??o', 'atualização'], ['Atualiza??o', 'Atualização'],
+    ['edi??o', 'edição'], ['Edi??o', 'Edição'],
+    ['configura??o', 'configuração'], ['Configura??o', 'Configuração'],
+    ['recupera??o', 'recuperação'], ['Recupera??o', 'Recuperação'],
+    ['Permiss?o', 'Permissão'], ['permiss?o', 'permissão'],
+    ['pol?ticas', 'políticas'], ['Pol?ticas', 'Políticas'],
+    ['poss?vel', 'possível'], ['Poss?vel', 'Possível'],
+    ['usu?rio', 'usuário'], ['Usu?rio', 'Usuário'],
+    ['autom?tico', 'automático'], ['Autom?tico', 'Automático'],
+    ['p?gina', 'página'], ['P?gina', 'Página'],
+    ['sess?o', 'sessão'], ['Sess?o', 'Sessão'],
+    ['Come?ar', 'Começar'], ['come?ar', 'começar'],
+    ['Pend?ncia', 'Pendência'], ['pend?ncia', 'pendência'],
+    ['avan?o', 'avanço'], ['Avan?o', 'Avanço'],
+    ['h?', 'há'], ['H?', 'Há']
+  ];
+
+  for (let i = 0; i < 3; i += 1) {
+    trocasLiterais.forEach(([de, para]) => {
+      texto = texto.split(de).join(para);
+    });
+  }
+
   return texto
-    .replace(/PLANT(?:AO|\u00c3O|[\u00c0-\u017f\ufffd]+O)/gi, APP_DISPLAY_NAME)
-    .replace(/Voc\ufffd/g, 'Voc?')
-    .replace(/n\ufffdo/g, 'n?o')
-    .replace(/N\ufffdo/g, 'N?o')
-    .replace(/Miss\ufffdo/g, 'Miss?o')
-    .replace(/Quest\ufffdes/g, 'Quest?es')
-    .replace(/Precis\ufffdo/g, 'Precis?o')
-    .replace(/Revis\ufffdo/g, 'Revis?o')
-    .replace(/Exerc\ufffdcios/g, 'Exerc?cios')
-    .replace(/Mat\ufffdrias/g, 'Mat?rias')
-    .replace(/Publica\ufffdo/g, 'Publica??o')
-    .replace(/solicita\ufffdes/g, 'solicita??es')
-    .replace(/lan\ufffamentos/g, 'lan?amentos')
-    .replace(/Hor\ufffarios/g, 'Hor?rios')
-    .replace(/Di\ufffarias/g, 'Di?rias');
+    .replace(/PLANT(?:AO|Ãƒ?O|�O|\?O|[\u00c0-\u017f\ufffd]+O)/gi, APP_DISPLAY_NAME)
+    .replace(/\u00a0/g, ' ');
+}
+
+function normalizarTextoBusca(valor) {
+  return corrigirMojibakeValor(String(valor || ''))
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 }
 
 function corrigirTextosDaTela(root = document.body) {
@@ -586,29 +646,34 @@ function preferenciasKey() {
 }
 
 function textoBusca(valor) {
-    return corrigirMojibakeValor(String(valor || '')).toLowerCase();
+    return normalizarTextoBusca(valor);
+}
+
+function termosRegistroAtendidos(assuntoNormalizado, registro) {
+    const grupos = (registro.termos || []).map(grupo => Array.isArray(grupo) ? grupo : [grupo]);
+    return grupos.every(grupo => grupo.some(termo => assuntoNormalizado.includes(textoBusca(termo))));
+}
+
+function materiaRegistroCompativel(item, registro) {
+    const materiaItem = textoBusca(item?.m);
+    const materiaRegistro = textoBusca(registro.m);
+    return materiaItem === materiaRegistro || materiaItem.includes(materiaRegistro) || materiaRegistro.includes(materiaItem);
 }
 
 function encontrarItemRecuperacao(registro) {
-    const materia = textoBusca(registro.m);
-    const termos = (registro.termos || []).map(textoBusca);
     return (db.lista || []).find(item => {
-        if(textoBusca(item.m) !== materia) return false;
-        const assunto = textoBusca(item.a);
-        return termos.every(termo => assunto.includes(termo));
+        if(!materiaRegistroCompativel(item, registro)) return false;
+        return termosRegistroAtendidos(textoBusca(item.a), registro);
     }) || null;
 }
 
-function existeLancamentoRecuperado(registro) {
+function encontrarLancamentoRecuperado(registro) {
     const tasks = db.metaFixa?.[registro.dia] || [];
-    const materia = textoBusca(registro.m);
-    const termos = (registro.termos || []).map(textoBusca);
-    return tasks.some(task => {
+    return tasks.find(task => {
         if(task.recoveryId === registro.recoveryId) return true;
-        if(!task.c || task.k !== registro.k) return false;
-        if(textoBusca(task.m) !== materia) return false;
-        const assunto = textoBusca(task.a);
-        return termos.every(termo => assunto.includes(termo));
+        if(task.k !== registro.k) return false;
+        if(!materiaRegistroCompativel(task, registro)) return false;
+        return termosRegistroAtendidos(textoBusca(task.a), registro);
     });
 }
 
@@ -644,8 +709,8 @@ function recuperarLancamentosAdminConhecidos() {
             recoveryId: 'rec-admin-2026-05-13-direito-administrativo-aula13-estudo-2h',
             dia: '13/05/2026',
             m: 'DIREITO ADMINISTRATIVO',
-            a: 'Aula 13 - Agentes p?blicos. 3.1 Legisla??o pertinente. 3.1.1 Lei n? 8.112/1990 e suas altera??es (parte 3). 4.2 Deveres dos servidores p?blicos: moralidade administrativa (Lei n? 8.112, de 1990, art. 116, IX).',
-            termos: ['Aula 13', 'Agentes p?blicos'],
+            a: 'Aula 13 - Agentes públicos. 3.1 Legislação pertinente. 3.1.1 Lei nº 8.112/1990 e suas alterações (parte 3). 4.2 Deveres dos servidores públicos: moralidade administrativa (Lei nº 8.112, de 1990, art. 116, IX).',
+            termos: [['Aula 13'], ['Agentes públicos', 'Lei 8.112', 'servidores públicos']],
             l: 'Estudo',
             k: 'E',
             h: 2,
@@ -654,9 +719,9 @@ function recuperarLancamentosAdminConhecidos() {
         {
             recoveryId: 'rec-admin-2026-05-14-raciocinio-logico-aula17-estudo-1h',
             dia: '14/05/2026',
-            m: 'RACIOC?NIO L?GICO',
-            a: 'Aula 17 - Orienta??o Espacial',
-            termos: ['Aula 17', 'Orienta??o Espacial'],
+            m: 'RACIOCÍNIO LÓGICO',
+            a: 'Aula 17 - Raciocínio Sequencial / Orientação Espacial',
+            termos: [['Aula 17'], ['Raciocínio Sequencial', 'Orientação Espacial']],
             l: 'Estudo',
             k: 'E',
             h: 1
@@ -665,8 +730,22 @@ function recuperarLancamentosAdminConhecidos() {
 
     let adicionou = false;
     conhecidos.forEach(registro => {
-        if(existeLancamentoRecuperado(registro)) return;
         const item = encontrarItemRecuperacao(registro);
+        const existente = encontrarLancamentoRecuperado(registro);
+        if(existente) {
+            const antes = JSON.stringify(existente);
+            existente.recoveryId = existente.recoveryId || registro.recoveryId;
+            existente.recuperado = true;
+            existente.c = true;
+            existente.h = Math.max(parseFloat(existente.h) || 0, registro.h);
+            existente.l = registro.l;
+            existente.k = registro.k;
+            existente.m = item?.m || corrigirMojibakeValor(existente.m || registro.m);
+            existente.a = item?.a || corrigirMojibakeValor(existente.a || registro.a);
+            aplicarEfeitoLancamentoRecuperado(item, registro);
+            if(JSON.stringify(existente) !== antes) adicionou = true;
+            return;
+        }
         db.metaFixa[registro.dia] = db.metaFixa[registro.dia] || [];
         db.metaFixa[registro.dia].push({
             itemId: item?.id || registro.recoveryId,
@@ -687,7 +766,7 @@ function recuperarLancamentosAdminConhecidos() {
     if(adicionou) {
         localStorage.setItem('prf_v120', JSON.stringify(db));
         save();
-        showToast('Lan?amentos recuperados', 'Recoloquei os estudos conhecidos na Base de Lan?amentos.');
+        showToast('Lançamentos recuperados', 'Recoloquei os estudos conhecidos na Base de Lançamentos.');
     }
     return adicionou;
 }
@@ -1535,7 +1614,7 @@ async function salvarDadosSupabase(imediato) {
         if(atual.data?.data && salvariaPerdaCritica(db, atual.data.data)) {
             showToast(
                 'Salvamento bloqueado',
-                'O Supabase tem mais dados que esta tela. Recarregue a p?gina antes de salvar para evitar perda de aulas.'
+                'O Supabase tem mais dados que esta tela. Recarregue a página antes de salvar para evitar perda de aulas.'
             );
             return;
         }
@@ -1667,6 +1746,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function init() {
     atualizarPersonalizacao();
+    if(dadosSupabaseCarregados) recuperarLancamentosAdminConhecidos();
     renderAdminStudentBanner();
     renderDiario(vDate);
     updateDashboard();
@@ -3214,6 +3294,32 @@ function totalHorasPlanejadas(tasks) {
     return tarefasPlanejadas(tasks || []).reduce((acc, t) => acc + (parseFloat(t.h) || 0), 0);
 }
 
+function mesmaTarefaPlanejada(a, b) {
+    if(a?.recoveryId && b?.recoveryId && a.recoveryId === b.recoveryId) return true;
+    if(a?.itemId && b?.itemId && a.itemId === b.itemId && a.k === b.k) return true;
+    return textoBusca(a?.m) === textoBusca(b?.m)
+        && textoBusca(a?.a) === textoBusca(b?.a)
+        && a?.k === b?.k;
+}
+
+function mesclarLancamentosConcluidosNoDia(tasks, diaKey) {
+    const base = [...(tasks || [])];
+    const concluidas = tarefasPlanejadas(db.metaFixa?.[diaKey] || []).filter(t => t.c);
+    concluidas.forEach(concluida => {
+        const existente = base.find(t => mesmaTarefaPlanejada(t, concluida));
+        if(existente) {
+            existente.c = true;
+            existente.perf = existente.perf || concluida.perf || null;
+            existente.recoveryId = existente.recoveryId || concluida.recoveryId;
+            existente.recuperado = existente.recuperado || concluida.recuperado;
+            existente.h = Math.max(parseFloat(existente.h) || 0, parseFloat(concluida.h) || 0);
+        } else {
+            base.push({...concluida});
+        }
+    });
+    return base;
+}
+
 function mesclarComplementoPlanejado(tasks, extras) {
     const base = [...(tasks || [])];
     (extras || []).forEach(extra => {
@@ -3281,7 +3387,7 @@ function calcularSemanaPlanejada() {
             tasks = getNeuralPoolSim(limiteDia, simDb, d);
         }
 
-        planejados[k] = tasks;
+        planejados[k] = mesclarLancamentosConcluidosNoDia(tasks, k);
     }
 
     return planejados;
@@ -3370,6 +3476,7 @@ function renderSemanal() {
         const ehHoje = k === hojeKey;
         const diaAtrasado = d < hoje;
         let tasks = diaAtrasado ? tarefasPlanejadas(db.metaFixa[k] || []) : (semana[k] || []);
+        tasks = mesclarLancamentosConcluidosNoDia(tasks, k);
         const temTarefaAtrasada = diaAtrasado && tasks.some(t => !t.c && !isExtraTask(t));
 
         const totalHoras = tasks.reduce((acc, t) => acc + (parseFloat(t.h) || 0), 0);
@@ -4276,6 +4383,5 @@ function salvarExtra() {
     updateDashboard();
 }
 //trigger deploy
-
 
 
