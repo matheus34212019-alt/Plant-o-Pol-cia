@@ -585,6 +585,113 @@ function preferenciasKey() {
     return `plantao_prefs_${id}`;
 }
 
+function textoBusca(valor) {
+    return corrigirMojibakeValor(String(valor || '')).toLowerCase();
+}
+
+function encontrarItemRecuperacao(registro) {
+    const materia = textoBusca(registro.m);
+    const termos = (registro.termos || []).map(textoBusca);
+    return (db.lista || []).find(item => {
+        if(textoBusca(item.m) !== materia) return false;
+        const assunto = textoBusca(item.a);
+        return termos.every(termo => assunto.includes(termo));
+    }) || null;
+}
+
+function existeLancamentoRecuperado(registro) {
+    const tasks = db.metaFixa?.[registro.dia] || [];
+    const materia = textoBusca(registro.m);
+    const termos = (registro.termos || []).map(textoBusca);
+    return tasks.some(task => {
+        if(task.recoveryId === registro.recoveryId) return true;
+        if(!task.c || task.k !== registro.k) return false;
+        if(textoBusca(task.m) !== materia) return false;
+        const assunto = textoBusca(task.a);
+        return termos.every(termo => assunto.includes(termo));
+    });
+}
+
+function aplicarEfeitoLancamentoRecuperado(item, registro) {
+    if(!item || registro.k !== 'E') return;
+    item.h = item.h || {};
+    item.h.E = Math.max(parseFloat(item.h.E) || 0, registro.h + (registro.extraPendente || 0));
+    item.hF = Math.max(parseFloat(item.hF) || 0, registro.h);
+    if(registro.extraPendente) {
+        item.extraTeoria = Math.max(parseFloat(item.extraTeoria) || 0, registro.extraPendente);
+        item.done = item.done || {E:false, Rev:false, Ex:false};
+        item.done.E = false;
+        item.done.Rev = false;
+        item.done.Ex = false;
+        item.f = false;
+        item.sinalizado = false;
+        item.cicloConcluidoManual = false;
+        item.revCycle = null;
+        return;
+    }
+    if(item.hF >= item.h.E - 0.01) {
+        item.done = item.done || {E:false, Rev:false, Ex:false};
+        item.done.E = true;
+        item.lastInitialStudyDate = registro.dia;
+    }
+}
+
+function recuperarLancamentosAdminConhecidos() {
+    if(!usuarioAdmin() || editandoAlunoComoAdmin()) return false;
+    db.metaFixa = db.metaFixa || {};
+    const conhecidos = [
+        {
+            recoveryId: 'rec-admin-2026-05-13-direito-administrativo-aula13-estudo-2h',
+            dia: '13/05/2026',
+            m: 'DIREITO ADMINISTRATIVO',
+            a: 'Aula 13 - Agentes p?blicos. 3.1 Legisla??o pertinente. 3.1.1 Lei n? 8.112/1990 e suas altera??es (parte 3). 4.2 Deveres dos servidores p?blicos: moralidade administrativa (Lei n? 8.112, de 1990, art. 116, IX).',
+            termos: ['Aula 13', 'Agentes p?blicos'],
+            l: 'Estudo',
+            k: 'E',
+            h: 2,
+            extraPendente: 1
+        },
+        {
+            recoveryId: 'rec-admin-2026-05-14-raciocinio-logico-aula17-estudo-1h',
+            dia: '14/05/2026',
+            m: 'RACIOC?NIO L?GICO',
+            a: 'Aula 17 - Orienta??o Espacial',
+            termos: ['Aula 17', 'Orienta??o Espacial'],
+            l: 'Estudo',
+            k: 'E',
+            h: 1
+        }
+    ];
+
+    let adicionou = false;
+    conhecidos.forEach(registro => {
+        if(existeLancamentoRecuperado(registro)) return;
+        const item = encontrarItemRecuperacao(registro);
+        db.metaFixa[registro.dia] = db.metaFixa[registro.dia] || [];
+        db.metaFixa[registro.dia].push({
+            itemId: item?.id || registro.recoveryId,
+            m: item?.m || registro.m,
+            a: item?.a || registro.a,
+            l: registro.l,
+            k: registro.k,
+            h: registro.h,
+            c: true,
+            data: registro.dia,
+            recoveryId: registro.recoveryId,
+            recuperado: true
+        });
+        aplicarEfeitoLancamentoRecuperado(item, registro);
+        adicionou = true;
+    });
+
+    if(adicionou) {
+        localStorage.setItem('prf_v120', JSON.stringify(db));
+        save();
+        showToast('Lan?amentos recuperados', 'Recoloquei os estudos conhecidos na Base de Lan?amentos.');
+    }
+    return adicionou;
+}
+
 function salvarPreferenciasLocais() {
     try {
         const prefs = {
@@ -1362,6 +1469,7 @@ async function carregarDadosSupabase() {
             aplicarPreferenciasLocais();
             localStorage.setItem('prf_v120', JSON.stringify(db));
             dadosSupabaseCarregados = true;
+            recuperarLancamentosAdminConhecidos();
             showToast('Dados sincronizados', editandoAlunoComoAdmin() ? `Perfil de ${alvo.email} carregado.` : 'Seu planejamento foi carregado do Supabase.');
             return true;
         } else {
