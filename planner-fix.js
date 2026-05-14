@@ -213,6 +213,195 @@
         aplicarTempoExtraTeoria.__plantaoExtraGuard = true;
     }
 
+    function instalarReplanejamentoDeAtrasos() {
+        if (typeof replanejarAgora !== 'function' || replanejarAgora.__plantaoMoveAtrasos) return;
+
+        const tarefasPlanejadasLocal = (tasks) => (tasks || []).filter((task) => !isExtraTask(task));
+        const arredondarHoras = (valor) => Math.round((parseFloat(valor) || 0) * 10) / 10;
+
+        function ordenarAtrasosPorData(atrasos) {
+            return atrasos.sort((a, b) => keyToDate(a.dia) - keyToDate(b.dia) || a.idx - b.idx);
+        }
+
+        function getAtrasosComIndice(hoje) {
+            const hojeBase = new Date(hoje);
+            hojeBase.setHours(0, 0, 0, 0);
+            const atrasos = [];
+            Object.entries(db.metaFixa || {}).forEach(([dia, tasks]) => {
+                const data = keyToDate(dia);
+                data.setHours(0, 0, 0, 0);
+                if (data >= hojeBase) return;
+                (tasks || []).forEach((task, idx) => {
+                    if (!task.c && !isExtraTask(task)) atrasos.push({ dia, task, idx });
+                });
+            });
+            return ordenarAtrasosPorData(atrasos);
+        }
+
+        function totalPlanejadoDia(diaKey) {
+            return tarefasPlanejadasLocal(db.metaFixa?.[diaKey])
+                .reduce((acc, task) => acc + (parseFloat(task.h) || 0), 0);
+        }
+
+        function estudoDoAssuntoDia(diaKey, itemId) {
+            return tarefasPlanejadasLocal(db.metaFixa?.[diaKey])
+                .filter((task) => task.itemId === itemId && task.k === 'E')
+                .reduce((acc, task) => acc + (parseFloat(task.h) || 0), 0);
+        }
+
+        function guardarPlano(diaKey) {
+            if (typeof atualizarPlanoDiaTravado === 'function') atualizarPlanoDiaTravado(diaKey);
+        }
+
+        function limparPlanejamentoRecalculavel(inicioDate) {
+            const inicio = new Date(inicioDate);
+            inicio.setHours(0, 0, 0, 0);
+            Object.keys(db.metaFixa || {}).forEach((dia) => {
+                const data = keyToDate(dia);
+                data.setHours(0, 0, 0, 0);
+                if (data < inicio) return;
+                const preservadas = (db.metaFixa[dia] || []).filter((task) => task.c || isExtraTask(task));
+                if (preservadas.length) {
+                    db.metaFixa[dia] = preservadas;
+                    guardarPlano(dia);
+                } else {
+                    delete db.metaFixa[dia];
+                    if (db.planosTravados) delete db.planosTravados[dia];
+                }
+            });
+        }
+
+        function adicionarAtraso(diaKey, task, horas, origemDia) {
+            db.metaFixa[diaKey] = db.metaFixa[diaKey] || [];
+            const h = arredondarHoras(horas);
+            if (h <= 0.01) return false;
+
+            const existente = db.metaFixa[diaKey].find((item) =>
+                !item.c &&
+                !isExtraTask(item) &&
+                item.itemId === task.itemId &&
+                item.k === task.k &&
+                (item.k === 'E' || item.k === 'Rev')
+            );
+
+            if (existente) {
+                existente.h = arredondarHoras((parseFloat(existente.h) || 0) + h);
+                existente.replanejado = true;
+                existente.replanejadoDe = existente.replanejadoDe || origemDia;
+                existente.data = diaKey;
+                return true;
+            }
+
+            const novo = { ...task, h, c: false, data: diaKey, replanejado: true, replanejadoDe: origemDia };
+            delete novo.perf;
+            db.metaFixa[diaKey].push(novo);
+            return true;
+        }
+
+        function inserirAtrasoNoProximoEspaco(task, origemDia, inicioDate) {
+            let restante = arredondarHoras(task.h);
+            if (restante <= 0.01) return false;
+
+            const metaSnapshot = JSON.stringify(db.metaFixa || {});
+            const travadosSnapshot = JSON.stringify(db.planosTravados || {});
+
+            for (let offset = 0; offset <= 365 && restante > 0.01; offset += 1) {
+                const data = addDays(inicioDate, offset);
+                const diaKey = dateKey(data);
+                if (typeof diaPausado === 'function' && diaPausado(diaKey)) continue;
+
+                const limite = parseFloat(db.h?.[data.getDay()]) || 0;
+                if (limite <= 0) continue;
+
+                const livre = arredondarHoras(Math.max(0, limite - totalPlanejadoDia(diaKey)));
+                if (livre <= 0.01) continue;
+
+                if (task.k === 'E') {
+                    const limiteAssunto = Math.max(0, (typeof MAX_ESTUDO_DIA === 'number' ? MAX_ESTUDO_DIA : 2) - estudoDoAssuntoDia(diaKey, task.itemId));
+                    const bloco = arredondarHoras(Math.min(restante, livre, limiteAssunto));
+                    if (bloco < 0.5 && restante >= 0.5) continue;
+                    if (!adicionarAtraso(diaKey, task, bloco, origemDia)) continue;
+                    restante = arredondarHoras(restante - bloco);
+                    guardarPlano(diaKey);
+                    continue;
+                }
+
+                if (livre + 0.01 < restante) continue;
+                if (adicionarAtraso(diaKey, task, restante, origemDia)) {
+                    guardarPlano(diaKey);
+                    restante = 0;
+                }
+            }
+
+            if (restante <= 0.01) return true;
+            db.metaFixa = JSON.parse(metaSnapshot);
+            db.planosTravados = JSON.parse(travadosSnapshot);
+            return false;
+        }
+
+        function removerMovidosDoHistorico(movidos) {
+            const porDia = new Map();
+            movidos.forEach(({ dia, idx }) => {
+                if (!porDia.has(dia)) porDia.set(dia, new Set());
+                porDia.get(dia).add(idx);
+            });
+
+            porDia.forEach((indices, dia) => {
+                const filtradas = (db.metaFixa[dia] || []).filter((task, idx) => !indices.has(idx));
+                if (filtradas.length) {
+                    db.metaFixa[dia] = filtradas;
+                    guardarPlano(dia);
+                } else {
+                    delete db.metaFixa[dia];
+                    if (db.planosTravados) delete db.planosTravados[dia];
+                }
+            });
+        }
+
+        replanejarAgora = function replanejarMovendoAtrasos() {
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            const atrasos = getAtrasosComIndice(hoje);
+            if (!atrasos.length) {
+                if (typeof showToast === 'function') showToast('Sem atrasos', 'Nenhuma pendencia encontrada para replanejar.');
+                return;
+            }
+
+            limparPlanejamentoRecalculavel(hoje);
+            const movidos = [];
+            atrasos.forEach((registro) => {
+                if (inserirAtrasoNoProximoEspaco(registro.task, registro.dia, hoje)) movidos.push(registro);
+            });
+            removerMovidosDoHistorico(movidos);
+
+            const hojeKey = dateKey(hoje);
+            if (typeof garantirDiaPlanejado === 'function') garantirDiaPlanejado(hojeKey, hoje);
+            if (typeof calcularSemanaPlanejada === 'function' && typeof fixarSemanaPlanejada === 'function') {
+                const inicioSemana = new Date(hoje);
+                inicioSemana.setDate(hoje.getDate() - hoje.getDay());
+                fixarSemanaPlanejada(calcularSemanaPlanejada(), inicioSemana, hoje);
+            }
+
+            if (typeof save === 'function') save();
+            if (typeof showToast === 'function') {
+                const pendentes = atrasos.length - movidos.length;
+                showToast(
+                    pendentes ? 'Plantao parcialmente replanejado' : 'Plantao replanejado',
+                    pendentes
+                        ? `${movidos.length} atraso(s) foram movidos. ${pendentes} ainda ficaram pendentes por falta de espaco nas horas diarias.`
+                        : `${movidos.length} atraso(s) foram movidos para os proximos dias respeitando suas horas diarias.`
+                );
+            }
+
+            vDate = new Date(hoje);
+            if (typeof updateDashboard === 'function') updateDashboard();
+            if (typeof renderDiario === 'function') renderDiario(vDate);
+            if (typeof renderReplanejamento === 'function') renderReplanejamento();
+        };
+
+        replanejarAgora.__plantaoMoveAtrasos = true;
+    }
+
     function fixVisibleText(root = document.body) {
         if (!root) return;
         forceBrand();
@@ -242,6 +431,7 @@
     function boot() {
         bloquearConclusaoSemTeoria();
         substituirTempoExtraTeoria();
+        instalarReplanejamentoDeAtrasos();
         ['renderDiario', 'renderSemanal', 'updateDashboard', 'renderTree', 'renderFluxo', 'renderCiclo', 'renderReplanejar', 'renderRankingAlunos', 'renderPerfil'].forEach(wrapRender);
         fixVisibleText();
         setTimeout(fixVisibleText, 400);
