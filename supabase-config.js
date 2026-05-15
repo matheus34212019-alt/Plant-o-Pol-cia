@@ -3,7 +3,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
     anonKey: "sb_publishable_V2BXur3TO3bSOSWMK3a1xA_qLZ8xcu3"
 };
 
-(function loadTabletFix() {
+(function loadRuntimeFixes() {
     if(window.__plantaoTabletAssetsRequested) return;
     window.__plantaoTabletAssetsRequested = true;
 
@@ -15,17 +15,18 @@ window.PLANTAO_SUPABASE_CONFIG = {
         document.head.appendChild(link);
     }
 
-    function addScript() {
-        if(document.querySelector('script[src*="tablet-fix.js"]')) return;
+    function addScript(src) {
+        if(document.querySelector(`script[src*="${src.split('?')[0]}"]`)) return;
         const script = document.createElement('script');
-        script.src = 'tablet-fix.js?v=195-tablet-scroll';
+        script.src = src;
         script.defer = true;
         document.body ? document.body.appendChild(script) : document.head.appendChild(script);
     }
 
     function loadAssets() {
         addCss();
-        addScript();
+        addScript('tablet-fix.js?v=195-tablet-scroll');
+        addScript('auth-fix.js?v=196-login-sem-preview');
     }
 
     if(document.readyState === 'loading') {
