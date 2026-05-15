@@ -31,4 +31,11 @@
     }
 
     window.__plantaoScrollActiveTabToTop = scrollActiveTabToTop;
+
+    if(!document.querySelector('script[src*="auth-fix.js"]')) {
+        const script = document.createElement('script');
+        script.src = 'auth-fix.js?v=196-login-sem-preview';
+        script.defer = true;
+        document.body ? document.body.appendChild(script) : document.head.appendChild(script);
+    }
 })();
