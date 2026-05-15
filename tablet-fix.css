@@ -1,0 +1,245 @@
+/* v195 tablet scroll stability */
+html {
+    min-height: 100%;
+}
+
+body {
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+.main {
+    min-width: 0;
+}
+
+.sidebar,
+.main {
+    scrollbar-gutter: stable;
+}
+
+#lista-diaria,
+#lancamentos-content {
+    min-height: 1px;
+}
+
+@supports (height: 100dvh) {
+    body {
+        height: 100dvh;
+    }
+
+    .sidebar,
+    .main {
+        max-height: 100dvh;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1180px) {
+    body {
+        overflow: hidden;
+    }
+
+    .sidebar {
+        width: 236px;
+        padding: 16px 12px;
+    }
+
+    .logo-box {
+        font-size: 1rem;
+        margin-bottom: 16px;
+    }
+
+    .logo-box i {
+        width: 32px;
+        height: 32px;
+    }
+
+    .nav-item {
+        min-height: 40px;
+        padding: 8px 10px;
+        margin-bottom: 5px;
+        gap: 8px;
+        font-size: 0.82rem;
+    }
+
+    .submenu {
+        margin-left: 8px;
+        padding: 2px 0 4px;
+    }
+
+    .sub-link {
+        margin-left: 0;
+        padding: 7px 10px;
+        font-size: 0.76rem;
+    }
+
+    .main {
+        height: 100vh;
+        height: 100dvh;
+        padding: 22px;
+    }
+
+    .container {
+        width: 100%;
+        max-width: none;
+    }
+
+    .stats-grid {
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .welcome-box,
+    .admin-student-banner {
+        padding: 15px 18px;
+        margin-bottom: 18px;
+    }
+
+    .cycle-card {
+        padding: 18px;
+    }
+
+    .nav-days {
+        margin: 16px 0;
+    }
+
+    .page-header {
+        margin: 8px 0 10px;
+    }
+
+    .meta-sub {
+        margin-bottom: 14px;
+    }
+
+    .task-card {
+        padding: 18px;
+    }
+
+    .mission-complete-card {
+        grid-template-columns: auto 1fr;
+    }
+
+    .mission-complete-card .btn {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+}
+
+@media (max-width: 900px) {
+    body {
+        display: block;
+        height: auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .sidebar {
+        position: static;
+        width: 100%;
+        max-height: none;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        padding: 14px;
+        overflow: visible;
+        border-right: 0;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+    }
+
+    .logo-box {
+        grid-column: 1 / -1;
+        margin-bottom: 2px;
+    }
+
+    .nav-item {
+        min-height: 42px;
+        margin-bottom: 0;
+        padding: 9px 10px;
+    }
+
+    .nav-item span {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .submenu {
+        grid-column: 1 / -1;
+        margin-left: 0;
+        padding: 0;
+        border-left: 0;
+        gap: 8px;
+    }
+
+    .submenu.show {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sub-link {
+        margin-left: 0;
+        padding: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: rgba(15, 23, 42, 0.56);
+    }
+
+    .main {
+        height: auto;
+        max-height: none;
+        overflow: visible;
+        padding: 18px 14px 32px;
+    }
+
+    .container {
+        width: 100%;
+        max-width: none;
+    }
+
+    .stats-grid {
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .welcome-box,
+    .admin-student-banner,
+    .page-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .welcome-box,
+    .admin-student-banner {
+        padding: 16px;
+        margin-bottom: 18px;
+    }
+
+    .nav-days {
+        margin: 14px 0;
+    }
+
+    .task-card {
+        grid-template-columns: 1fr auto;
+        padding: 16px;
+    }
+
+    .mission-complete-card {
+        grid-template-columns: auto 1fr;
+    }
+
+    .mission-complete-card .btn {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .lancamento-row {
+        grid-template-columns: 1fr;
+        align-items: start;
+    }
+}
+
+@media (max-width: 560px) {
+    .sidebar,
+    .submenu.show {
+        grid-template-columns: 1fr;
+    }
+}
