@@ -27,6 +27,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
         addCss();
         addScript('tablet-fix.js?v=195-tablet-scroll');
         addScript('auth-fix.js?v=196-login-sem-preview');
+        addScript('review-dedup-fix.js?v=197-revisao-duplicada');
     }
 
     if(document.readyState === 'loading') {
