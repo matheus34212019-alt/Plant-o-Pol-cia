@@ -38,4 +38,11 @@
         script.defer = true;
         document.body ? document.body.appendChild(script) : document.head.appendChild(script);
     }
+
+    if(!document.querySelector('script[src*="review-dedup-fix.js"]')) {
+        const script = document.createElement('script');
+        script.src = 'review-dedup-fix.js?v=197-revisao-duplicada';
+        script.defer = true;
+        document.body ? document.body.appendChild(script) : document.head.appendChild(script);
+    }
 })();
