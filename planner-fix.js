@@ -1,6 +1,6 @@
 (function plantaoHotfix() {
-    if (window.__plantaoHotfixV193) return;
-    window.__plantaoHotfixV193 = true;
+    if (window.__plantaoHotfixV194) return;
+    window.__plantaoHotfixV194 = true;
 
     function extra(task) {
         return task?.extra === true || task?.l === 'Extra' || task?.k === 'Extra';
@@ -37,7 +37,7 @@
     function summary(data) {
         const meta = data?.metaFixa && typeof data.metaFixa === 'object' ? data.metaFixa : {};
         const tasks = Object.values(meta).flat().filter(Boolean);
-        const done = tasks.filter((task) => task?.c === true && !extra(task)).length;
+        const done = tasks.filter((task) => task?.c === true).length;
         return {
             assuntos: Array.isArray(data?.lista) ? data.lista.length : 0,
             dias: Object.keys(meta).length,
@@ -53,9 +53,12 @@
         if (!remoteData || !remoteData.lista) return true;
         const local = summary(localData);
         const remote = summary(remoteData);
+        const newerLocal = local.stamp && local.stamp > remote.stamp + 1000;
+        if (newerLocal && JSON.stringify(localData?.h || {}) !== JSON.stringify(remoteData?.h || {})) return true;
+        if (newerLocal && JSON.stringify(localData?.ciclo || []) !== JSON.stringify(remoteData?.ciclo || [])) return true;
         if (local.concluidas > remote.concluidas) return true;
         if (local.lancamentos > remote.lancamentos) return true;
-        if (local.stamp && local.stamp > remote.stamp + 1000 && local.assuntos >= remote.assuntos && local.tarefas >= Math.floor(remote.tarefas * 0.8)) return true;
+        if (newerLocal && local.assuntos >= remote.assuntos && local.tarefas >= Math.floor(remote.tarefas * 0.8)) return true;
         if (local.dias > remote.dias && local.tarefas >= remote.tarefas && local.assuntos >= remote.assuntos) return true;
         return false;
     }
@@ -321,9 +324,61 @@
         replanejarAgora.__hotfixV193 = true;
     }
 
+    function taskSignature(task) {
+        return encodeURIComponent(JSON.stringify([
+            task?.recoveryId || '',
+            task?.itemId || '',
+            task?.k || '',
+            task?.m || '',
+            task?.a || '',
+            task?.l || '',
+            roundHour(task?.h),
+            task?.data || '',
+        ]));
+    }
+
+    function installSafeTaskClick() {
+        if (window.__plantaoSafeTaskClickV194) return;
+        if (typeof renderTaskCard !== 'function' || typeof cliqueTask !== 'function') return;
+        window.__plantaoSafeTaskClickV194 = true;
+
+        window.cliqueTaskSeguro = function cliqueTaskSeguro(event, dia, signature, fallbackIdx) {
+            if (event?.stopPropagation) event.stopPropagation();
+            const tasks = db?.metaFixa?.[dia] || [];
+            const idx = tasks.findIndex((task) => taskSignature(task) === signature);
+            const fallback = Number.isFinite(Number(fallbackIdx)) ? Number(fallbackIdx) : -1;
+            const alvo = idx >= 0 ? idx : fallback;
+            if (alvo < 0 || !tasks[alvo]) {
+                if (typeof showToast === 'function') showToast('Atividade atualizada', 'Recarreguei o dia para evitar marcar a tarefa errada.');
+                if (typeof renderDiarioSemRecalcular === 'function') renderDiarioSemRecalcular(vDate);
+                return false;
+            }
+            return cliqueTask(dia, alvo);
+        };
+
+        const originalRenderTaskCard = renderTaskCard;
+        renderTaskCard = function renderTaskCardSeguro(task, dia, idx, atrasada) {
+            const html = originalRenderTaskCard.apply(this, arguments);
+            const signature = taskSignature(task);
+            const fallback = Number.isFinite(Number(idx)) ? Number(idx) : -1;
+            return html.replace(
+                /onclick="cliqueTask\('[^']+',\s*[^)]*\)"/,
+                `onclick="cliqueTaskSeguro(event, '${dia}', '${signature}', ${fallback})"`
+            );
+        };
+        renderTaskCard.__hotfixV194 = true;
+
+        setTimeout(() => {
+            if (typeof renderDiarioSemRecalcular === 'function' && typeof vDate !== 'undefined') {
+                renderDiarioSemRecalcular(vDate);
+            }
+        }, 0);
+    }
+
     function boot() {
         installPersistenceGuard();
         installReplanFix();
+        installSafeTaskClick();
     }
 
     if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', boot);
