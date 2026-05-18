@@ -1,6 +1,6 @@
 (function plantaoHotfix() {
-    if (window.__plantaoHotfixV194) return;
-    window.__plantaoHotfixV194 = true;
+    if (window.__plantaoHotfixV195) return;
+    window.__plantaoHotfixV195 = true;
 
     function extra(task) {
         return task?.extra === true || task?.l === 'Extra' || task?.k === 'Extra';
@@ -337,22 +337,170 @@
         ]));
     }
 
+    function onlyPlanned(tasks) {
+        if (typeof tarefasPlanejadas === 'function') return tarefasPlanejadas(tasks || []);
+        return planejadas(tasks || []);
+    }
+
+    function sameTask(a, b) {
+        if (typeof mesmaTarefaPlanejada === 'function') return mesmaTarefaPlanejada(a, b);
+        const norm = (value) => String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim()
+            .toLowerCase();
+        if (a?.recoveryId && b?.recoveryId && a.recoveryId === b.recoveryId) return true;
+        if (a?.itemId && b?.itemId && a.itemId === b.itemId && a.k === b.k) return true;
+        return norm(a?.m) === norm(b?.m) && norm(a?.a) === norm(b?.a) && a?.k === b?.k;
+    }
+
+    function splitStudyTaskForOneHour(dia, idx) {
+        const tasks = db?.metaFixa?.[dia];
+        const task = tasks?.[idx];
+        if (!task || task.c || task.k !== 'E') return idx;
+        const hours = roundHour(task.h);
+        if (hours <= 1.01) return idx;
+
+        const doneChunk = { ...task, h: 1, c: false, data: dia, __plantaoParcialEstudo: true };
+        const remaining = roundHour(hours - 1);
+        const pendingChunk = { ...task, h: remaining, c: false, data: dia, __plantaoRestoEstudo: true };
+        delete doneChunk.perf;
+        delete pendingChunk.perf;
+        tasks.splice(idx, 1, doneChunk, pendingChunk);
+        if (typeof atualizarPlanoDiaTravado === 'function') atualizarPlanoDiaTravado(dia);
+        stampLocalChange();
+        return idx;
+    }
+
+    let repairingStudyHours = false;
+
+    function repairInflatedStudyDay(dayKey, options = {}) {
+        if (repairingStudyHours || !dayKey || !db?.metaFixa?.[dayKey]) return false;
+        const tasks = db.metaFixa[dayKey];
+        if (!Array.isArray(tasks)) return false;
+
+        let changed = false;
+        repairingStudyHours = true;
+        try {
+            for (let idx = tasks.length - 1; idx >= 0; idx -= 1) {
+                const task = tasks[idx];
+                const hours = roundHour(task?.h);
+                if (!task?.c || task.k !== 'E' || extra(task) || hours <= 1.01 || task.__plantaoBlocoCompleto) continue;
+                const doneChunk = { ...task, h: 1, c: true, data: dayKey, __plantaoParcialCorrigido: true };
+                const remaining = roundHour(hours - 1);
+                if (remaining > 0.01) {
+                    const pendingChunk = { ...task, h: remaining, c: false, data: dayKey, __plantaoRestoCorrigido: true };
+                    delete pendingChunk.perf;
+                    tasks.splice(idx, 1, doneChunk, pendingChunk);
+                } else {
+                    tasks.splice(idx, 1, doneChunk);
+                }
+                changed = true;
+            }
+        } finally {
+            repairingStudyHours = false;
+        }
+
+        if (!changed) return false;
+        if (typeof atualizarPlanoDiaTravado === 'function') atualizarPlanoDiaTravado(dayKey);
+        if (typeof save === 'function') save();
+        else stampLocalChange();
+        if (options.render !== false && typeof renderDiarioSemRecalcular === 'function' && typeof vDate !== 'undefined') {
+            renderDiarioSemRecalcular(vDate);
+        }
+        if (options.toast && typeof showToast === 'function') {
+            showToast('Horas corrigidas', 'Mantive 1h marcada e deixei o restante pendente.');
+        }
+        return true;
+    }
+
+    function repairInflatedTodayStudy(options = {}) {
+        if (typeof dateKey !== 'function') return false;
+        return repairInflatedStudyDay(dateKey(new Date()), options);
+    }
+
+    function mergeCompletedWithoutInflating(base, completed) {
+        const doneHours = roundHour(completed?.h);
+        if (doneHours <= 0.01) return;
+        const idx = base.findIndex((task) => sameTask(task, completed));
+        if (idx < 0) {
+            base.push({ ...completed, h: doneHours, c: true });
+            return;
+        }
+
+        const planned = base[idx];
+        const plannedHours = roundHour(planned?.h);
+        if (planned?.c) {
+            base[idx] = { ...planned, ...completed, h: doneHours || plannedHours, c: true };
+            return;
+        }
+
+        if (completed.k === 'E' && plannedHours > doneHours + 0.01) {
+            const completedChunk = { ...planned, ...completed, h: doneHours, c: true };
+            const pendingChunk = { ...planned, h: roundHour(plannedHours - doneHours), c: false };
+            delete pendingChunk.perf;
+            base.splice(idx, 1, completedChunk, pendingChunk);
+            return;
+        }
+
+        base[idx] = { ...planned, ...completed, h: doneHours || plannedHours, c: true };
+    }
+
+    function installPartialStudyGuard() {
+        if (window.__plantaoPartialStudyGuardV195) return;
+        window.__plantaoPartialStudyGuardV195 = true;
+
+        if (typeof mesclarLancamentosConcluidosNoDia === 'function') {
+            mesclarLancamentosConcluidosNoDia = function mesclarLancamentosSemInflarHoras(tasks, diaKey) {
+                const base = (tasks || []).map((task) => ({ ...task }));
+                const completed = onlyPlanned(db?.metaFixa?.[diaKey] || []).filter((task) => task.c);
+                completed.forEach((task) => mergeCompletedWithoutInflating(base, task));
+                return base;
+            };
+            mesclarLancamentosConcluidosNoDia.__hotfixV195 = true;
+        }
+
+        if (typeof mesclarComplementoPlanejado === 'function') {
+            mesclarComplementoPlanejado = function mesclarComplementoSemJuntarConcluidas(tasks, extras) {
+                const base = (tasks || []).map((task) => ({ ...task }));
+                (extras || []).forEach((extraTask) => {
+                    const idx = base.findIndex((task) =>
+                        !task.c && task.itemId === extraTask.itemId && task.k === extraTask.k && (extraTask.k === 'E' || extraTask.k === 'Rev')
+                    );
+                    if (idx >= 0) {
+                        base[idx].h = roundHour((parseFloat(base[idx].h) || 0) + (parseFloat(extraTask.h) || 0));
+                        return;
+                    }
+                    if (!base.some((task) => !task.c && task.itemId === extraTask.itemId && task.k === extraTask.k)) {
+                        base.push({ ...extraTask });
+                    }
+                });
+                return base;
+            };
+            mesclarComplementoPlanejado.__hotfixV195 = true;
+        }
+
+        setTimeout(() => repairInflatedTodayStudy({ toast: true }), 50);
+        setTimeout(() => repairInflatedTodayStudy({ toast: false }), 800);
+    }
+
     function installSafeTaskClick() {
-        if (window.__plantaoSafeTaskClickV194) return;
+        if (window.__plantaoSafeTaskClickV195) return;
         if (typeof renderTaskCard !== 'function' || typeof cliqueTask !== 'function') return;
-        window.__plantaoSafeTaskClickV194 = true;
+        window.__plantaoSafeTaskClickV195 = true;
 
         window.cliqueTaskSeguro = function cliqueTaskSeguro(event, dia, signature, fallbackIdx) {
             if (event?.stopPropagation) event.stopPropagation();
             const tasks = db?.metaFixa?.[dia] || [];
             const idx = tasks.findIndex((task) => taskSignature(task) === signature);
             const fallback = Number.isFinite(Number(fallbackIdx)) ? Number(fallbackIdx) : -1;
-            const alvo = idx >= 0 ? idx : fallback;
+            let alvo = idx >= 0 ? idx : fallback;
             if (alvo < 0 || !tasks[alvo]) {
                 if (typeof showToast === 'function') showToast('Atividade atualizada', 'Recarreguei o dia para evitar marcar a tarefa errada.');
                 if (typeof renderDiarioSemRecalcular === 'function') renderDiarioSemRecalcular(vDate);
                 return false;
             }
+            alvo = splitStudyTaskForOneHour(dia, alvo);
             return cliqueTask(dia, alvo);
         };
 
@@ -362,13 +510,14 @@
             const signature = taskSignature(task);
             const fallback = Number.isFinite(Number(idx)) ? Number(idx) : -1;
             return html.replace(
-                /onclick="cliqueTask\('[^']+',\s*[^)]*\)"/,
+                /onclick="[^"]*cliqueTask(?:Seguro)?[^"]*"/,
                 `onclick="cliqueTaskSeguro(event, '${dia}', '${signature}', ${fallback})"`
             );
         };
-        renderTaskCard.__hotfixV194 = true;
+        renderTaskCard.__hotfixV195 = true;
 
         setTimeout(() => {
+            repairInflatedTodayStudy({ toast: true });
             if (typeof renderDiarioSemRecalcular === 'function' && typeof vDate !== 'undefined') {
                 renderDiarioSemRecalcular(vDate);
             }
@@ -378,6 +527,7 @@
     function boot() {
         installPersistenceGuard();
         installReplanFix();
+        installPartialStudyGuard();
         installSafeTaskClick();
     }
 
