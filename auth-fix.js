@@ -161,9 +161,9 @@
     }
     function load() {
         addScript('safety-features.js?v=203-estabilidade');
-        setTimeout(() => addScript('cloud-backup-fix.js?v=203-estabilidade'), 350);
-        setTimeout(() => addScript('schedule-guard-fix.js?v=204-cronograma'), 700);
-        setTimeout(() => addScript('quiet-mode-fix.js?v=205-silencioso'), 1000);
+        setTimeout(() => addScript('cloud-backup-fix.js?v=206-estabilidade'), 350);
+        setTimeout(() => addScript('schedule-guard-fix.js?v=206-estabilidade'), 700);
+        setTimeout(() => addScript('quiet-mode-fix.js?v=206-estabilidade'), 1000);
     }
     if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load, { once: true });
     else load();
