@@ -170,6 +170,14 @@ window.PLANTAO_SUPABASE_CONFIG = {
     return Math.max(0, s.assuntos - 3) + (s.dias * 2) + (s.tarefas * 3) + (s.concluidas * 5) + (s.lancamentos * 5);
   }
 
+  function sameStoredData(a, b) {
+    try {
+      return JSON.stringify(a || null) === JSON.stringify(b || null);
+    } catch (e) {
+      return false;
+    }
+  }
+
   function candidateLabel(key) {
     if (key === LEGACY_KEY) return 'dados antigos do navegador';
     if (key === LOCAL_KEY) return 'cópia local separada';
@@ -238,15 +246,36 @@ window.PLANTAO_SUPABASE_CONFIG = {
     if (document.getElementById('plantao-local-recovery')) return;
     const current = parseDataFromKey(activeDataKey());
     const currentScore = dataScore(current);
-    const candidate = localRecoveryCandidates().find(item => item.score > currentScore + 2);
-    if (!candidate) return;
+    const candidates = localRecoveryCandidates();
+    const betterCandidate = candidates.find(item => item.score > currentScore + 2);
+    const differentCandidate = candidates.find(item => !sameStoredData(item.data, current));
+    const candidate = betterCandidate || differentCandidate;
+    if (!candidate) {
+      if (currentScore <= 2 && findCurrentSessionData()) {
+        const emptyBanner = document.createElement('div');
+        emptyBanner.id = 'plantao-local-recovery';
+        emptyBanner.style.cssText = 'position:fixed;left:18px;right:18px;bottom:18px;z-index:100000;background:#0f172a;color:#e2e8f0;border:1px solid #475569;border-radius:14px;padding:16px;box-shadow:0 18px 45px rgba(0,0,0,.45);font-family:inherit;display:grid;gap:10px;';
+        emptyBanner.innerHTML = `
+          <strong>Não encontrei cópia antiga neste navegador</strong>
+          <span>Se seus dados foram criados em outro aparelho, outro navegador ou outra conta, a recuperação precisa ser feita pela nuvem/backups do Supabase.</span>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button type="button" id="plantao-empty-local-ok" style="border:0;border-radius:10px;padding:10px 14px;background:#334155;color:white;font-weight:800;cursor:pointer;">ENTENDI</button>
+          </div>`;
+        document.body.appendChild(emptyBanner);
+        document.getElementById('plantao-empty-local-ok').onclick = () => emptyBanner.remove();
+      }
+      return;
+    }
 
     const s = candidate.summary;
+    const title = betterCandidate
+      ? 'Encontrei uma cópia mais completa neste navegador'
+      : 'Encontrei outra cópia salva neste navegador';
     const banner = document.createElement('div');
     banner.id = 'plantao-local-recovery';
     banner.style.cssText = 'position:fixed;left:18px;right:18px;bottom:18px;z-index:100000;background:#0f172a;color:#e2e8f0;border:1px solid #38bdf8;border-radius:14px;padding:16px;box-shadow:0 18px 45px rgba(0,0,0,.45);font-family:inherit;display:grid;gap:10px;';
     banner.innerHTML = `
-      <strong>Encontrei uma cópia mais completa neste navegador</strong>
+      <strong>${title}</strong>
       <span>${candidateLabel(candidate.key)}: ${s.assuntos} assuntos, ${s.dias} dias, ${s.tarefas} cards, ${s.concluidas} concluídos.</span>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button type="button" id="plantao-restore-local" style="border:0;border-radius:10px;padding:10px 14px;background:#0891b2;color:white;font-weight:800;cursor:pointer;">RESTAURAR MEUS DADOS</button>
