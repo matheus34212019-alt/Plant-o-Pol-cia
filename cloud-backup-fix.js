@@ -42,6 +42,41 @@
         };
     }
 
+    function safeOwner(value) {
+        return String(value || 'local')
+            .toLowerCase()
+            .replace(/[^a-z0-9_-]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'local';
+    }
+
+    function ownerKey() {
+        try {
+            if(typeof window.__plantaoGetActiveDataKey === 'function') return safeOwner(window.__plantaoGetActiveDataKey());
+        } catch(e) {}
+        try {
+            if(typeof emailUsuario === 'function') return safeOwner(emailUsuario());
+        } catch(e) {}
+        return 'local';
+    }
+
+    function setUndoSnapshot(data) {
+        if(!data) return;
+        try {
+            if(typeof window.__plantaoPushHistorySnapshot === 'function') {
+                window.__plantaoPushHistorySnapshot(data, 'Antes de restaurar backup da nuvem');
+            }
+            if(typeof window.__plantaoSetUndoSnapshot === 'function') {
+                window.__plantaoSetUndoSnapshot(data);
+                return;
+            }
+            localStorage.setItem(`plantao_undo_v1_${ownerKey()}`, JSON.stringify({
+                createdAt: new Date().toISOString(),
+                resumo: summary(data),
+                data: clone(data)
+            }));
+        } catch(e) {}
+    }
+
     function disabled() {
         try { return sessionStorage.getItem(DISABLED_KEY) === '1'; } catch(e) { return false; }
     }
@@ -142,17 +177,17 @@
         }
         const alvo = target();
         const status = !alvo
-            ? 'Entre na conta para ativar versões na nuvem.'
+            ? 'Entre na conta para ativar versoes na nuvem.'
             : disabled()
-                ? 'A tabela plantao_user_backups ainda não está ativa no Supabase.'
+                ? 'A tabela plantao_user_backups ainda nao esta ativa no Supabase.'
                 : cloudLoading
                     ? 'Carregando backups da nuvem...'
-                    : 'As versões da nuvem aparecerão aqui depois dos próximos salvamentos.';
+                    : 'As versoes da nuvem aparecerao aqui depois dos proximos salvamentos.';
         const rows = cloudRows.length ? cloudRows.map(row => {
             const r = row.summary || {};
-            return `<div class="version-row"><div><strong>${new Date(row.created_at).toLocaleString()}</strong><small>${escapeText(row.reason || 'Backup')} | ${r.assuntos || 0} assuntos | ${r.concluidas || 0} concluídos</small></div><button class="btn btn-sm btn-outline" onclick="window.__plantaoRestoreCloudBackup('${row.id}')">RESTAURAR</button></div>`;
+            return `<div class="version-row"><div><strong>${new Date(row.created_at).toLocaleString()}</strong><small>${escapeText(row.reason || 'Backup')} | ${r.assuntos || 0} assuntos | ${r.concluidas || 0} concluidos</small></div><button class="btn btn-sm btn-outline" onclick="window.__plantaoRestoreCloudBackup('${row.id}')">RESTAURAR</button></div>`;
         }).join('') : `<div class="empty-state">${status}</div>`;
-        card.innerHTML = `<h3>Histórico na nuvem</h3><div class="safety-list">${rows}</div>`;
+        card.innerHTML = `<h3>Historico na nuvem</h3><div class="safety-list">${rows}</div>`;
     }
 
     function refreshCloudCard(force) {
@@ -167,7 +202,7 @@
     async function restoreCloudBackup(id) {
         const alvo = target();
         if(!alvo || !id) return;
-        if(!confirm('Restaurar este backup da nuvem? O estado atual ficará salvo no histórico local.')) return;
+        if(!confirm('Restaurar este backup da nuvem? O estado atual ficara salvo no historico local.')) return;
         try {
             const { data, error } = await supabaseClient
                 .from(TABLE)
@@ -177,17 +212,15 @@
                 .maybeSingle();
             if(error) throw error;
             if(!data?.data) {
-                if(typeof showToast === 'function') showToast('Backup não encontrado', 'Não encontrei os dados dessa versão na nuvem.');
+                if(typeof showToast === 'function') showToast('Backup nao encontrado', 'Nao encontrei os dados dessa versao na nuvem.');
                 return;
             }
-            if(typeof window.__plantaoUndoLastChange === 'function' && typeof db !== 'undefined') {
-                try { localStorage.setItem(`plantao_undo_v1_${Date.now()}`, JSON.stringify(db)); } catch(e) {}
-            }
+            if(typeof db !== 'undefined') setUndoSnapshot(db);
             db = clone(data.data);
             try { if(typeof normalizarBanco === 'function') normalizarBanco(); } catch(e) {}
             try { if(typeof save === 'function') save(); } catch(e) {}
             try { if(typeof init === 'function') init(); } catch(e) {}
-            if(typeof showToast === 'function') showToast('Backup restaurado', 'O planejamento voltou para a versão salva na nuvem.');
+            if(typeof showToast === 'function') showToast('Backup restaurado', 'O planejamento voltou para a versao salva na nuvem.');
         } catch(e) {
             handleCloudError(e, 'Falha ao restaurar backup');
             if(typeof showToast === 'function') showToast('Falha ao restaurar backup', 'Confira a tabela plantao_user_backups e tente novamente.');
