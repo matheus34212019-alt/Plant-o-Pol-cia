@@ -155,7 +155,7 @@
     function load() {
         if(document.querySelector("script[src*='safety-features.js']")) return;
         const script = document.createElement('script');
-        script.src = 'safety-features.js?v=202-funcionalidades';
+        script.src = 'safety-features.js?v=203-estabilidade';
         script.defer = true;
         document.body ? document.body.appendChild(script) : document.head.appendChild(script);
     }
