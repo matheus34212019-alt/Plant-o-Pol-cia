@@ -140,6 +140,139 @@ window.PLANTAO_SUPABASE_CONFIG = {
 
   window.__plantaoSetDataOwner = setActiveIdentity;
   window.__plantaoClearDataOwner = clearActiveIdentity;
+  window.__plantaoGetActiveDataKey = activeDataKey;
+  window.__plantaoReadRawStorageKey = key => originalGetItem.call(localStorage, key);
+  window.__plantaoWriteRawStorageKey = (key, value) => originalSetItem.call(localStorage, key, value);
+
+  function parseDataFromKey(key) {
+    try {
+      const raw = originalGetItem.call(localStorage, key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function dataSummary(data) {
+    const meta = data?.metaFixa && typeof data.metaFixa === 'object' ? data.metaFixa : {};
+    const tasks = Object.values(meta).flat().filter(Boolean);
+    return {
+      assuntos: Array.isArray(data?.lista) ? data.lista.length : 0,
+      dias: Object.keys(meta).length,
+      tarefas: tasks.length,
+      concluidas: tasks.filter(t => t?.c === true).length,
+      lancamentos: Array.isArray(data?.lancamentos) ? data.lancamentos.length : 0
+    };
+  }
+
+  function dataScore(data) {
+    const s = dataSummary(data);
+    return Math.max(0, s.assuntos - 3) + (s.dias * 2) + (s.tarefas * 3) + (s.concluidas * 5) + (s.lancamentos * 5);
+  }
+
+  function candidateLabel(key) {
+    if (key === LEGACY_KEY) return 'dados antigos do navegador';
+    if (key === LOCAL_KEY) return 'cópia local separada';
+    return 'cópia local de usuário';
+  }
+
+  function localRecoveryCandidates() {
+    const active = activeDataKey();
+    const keys = new Set([LEGACY_KEY, LOCAL_KEY]);
+    try {
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(USER_PREFIX)) keys.add(key);
+      }
+    } catch (e) {}
+    keys.delete(active);
+    return [...keys]
+      .map(key => {
+        const data = parseDataFromKey(key);
+        return data ? { key, data, score: dataScore(data), summary: dataSummary(data) } : null;
+      })
+      .filter(item => item && item.score > 0)
+      .sort((a, b) => b.score - a.score);
+  }
+
+  function findCurrentSessionData() {
+    try {
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith('sb-')) continue;
+        const raw = originalGetItem.call(localStorage, key);
+        if (!raw) continue;
+        const parsed = JSON.parse(raw);
+        const token = parsed?.access_token || parsed?.currentSession?.access_token || parsed?.session?.access_token;
+        const payload = decodeJwtPayload(token);
+        if (token && payload?.sub) return { token, payload };
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  async function uploadRecoveredData(data) {
+    const session = findCurrentSessionData();
+    if (!session || !window.supabase?.createClient) return false;
+    const client = window.supabase.createClient(
+      window.PLANTAO_SUPABASE_CONFIG.url,
+      window.PLANTAO_SUPABASE_CONFIG.anonKey,
+      {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: { headers: { Authorization: `Bearer ${session.token}` } }
+      }
+    );
+    const { error } = await client
+      .from('plantao_user_data')
+      .upsert({
+        user_id: session.payload.sub,
+        email: session.payload.email || null,
+        data,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+    if (error) throw error;
+    return true;
+  }
+
+  function showLocalRecoveryIfNeeded() {
+    if (document.getElementById('plantao-local-recovery')) return;
+    const current = parseDataFromKey(activeDataKey());
+    const currentScore = dataScore(current);
+    const candidate = localRecoveryCandidates().find(item => item.score > currentScore + 2);
+    if (!candidate) return;
+
+    const s = candidate.summary;
+    const banner = document.createElement('div');
+    banner.id = 'plantao-local-recovery';
+    banner.style.cssText = 'position:fixed;left:18px;right:18px;bottom:18px;z-index:100000;background:#0f172a;color:#e2e8f0;border:1px solid #38bdf8;border-radius:14px;padding:16px;box-shadow:0 18px 45px rgba(0,0,0,.45);font-family:inherit;display:grid;gap:10px;';
+    banner.innerHTML = `
+      <strong>Encontrei uma cópia mais completa neste navegador</strong>
+      <span>${candidateLabel(candidate.key)}: ${s.assuntos} assuntos, ${s.dias} dias, ${s.tarefas} cards, ${s.concluidas} concluídos.</span>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button type="button" id="plantao-restore-local" style="border:0;border-radius:10px;padding:10px 14px;background:#0891b2;color:white;font-weight:800;cursor:pointer;">RESTAURAR MEUS DADOS</button>
+        <button type="button" id="plantao-ignore-local" style="border:1px solid #334155;border-radius:10px;padding:10px 14px;background:transparent;color:#e2e8f0;font-weight:800;cursor:pointer;">IGNORAR</button>
+      </div>`;
+    document.body.appendChild(banner);
+
+    document.getElementById('plantao-ignore-local').onclick = () => banner.remove();
+    document.getElementById('plantao-restore-local').onclick = async () => {
+      const btn = document.getElementById('plantao-restore-local');
+      btn.disabled = true;
+      btn.textContent = 'RESTAURANDO...';
+      try {
+        originalSetItem.call(localStorage, activeDataKey(), JSON.stringify(candidate.data));
+        await uploadRecoveredData(candidate.data);
+        banner.innerHTML = '<strong>Dados restaurados.</strong><span>Vou recarregar a página para abrir seu planejamento.</span>';
+        setTimeout(() => window.location.reload(), 900);
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = 'TENTAR NOVAMENTE';
+        const msg = document.createElement('span');
+        msg.textContent = 'Não consegui enviar para a nuvem agora, mas a cópia foi mantida neste navegador.';
+        banner.appendChild(msg);
+      }
+    };
+  }
 
   function wrapWhenReady() {
     if (window.__plantaoDataIsolationWrapped) return true;
@@ -172,6 +305,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
 
     window.carregarDadosSupabase = async function carregarDadosSupabaseIsolado() {
       const result = await originalCarregarSupabase.apply(this, arguments);
+      setTimeout(showLocalRecoveryIfNeeded, 700);
       if (result) {
         window.__plantaoCloudDataReady = true;
         releaseBlocked();
@@ -228,6 +362,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
     ensureLoadingStyle();
     keepBlocked();
     wrapWhenReady();
+    setTimeout(showLocalRecoveryIfNeeded, 1800);
   }, { once: true, capture: true });
 
   if (document.body) keepBlocked();
