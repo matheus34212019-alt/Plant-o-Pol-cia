@@ -152,12 +152,16 @@
 (function loadPlantaoSafetyFeatures() {
     if(window.__plantaoSafetyFeaturesRequested) return;
     window.__plantaoSafetyFeaturesRequested = true;
-    function load() {
-        if(document.querySelector("script[src*='safety-features.js']")) return;
+    function addScript(src) {
+        if(document.querySelector(`script[src*='${src.split('?')[0]}']`)) return;
         const script = document.createElement('script');
-        script.src = 'safety-features.js?v=203-estabilidade';
+        script.src = src;
         script.defer = true;
         document.body ? document.body.appendChild(script) : document.head.appendChild(script);
+    }
+    function load() {
+        addScript('safety-features.js?v=203-estabilidade');
+        setTimeout(() => addScript('cloud-backup-fix.js?v=203-estabilidade'), 350);
     }
     if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load, { once: true });
     else load();
