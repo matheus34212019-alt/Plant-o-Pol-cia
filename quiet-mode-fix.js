@@ -3,7 +3,6 @@
     window.__plantaoQuietModeFixInstalled = true;
     window.__plantaoQuietMode = true;
 
-    const QUIET_CONFIRM_MARK = 'Um ponto de restauração será criado antes da alteração.';
     const QUIET_TITLES = [
         'Dados sincronizados',
         'Nuvem ativada',
@@ -41,16 +40,30 @@
         return QUIET_TITLES.some(item => t.toLowerCase() === item.toLowerCase());
     }
 
+    let lastConfirmedText = '';
+    let lastConfirmedAt = 0;
+
     function wrapConfirm() {
         if(window.confirm?.__plantaoQuietModeWrapped) return;
         const original = window.confirm.bind(window);
         window.confirm = function quietConfirm(message) {
             const text = String(message || '');
-            if(text.includes(QUIET_CONFIRM_MARK)) {
-                try { console.info('[PLANTAO] Confirmação interna aplicada em modo silencioso.'); } catch(e) {}
+            const now = Date.now();
+            if(text && text === lastConfirmedText && now - lastConfirmedAt < 1800) {
+                try { console.info('[PLANTAO] Confirmacao duplicada silenciada.'); } catch(e) {}
+                lastConfirmedText = '';
+                lastConfirmedAt = 0;
                 return true;
             }
-            return original(message);
+            const result = original(message);
+            if(result) {
+                lastConfirmedText = text;
+                lastConfirmedAt = Date.now();
+            } else {
+                lastConfirmedText = '';
+                lastConfirmedAt = 0;
+            }
+            return result;
         };
         window.confirm.__plantaoQuietModeWrapped = true;
     }
