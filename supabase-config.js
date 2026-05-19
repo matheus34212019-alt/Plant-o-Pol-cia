@@ -123,9 +123,24 @@ window.PLANTAO_SUPABASE_CONFIG = {
   }
 
   function loadDbForActiveKey() {
-    const raw = originalGetItem.call(localStorage, activeDataKey());
+    const key = activeDataKey();
+    const raw = originalGetItem.call(localStorage, key);
     if (raw) {
-      try { return replaceDb(JSON.parse(raw)); } catch (e) {}
+      try {
+        const current = JSON.parse(raw);
+        if (dataScore(current) > 2) return replaceDb(current);
+        const candidate = bestSilentRecoveryCandidate(current);
+        if (candidate) {
+          originalSetItem.call(localStorage, key, JSON.stringify(candidate.data));
+          return replaceDb(candidate.data);
+        }
+        return replaceDb(current);
+      } catch (e) {}
+    }
+    const candidate = bestSilentRecoveryCandidate(null);
+    if (candidate) {
+      originalSetItem.call(localStorage, key, JSON.stringify(candidate.data));
+      return replaceDb(candidate.data);
     }
     return replaceDb(defaultData());
   }
@@ -195,6 +210,23 @@ window.PLANTAO_SUPABASE_CONFIG = {
     return allLocalDataCandidates(false).filter(item => !sameStoredData(item.data, current));
   }
 
+  function bestSilentRecoveryCandidate(current) {
+    const currentScore = dataScore(current);
+    if (currentScore > 2) return null;
+    return allLocalDataCandidates(false).find(item => item.score > currentScore) || null;
+  }
+
+  function silentAutoRestoreIfNeeded() {
+    const key = activeDataKey();
+    const current = parseDataFromKey(key);
+    const candidate = bestSilentRecoveryCandidate(current);
+    if (!candidate) return false;
+    originalSetItem.call(localStorage, key, JSON.stringify(candidate.data));
+    replaceDb(candidate.data);
+    try { if (typeof normalizarBanco === 'function') normalizarBanco(); } catch (e) {}
+    return true;
+  }
+
   async function uploadRecoveredData(data) {
     const session = findSessionData();
     if (!session || !window.supabase?.createClient) return false;
@@ -231,71 +263,6 @@ window.PLANTAO_SUPABASE_CONFIG = {
       body.plantao-data-loading #login-screen {
         display: flex !important;
       }
-      #plantao-recovery-open {
-        position: fixed;
-        right: 18px;
-        bottom: 18px;
-        z-index: 99998;
-        border: 0;
-        border-radius: 10px;
-        background: #0891b2;
-        color: #fff;
-        font: 800 12px/1.2 inherit;
-        letter-spacing: 0;
-        padding: 12px 14px;
-        box-shadow: 0 14px 35px rgba(0,0,0,.35);
-        cursor: pointer;
-      }
-      #plantao-recovery-panel {
-        position: fixed;
-        left: 18px;
-        right: 18px;
-        bottom: 72px;
-        z-index: 99999;
-        background: #0f172a;
-        color: #e2e8f0;
-        border: 1px solid #38bdf8;
-        border-radius: 14px;
-        padding: 16px;
-        box-shadow: 0 18px 45px rgba(0,0,0,.45);
-        font-family: inherit;
-        display: grid;
-        gap: 12px;
-        max-height: min(70vh, 560px);
-        overflow: auto;
-      }
-      .plantao-recovery-row {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 12px;
-        align-items: center;
-        border-top: 1px solid #334155;
-        padding-top: 12px;
-      }
-      .plantao-recovery-row small {
-        color: #cbd5e1;
-        display: block;
-        margin-top: 4px;
-        font-weight: 700;
-      }
-      .plantao-recovery-actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-      .plantao-recovery-btn {
-        border: 0;
-        border-radius: 10px;
-        padding: 10px 14px;
-        background: #0891b2;
-        color: white;
-        font-weight: 800;
-        cursor: pointer;
-      }
-      .plantao-recovery-secondary {
-        border: 1px solid #334155;
-        background: transparent;
-      }
     `;
     document.head.appendChild(style);
   }
@@ -316,105 +283,6 @@ window.PLANTAO_SUPABASE_CONFIG = {
     document.body?.classList.remove('plantao-data-loading');
   }
 
-  function candidateText(item) {
-    const s = item.summary;
-    const materias = s.materias.length ? ` Matérias: ${s.materias.join(', ')}.` : '';
-    return `${candidateLabel(item.key)}: ${s.assuntos} assuntos, ${s.dias} dias, ${s.tarefas} cards, ${s.concluidas} concluídos.${materias}`;
-  }
-
-  async function restoreCandidate(item, host) {
-    const btn = host.querySelector(`[data-restore-key="${CSS.escape(item.key)}"]`);
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = 'RESTAURANDO...';
-    }
-    originalSetItem.call(localStorage, activeDataKey(), JSON.stringify(item.data));
-    replaceDb(item.data);
-    try {
-      if (typeof normalizarBanco === 'function') normalizarBanco();
-      await uploadRecoveredData(item.data);
-      host.innerHTML = '<strong>Dados restaurados.</strong><span>Vou recarregar a página para abrir seu planejamento.</span>';
-      setTimeout(() => window.location.reload(), 900);
-    } catch (e) {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = 'TENTAR NOVAMENTE';
-      }
-      const msg = document.createElement('span');
-      msg.textContent = 'A cópia foi recolocada neste navegador, mas não consegui enviar para a nuvem agora.';
-      host.appendChild(msg);
-    }
-  }
-
-  function openRecoveryPanel(auto = false) {
-    ensureLoadingStyle();
-    document.getElementById('plantao-recovery-panel')?.remove();
-    const panel = document.createElement('div');
-    panel.id = 'plantao-recovery-panel';
-    const candidates = recoveryCandidates();
-    const active = parseDataFromKey(activeDataKey());
-    const activeSummary = dataSummary(active);
-
-    if (!candidates.length) {
-      panel.innerHTML = `
-        <strong>Não encontrei cópia antiga diferente neste navegador</strong>
-        <span>Dados abertos agora: ${activeSummary.assuntos} assuntos, ${activeSummary.dias} dias, ${activeSummary.tarefas} cards.</span>
-        <span>Se suas matérias foram criadas em outro aparelho, outro navegador ou antes do login atual, a recuperação precisa ser feita pelo Supabase/backups.</span>
-        <div class="plantao-recovery-actions">
-          <button type="button" class="plantao-recovery-btn plantao-recovery-secondary" id="plantao-recovery-close">FECHAR</button>
-        </div>`;
-      document.body.appendChild(panel);
-      panel.querySelector('#plantao-recovery-close').onclick = () => panel.remove();
-      return;
-    }
-
-    panel.innerHTML = `
-      <strong>${auto ? 'Encontrei possível cópia dos seus dados' : 'Cópias encontradas neste navegador'}</strong>
-      <span>Escolha a cópia que tem suas matérias cadastradas. A restauração salva essa cópia na conta que está logada agora.</span>
-      <div id="plantao-recovery-list"></div>
-      <div class="plantao-recovery-actions">
-        <button type="button" class="plantao-recovery-btn plantao-recovery-secondary" id="plantao-recovery-close">FECHAR</button>
-      </div>`;
-    const list = panel.querySelector('#plantao-recovery-list');
-    candidates.forEach(item => {
-      const row = document.createElement('div');
-      row.className = 'plantao-recovery-row';
-      row.innerHTML = `
-        <div>
-          <strong>${candidateText(item)}</strong>
-          <small>Chave local: ${item.key}</small>
-        </div>
-        <button type="button" class="plantao-recovery-btn" data-restore-key="${item.key}">RESTAURAR</button>`;
-      list.appendChild(row);
-      row.querySelector('button').onclick = () => restoreCandidate(item, panel);
-    });
-    document.body.appendChild(panel);
-    panel.querySelector('#plantao-recovery-close').onclick = () => panel.remove();
-  }
-
-  function ensureRecoveryButton() {
-    if (!document.body || document.getElementById('plantao-recovery-open')) return;
-    ensureLoadingStyle();
-    const button = document.createElement('button');
-    button.id = 'plantao-recovery-open';
-    button.type = 'button';
-    button.textContent = 'RECUPERAR DADOS';
-    button.onclick = () => openRecoveryPanel(false);
-    document.body.appendChild(button);
-  }
-
-  function showRecoveryIfUseful() {
-    ensureRecoveryButton();
-    const currentScore = dataScore(parseDataFromKey(activeDataKey()));
-    const candidate = recoveryCandidates().find(item => item.score > currentScore + 2 || item.score > 2);
-    if (candidate) openRecoveryPanel(true);
-  }
-
-  function hasBetterLocalCopyThanRuntime() {
-    const currentScore = dataScore(parseDataFromKey(activeDataKey()));
-    return recoveryCandidates().some(item => item.score > currentScore + 2 && item.score > 2);
-  }
-
   window.__plantaoSetDataOwner = setActiveIdentity;
   window.__plantaoClearDataOwner = clearActiveIdentity;
   window.__plantaoGetActiveDataKey = activeDataKey;
@@ -424,7 +292,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
     if (identity) setActiveIdentity(identity);
     return loadDbForActiveKey();
   };
-  window.__plantaoOpenRecoveryPanel = () => openRecoveryPanel(false);
+  window.__plantaoRecoverSilently = silentAutoRestoreIfNeeded;
 
   function wrapWhenReady() {
     if (window.__plantaoDataSafetyWrapped) return true;
@@ -457,7 +325,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
 
     window.carregarDadosSupabase = async function carregarDadosSupabaseSeguro() {
       const result = await originalCarregarSupabase.apply(this, arguments);
-      setTimeout(showRecoveryIfUseful, 500);
+      setTimeout(silentAutoRestoreIfNeeded, 500);
       if (result) {
         window.__plantaoCloudDataReady = true;
         releaseBlocked();
@@ -465,19 +333,15 @@ window.PLANTAO_SUPABASE_CONFIG = {
       } else {
         window.__plantaoCloudDataReady = false;
         keepBlocked();
-        setStatus('Não foi possível carregar seus dados. Use Recuperar Dados ou entre novamente.');
-        ensureRecoveryButton();
+        silentAutoRestoreIfNeeded();
+        setStatus('Não foi possível carregar seus dados da nuvem agora. Seus dados locais desta conta continuam preservados.');
       }
       return result;
     };
 
     if (typeof originalSalvarSupabase === 'function') {
       window.salvarDadosSupabase = async function salvarDadosSupabaseSeguro() {
-        if (hasBetterLocalCopyThanRuntime()) {
-          showRecoveryIfUseful();
-          setStatus('Bloqueei o salvamento porque encontrei uma cópia local mais completa.');
-          return;
-        }
+        silentAutoRestoreIfNeeded();
         return originalSalvarSupabase.apply(this, arguments);
       };
     }
@@ -531,7 +395,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
     ensureLoadingStyle();
     keepBlocked();
     wrapWhenReady();
-    setTimeout(showRecoveryIfUseful, 1800);
+    setTimeout(silentAutoRestoreIfNeeded, 1800);
   }, { once: true, capture: true });
 
   if (document.body) keepBlocked();
