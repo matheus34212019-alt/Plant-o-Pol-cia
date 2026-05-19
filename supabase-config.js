@@ -224,6 +224,13 @@ window.PLANTAO_SUPABASE_CONFIG = {
     return true;
   }
 
+  document.addEventListener('DOMContentLoaded', () => {
+    ensureLoadingStyle();
+    keepBlocked();
+    wrapWhenReady();
+  }, { once: true, capture: true });
+
+  if (document.body) keepBlocked();
   ensureLoadingStyle();
   const timer = setInterval(() => {
     if (wrapWhenReady()) clearInterval(timer);
