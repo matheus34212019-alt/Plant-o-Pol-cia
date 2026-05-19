@@ -162,6 +162,7 @@
     function load() {
         addScript('safety-features.js?v=203-estabilidade');
         setTimeout(() => addScript('cloud-backup-fix.js?v=203-estabilidade'), 350);
+        setTimeout(() => addScript('schedule-guard-fix.js?v=204-cronograma'), 700);
     }
     if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load, { once: true });
     else load();
