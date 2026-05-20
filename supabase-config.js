@@ -12,10 +12,10 @@ window.PLANTAO_SUPABASE_CONFIG = {
   const ACTIVE_KEY = 'plantao_active_db_key_v1';
   const USER_PREFIX = 'plantao_db_user_v1_';
   const STUDENT_PREFIX = USER_PREFIX + 'aluno-';
-  const EXPECTED_ASSET_VERSION = 'v209-silent-guards';
+  const EXPECTED_ASSET_VERSION = 'v213-security-time';
   const OWNER_FIELD = '__plantaoOwner';
   const LOG_KEY = 'plantao_runtime_log_v1';
-  const CACHE_RELOAD_KEY = 'plantao_cache_reload_v209';
+  const CACHE_RELOAD_KEY = 'plantao_cache_reload_v213';
   const BACKUP_TABLE = 'plantao_user_backups';
   const BACKUP_DISABLED_KEY = 'plantao_cloud_backup_silent_disabled_v1';
   const BACKUP_MIN_INTERVAL = 45000;
@@ -155,6 +155,19 @@ window.PLANTAO_SUPABASE_CONFIG = {
     const owner = dataOwnerId(data);
     if (!owner || !target?.userId) return true;
     return String(owner) === String(target.userId);
+  }
+
+  function ownerConflicts(data, target = currentTarget()) {
+    const owner = dataOwnerId(data);
+    return Boolean(owner && target?.userId && String(owner) !== String(target.userId));
+  }
+
+  function candidateAllowedForTarget(candidate, target = currentTarget()) {
+    if (!candidate?.data || !target?.userId) return false;
+    if (ownerConflicts(candidate.data, target)) return false;
+    const owner = dataOwnerId(candidate.data);
+    if (owner) return true;
+    return candidate.key === activeDataKey() && candidate.key === keyForIdentity(target.userId);
   }
 
   function stampOwner(data, reason = 'runtime') {
@@ -322,10 +335,12 @@ window.PLANTAO_SUPABASE_CONFIG = {
       .sort((a, b) => b.score - a.score);
   }
 
-  function bestSilentRecoveryCandidate(current) {
+  function bestSilentRecoveryCandidate(current, target = currentTarget()) {
     const currentScore = dataScore(current);
+    if (ownerConflicts(current, target)) return null;
     if (currentScore > 2 && !isStarterData(current)) return null;
-    return allLocalDataCandidates(false).find(item => item.score > currentScore) || null;
+    return allLocalDataCandidates(false)
+      .find(item => candidateAllowedForTarget(item, target) && item.score > currentScore) || null;
   }
 
   function loadDbForActiveKey() {
@@ -334,6 +349,10 @@ window.PLANTAO_SUPABASE_CONFIG = {
     if (raw) {
       try {
         const current = JSON.parse(raw);
+        if (ownerConflicts(current, currentTarget())) {
+          logEvent('active-key-owner-conflict', { key, found: dataOwnerId(current), expected: currentTarget()?.userId });
+          return replaceDb(defaultData());
+        }
         if (dataScore(current) > 2) return replaceDb(current);
         const candidate = bestSilentRecoveryCandidate(current);
         if (candidate) {
@@ -449,9 +468,12 @@ window.PLANTAO_SUPABASE_CONFIG = {
   }
 
   function restoreLocalForOwner(target = currentTarget(), fallback = null) {
-    const fallbackOk = fallback && ownerMatches(fallback, target) && !isStarterData(fallback);
+    const fallbackOk = fallback &&
+      !ownerConflicts(fallback, target) &&
+      !isStarterData(fallback) &&
+      (dataOwnerId(fallback) || activeDataKey() === keyForIdentity(target?.userId));
     const candidate = allLocalDataCandidates(true)
-      .find(item => ownerMatches(item.data, target) && !isStarterData(item.data));
+      .find(item => candidateAllowedForTarget(item, target) && !isStarterData(item.data));
     const data = candidate?.data || (fallbackOk ? fallback : null);
     if (!data) return false;
     replaceDb(data);
@@ -479,7 +501,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
       const data = await readRemoteData(target);
       if (!data?.data) return false;
       const remote = data.data;
-      if (!ownerMatches(remote, target)) {
+      if (ownerConflicts(remote, target)) {
         logEvent('remote-owner-mismatch', { expected: target.userId, found: dataOwnerId(remote) });
         return restoreLocalForOwner(target);
       }
@@ -594,7 +616,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
       const result = await originalCarregarSupabase.apply(this, arguments);
       setTimeout(silentAutoRestoreIfNeeded, 500);
       if (result) {
-        if (!ownerMatches(db, target)) {
+        if (ownerConflicts(db, target)) {
           logEvent('load-owner-mismatch', { expected: target.userId, found: dataOwnerId(db) });
           if (!restoreLocalForOwner(target, before)) {
             window.__plantaoCloudDataReady = false;
@@ -622,7 +644,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
       window.salvarDadosSupabase = async function salvarDadosSupabaseSeguro() {
         silentAutoRestoreIfNeeded();
         const target = currentTarget();
-        if (!ownerMatches(db, target)) {
+        if (ownerConflicts(db, target)) {
           logEvent('save-owner-mismatch-blocked', { expected: target.userId, found: dataOwnerId(db) });
           restoreLocalForOwner(target);
           return;
@@ -630,7 +652,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
         if (await restoreRemoteIfRicher()) return;
         const remote = await readRemoteData(target);
         if (remote?.data) {
-          if (!ownerMatches(remote.data, target)) {
+          if (ownerConflicts(remote.data, target)) {
             logEvent('save-remote-owner-mismatch-blocked', { expected: target.userId, found: dataOwnerId(remote.data) });
             restoreLocalForOwner(target);
             return;
@@ -741,6 +763,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
     addScript('review-dedup-fix.js?v=197-revisao-duplicada');
     addScript('planning-fill-fix.js?v=198-preenche-meta-pendentes');
     addScript('safety-features.js?v=203-estabilidade');
+    addScript('schedule-hardening.js?v=213-security-time');
     setTimeout(() => addScript('launch-fix.js?v=196-launch-history'), 2200);
     setTimeout(() => addScript('ranking-fix.js?v=197-ranking-lancamentos'), 2600);
     window.addEventListener('load', () => {
