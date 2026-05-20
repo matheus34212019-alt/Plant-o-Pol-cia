@@ -195,6 +195,20 @@ window.PLANTAO_SUPABASE_CONFIG = {
     return Math.max(0, s.assuntos - 3) + (s.dias * 2) + (s.tarefas * 3) + (s.concluidas * 5) + (s.lancamentos * 5);
   }
 
+  function isStarterData(data) {
+    const list = Array.isArray(data?.lista) ? data.lista : [];
+    if (!list.length || list.length > 3) return false;
+    const seedSubjects = new Set(['portugues', 'raciocinio logico', 'direito penal']);
+    const normalized = list
+      .map(item => String(item?.m || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim())
+      .filter(Boolean);
+    return normalized.length > 0 && normalized.every(name => seedSubjects.has(name));
+  }
+
+  function sameStoredData(a, b) {
+    try { return JSON.stringify(a || null) === JSON.stringify(b || null); } catch (e) { return false; }
+  }
+
   function allLocalDataCandidates(includeActive = false) {
     const active = activeDataKey();
     const keys = new Set([LEGACY_KEY, LOCAL_KEY]);
@@ -218,7 +232,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
 
   function bestSilentRecoveryCandidate(current) {
     const currentScore = dataScore(current);
-    if (currentScore > 2) return null;
+    if (currentScore > 2 && !isStarterData(current)) return null;
     return allLocalDataCandidates(false).find(item => item.score > currentScore) || null;
   }
 
@@ -254,6 +268,46 @@ window.PLANTAO_SUPABASE_CONFIG = {
     replaceDb(candidate.data);
     try { if (typeof normalizarBanco === 'function') normalizarBanco(); } catch (e) {}
     return true;
+  }
+
+  async function restoreRemoteIfRicher() {
+    try {
+      if (
+        typeof supabaseClient === 'undefined' ||
+        typeof cloudUser === 'undefined' ||
+        !supabaseClient ||
+        !cloudUser ||
+        typeof alvoDadosNuvem !== 'function'
+      ) {
+        return false;
+      }
+      const alvo = alvoDadosNuvem();
+      if (!alvo?.user_id) return false;
+      const { data, error } = await supabaseClient
+        .from('plantao_user_data')
+        .select('data')
+        .eq('user_id', alvo.user_id)
+        .maybeSingle();
+      if (error || !data?.data) return false;
+      const remote = data.data;
+      const shouldRestore = typeof salvariaPerdaCritica === 'function'
+        ? salvariaPerdaCritica(db, remote)
+        : dataScore(remote) > dataScore(db);
+      if (!shouldRestore && !isStarterData(db)) return false;
+
+      replaceDb(remote);
+      rawSet(activeDataKey(), JSON.stringify(db));
+      try { dadosSupabaseCarregados = true; } catch (e) {}
+      try { carregandoNuvem = true; } catch (e) {}
+      try { if (typeof normalizarBanco === 'function') normalizarBanco(); } catch (e) {}
+      try { carregandoNuvem = false; } catch (e) {}
+      rawSet(activeDataKey(), JSON.stringify(db));
+      try { if (typeof init === 'function') init(); } catch (e) {}
+      return true;
+    } catch (e) {
+      try { carregandoNuvem = false; } catch (_) {}
+      return false;
+    }
   }
 
   function ensureLoadingStyle() {
@@ -351,6 +405,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
     if (typeof originalSalvarSupabase === 'function') {
       window.salvarDadosSupabase = async function salvarDadosSupabaseSeguro() {
         silentAutoRestoreIfNeeded();
+        if (await restoreRemoteIfRicher()) return;
         return originalSalvarSupabase.apply(this, arguments);
       };
     }
