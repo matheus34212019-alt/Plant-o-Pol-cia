@@ -3,8 +3,8 @@
     window.__plantaoReadableLoginGuard = true;
 
     const GUARD_FLAG = '__plantaoReadableLoginGuardWrapped';
-    const EMPTY_DAY_TEXT = 'O cronograma encontrou um dia vazio no seu planejamento. Recarregue a pagina e tente entrar novamente.';
-    const INCOMPLETE_DATA_TEXT = 'O site recebeu uma informacao incompleta ao abrir sua conta. Recarregue a pagina e tente novamente.';
+    const EMPTY_DAY_TEXT = 'O cronograma encontrou um dia vazio no seu planejamento. Recarregue a página e tente entrar novamente.';
+    const INCOMPLETE_DATA_TEXT = 'O site recebeu uma informação incompleta ao abrir sua conta. Recarregue a página e tente novamente.';
 
     function rawErrorText(value) {
         if(!value) return '';
@@ -24,14 +24,14 @@
 
         if(lower.includes('invalid login credentials')) return 'E-mail ou senha incorretos.';
         if(lower.includes('email not confirmed')) return 'Confirme seu e-mail antes de entrar.';
-        if(lower.includes('failed to fetch') || lower.includes('network')) return 'Falha de conexao com a nuvem. Confira sua internet e tente novamente.';
+        if(lower.includes('failed to fetch') || lower.includes('network')) return 'Falha de conexão com a nuvem. Confira sua internet e tente novamente.';
         if(lower.includes('rate limit')) return 'Muitas tentativas seguidas. Aguarde alguns minutos e tente novamente.';
-        if(lower.includes('jwt') || lower.includes('expired')) return 'Sua sessao expirou. Entre novamente.';
+        if(lower.includes('jwt') || lower.includes('expired')) return 'Sua sessão expirou. Entre novamente.';
         if(lower.includes('permission denied') || lower.includes('row-level security') || lower.includes('rls')) {
-            return 'Permissao negada na nuvem. Verifique se sua conta esta aprovada.';
+            return 'Permissão negada na nuvem. Verifique se sua conta está aprovada.';
         }
         if(lower.includes('plantao_user_access') || lower.includes('schema cache') || lower.includes('could not find the table')) {
-            return 'A configuracao de acesso na nuvem ainda nao esta pronta. Avise o administrador para verificar o Supabase.';
+            return 'A configuração de acesso na nuvem ainda não está pronta. Avise o administrador para verificar o Supabase.';
         }
         if(lower.includes('cannot read properties') && (lower.includes('reduce') || lower.includes('map') || lower.includes('foreach'))) {
             return EMPTY_DAY_TEXT;
@@ -45,8 +45,8 @@
         const original = String(text || '').trim();
         const friendly = friendlyError(original);
         if(!friendly) return original;
-        if(original.toLowerCase().includes('login')) return `Nao foi possivel concluir o login: ${friendly}`;
-        if(original.toLowerCase().includes('entrar')) return `Nao foi possivel entrar: ${friendly}`;
+        if(original.toLowerCase().includes('login')) return `Não foi possível concluir o login: ${friendly}`;
+        if(original.toLowerCase().includes('entrar')) return `Não foi possível entrar: ${friendly}`;
         return friendly;
     }
 
@@ -152,13 +152,13 @@
         const dailyHours = state && state.h ? (parseFloat(state.h[safeDate.getDay()]) || 0) : 0;
 
         if(meta) meta.innerText = `0.0h / ${dailyHours}h meta`;
-        if(title) title.innerText = safeDate.getTime() === today.getTime() ? 'Missao de Hoje' : 'Missao de Amanha';
+        if(title) title.innerText = safeDate.getTime() === today.getTime() ? 'Missão de Hoje' : 'Missão de Amanhã';
         if(list) {
             list.innerHTML = [
                 '<div class="empty-state">',
                 '<i class="fas fa-calendar-day"></i>',
                 '<strong>Sem atividades para este dia</strong>',
-                '<span>O cronograma vai preencher os proximos horarios quando houver pendencias.</span>',
+                '<span>O cronograma vai preencher os próximos horários quando houver pendências.</span>',
                 '</div>'
             ].join('');
         }
