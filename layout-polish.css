@@ -1,0 +1,225 @@
+/* v214 logic/layout polish: visual layer only */
+
+html {
+    overflow-x: hidden;
+}
+
+body {
+    width: 100%;
+}
+
+.main {
+    min-width: 0;
+    overflow-x: hidden;
+}
+
+.container {
+    width: min(100%, 1440px);
+    max-width: none;
+}
+
+#seguranca,
+#diagnostico,
+[onclick*="showTab('seguranca')"],
+[onclick*="showTab('diagnostico')"],
+[onclick*='showTab("seguranca")'],
+[onclick*='showTab("diagnostico")'],
+#save-status-pill {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+.stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.stat-card,
+.task-card,
+.day-column,
+.profile-info-row,
+.admin-access-row,
+.lancamento-row,
+.study-row,
+.study-card-row {
+    overflow: hidden;
+}
+
+.task-card,
+.sim-task,
+.day-head,
+.ciclo-info,
+.flow-info,
+.profile-info-row,
+.ranking-row,
+.lancamento-main,
+.study-row {
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+.task-card {
+    min-height: 116px;
+}
+
+.task-card > div:first-child {
+    min-width: 0;
+}
+
+.task-card input[type="checkbox"] {
+    flex: 0 0 auto;
+}
+
+#grid-semanal {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    overscroll-behavior-inline: contain;
+    scroll-padding-inline: 12px;
+    padding-inline: 2px 12px;
+}
+
+.day-column {
+    flex: 0 0 248px;
+    min-width: 248px;
+}
+
+.day-column.is-today {
+    border-color: rgba(103, 232, 249, 0.68);
+    box-shadow: 0 0 0 1px rgba(103, 232, 249, 0.18), var(--shadow-soft);
+}
+
+.day-column.is-today .day-head {
+    background: linear-gradient(135deg, rgba(8, 145, 178, 0.96), rgba(15, 118, 110, 0.88));
+}
+
+.sim-task {
+    min-height: 76px;
+}
+
+.sim-task strong,
+.sim-task span,
+.sim-task em {
+    overflow-wrap: anywhere;
+}
+
+.nav-item span,
+.sub-link,
+.btn {
+    min-width: 0;
+}
+
+.btn {
+    text-align: center;
+    white-space: normal;
+}
+
+.toast-area {
+    pointer-events: none;
+}
+
+.toast-card {
+    pointer-events: auto;
+}
+
+.login-status {
+    overflow-wrap: anywhere;
+}
+
+.study-grid,
+.perf-grid,
+.profile-grid,
+.ranking-grid,
+.replan-grid,
+.backup-grid {
+    align-items: start;
+}
+
+.study-kpis,
+.perf-kpi-grid,
+.base-summary,
+.backup-stats {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.weekly-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+@media (min-width: 1181px) {
+    .sidebar {
+        width: clamp(260px, 17vw, 300px);
+    }
+
+    .main {
+        padding: clamp(28px, 2.4vw, 42px);
+    }
+}
+
+@media (max-width: 1180px) {
+    .day-column {
+        flex-basis: 236px;
+        min-width: 236px;
+    }
+}
+
+@media (max-width: 900px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    .sidebar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .logo-box {
+        grid-column: 1 / -1;
+    }
+
+    .nav-item {
+        width: 100%;
+    }
+
+    .submenu.show {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .task-card {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .day-column {
+        flex-basis: min(84vw, 360px);
+        min-width: min(84vw, 360px);
+    }
+
+    .admin-access-row,
+    .subject-flow-row,
+    .lancamento-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .sidebar,
+    .submenu.show {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .task-card {
+        padding: 16px;
+    }
+
+    .page-header .btn,
+    .nav-days .btn {
+        width: 100%;
+    }
+}
