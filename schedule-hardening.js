@@ -4,6 +4,7 @@
 
     const VERSION = 'v213-security-time';
     const TIMER_MIN_SECONDS = 30;
+    const REVIEW_INTERVALS_DAYS = [1, 7, 30];
     const activeTimers = {};
 
     function globalValue(name, fallback = null) {
@@ -107,6 +108,7 @@
                 if(!item || typeof item !== 'object') return;
                 item.lastInitialStudyDate = canonicalDateKey(item.lastInitialStudyDate) || null;
                 item.lastInitialRevDate = canonicalDateKey(item.lastInitialRevDate) || null;
+                item.reviewAnchorDate = canonicalDateKey(item.reviewAnchorDate) || item.lastInitialStudyDate || null;
                 if(item.revCycle?.due) item.revCycle.due = canonicalDateKey(item.revCycle.due) || dateKeyFixed(addDaysFixed(new Date(), 1));
             });
         }
@@ -229,6 +231,75 @@
         return true;
     }
 
+    function scheduleReviewCycle(item, anchorDay, cycle = 1) {
+        if(!item || !anchorDay) return false;
+        const normalizedAnchor = canonicalDateKey(anchorDay) || dateKeyFixed(new Date());
+        const safeCycle = Math.max(1, Math.min(REVIEW_INTERVALS_DAYS.length, Number(cycle) || 1));
+        item.reviewAnchorDate = normalizedAnchor;
+        item.revCycle = {
+            cycle: safeCycle,
+            stage: 'Rev',
+            due: dateKeyFixed(addDaysFixed(normalizedAnchor, REVIEW_INTERVALS_DAYS[safeCycle - 1]))
+        };
+        return true;
+    }
+
+    function wrapRevisionPolicy() {
+        const finishOriginal = globalValue('finalizarBaseEAgendarCiclo');
+        if(typeof finishOriginal === 'function' && !finishOriginal.__plantaoScheduleHardeningWrapped) {
+            window.finalizarBaseEAgendarCiclo = function finalizarBaseComRevisaoEspacada(item, dayKey) {
+                const result = finishOriginal.apply(this, arguments);
+                scheduleReviewCycle(item, dayKey, 1);
+                return result;
+            };
+            window.finalizarBaseEAgendarCiclo.__plantaoScheduleHardeningWrapped = true;
+        }
+
+        const markOriginal = globalValue('marcarComoEstudado');
+        if(typeof markOriginal === 'function' && !markOriginal.__plantaoScheduleHardeningWrapped) {
+            window.marcarComoEstudado = function marcarComoEstudadoComRevisaoEspacada(item, marked) {
+                const result = markOriginal.apply(this, arguments);
+                if(marked) scheduleReviewCycle(item, dateKeyFixed(new Date()), 1);
+                return result;
+            };
+            window.marcarComoEstudado.__plantaoScheduleHardeningWrapped = true;
+        }
+
+        const completeOriginal = globalValue('concluirTaskNoState');
+        if(typeof completeOriginal === 'function' && !completeOriginal.__plantaoScheduleHardeningWrapped) {
+            window.concluirTaskNoState = function concluirTaskComRevisaoEspacada(task, dayKey, state) {
+                const db = state || dbRef();
+                const item = db?.lista?.find(x => x.id === task?.itemId);
+                const wasFinalized = Boolean(item?.f);
+                const previousCycle = Number(item?.revCycle?.cycle) || 1;
+                const result = completeOriginal.apply(this, arguments);
+                if(result && item) {
+                    if(task?.k === 'E' && item.f) scheduleReviewCycle(item, dayKey, 1);
+                    if(task?.k === 'Ex' && item.f && item.revCycle?.stage === 'Rev') {
+                        const nextCycle = wasFinalized ? Math.max(previousCycle + 1, Number(item.revCycle.cycle) || 1) : 1;
+                        scheduleReviewCycle(item, item.reviewAnchorDate || dayKey, nextCycle);
+                    }
+                }
+                return result;
+            };
+            window.concluirTaskNoState.__plantaoScheduleHardeningWrapped = true;
+        }
+
+        const restartOriginal = globalValue('reiniciarMateriaSeCompleta');
+        if(typeof restartOriginal === 'function' && !restartOriginal.__plantaoScheduleHardeningWrapped) {
+            window.reiniciarMateriaSeCompleta = function reiniciarMateriaComRevisaoEspacada(state, subject, dayKey) {
+                const result = restartOriginal.apply(this, arguments);
+                (state?.lista || []).filter(item => item.m === subject && item.revCycle).forEach(item => {
+                    scheduleReviewCycle(item, dayKey, 1);
+                });
+                return result;
+            };
+            window.reiniciarMateriaSeCompleta.__plantaoScheduleHardeningWrapped = true;
+        }
+
+        return true;
+    }
+
     function wrapTimer() {
         window.toggleTimer = function toggleTimerLiquido(id, day, idx) {
             const button = document.getElementById(`btn-t-${id}`);
@@ -275,8 +346,10 @@
         wrapNormalizer();
         wrapDelayCollectors();
         wrapTaskRenderer();
+        wrapRevisionPolicy();
         wrapTimer();
         normalizeDbDates();
+        window.__plantaoReviewIntervalsDays = REVIEW_INTERVALS_DAYS.slice();
         window.__plantaoScheduleHardeningVersion = VERSION;
         try {
             const daily = document.getElementById('diaria');
@@ -291,7 +364,7 @@
     else install();
 
     const retry = setInterval(() => {
-        const ok = wrapNormalizer() && wrapTaskRenderer();
+        const ok = wrapNormalizer() && wrapTaskRenderer() && wrapRevisionPolicy();
         if(ok) clearInterval(retry);
     }, 250);
     setTimeout(() => clearInterval(retry), 6000);
