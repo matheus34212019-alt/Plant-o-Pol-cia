@@ -12,6 +12,14 @@ window.PLANTAO_SUPABASE_CONFIG = {
   const ACTIVE_KEY = 'plantao_active_db_key_v1';
   const USER_PREFIX = 'plantao_db_user_v1_';
   const STUDENT_PREFIX = USER_PREFIX + 'aluno-';
+  const EXPECTED_ASSET_VERSION = 'v209-silent-guards';
+  const OWNER_FIELD = '__plantaoOwner';
+  const LOG_KEY = 'plantao_runtime_log_v1';
+  const CACHE_RELOAD_KEY = 'plantao_cache_reload_v209';
+  const BACKUP_TABLE = 'plantao_user_backups';
+  const BACKUP_DISABLED_KEY = 'plantao_cloud_backup_silent_disabled_v1';
+  const BACKUP_MIN_INTERVAL = 45000;
+  let lastBackupAt = 0;
 
   const rawGetItem = Storage.prototype.getItem;
   const rawSetItem = Storage.prototype.setItem;
@@ -43,6 +51,37 @@ window.PLANTAO_SUPABASE_CONFIG = {
 
   function rawRemove(key) {
     try { return rawRemoveItem.call(localStorage, key); } catch (e) {}
+  }
+
+  function logEvent(type, detail = {}) {
+    try {
+      const raw = rawGet(LOG_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      list.unshift({
+        type: String(type || 'event'),
+        detail,
+        at: new Date().toISOString(),
+        version: EXPECTED_ASSET_VERSION
+      });
+      rawSet(LOG_KEY, JSON.stringify(list.slice(0, 80)));
+    } catch (e) {}
+  }
+
+  function ensureExpectedRuntimeVersion() {
+    try {
+      const scripts = Array.from(document.scripts || []).map(script => script.src || '').join(' ');
+      if (!scripts.includes('supabase-config.js')) return true;
+      if (scripts.includes(EXPECTED_ASSET_VERSION)) return true;
+      if (sessionStorage.getItem(CACHE_RELOAD_KEY) === EXPECTED_ASSET_VERSION) return true;
+      sessionStorage.setItem(CACHE_RELOAD_KEY, EXPECTED_ASSET_VERSION);
+      const url = new URL(window.location.href);
+      url.searchParams.set('v', EXPECTED_ASSET_VERSION);
+      logEvent('cache-refresh', { from: 'stale-script-reference' });
+      window.location.replace(url.toString());
+      return false;
+    } catch (e) {
+      return true;
+    }
   }
 
   function decodeJwtPayload(token) {
@@ -78,6 +117,59 @@ window.PLANTAO_SUPABASE_CONFIG = {
 
   function identityFromSupabaseToken() {
     return findSessionData()?.payload?.sub || null;
+  }
+
+  function currentTarget() {
+    try {
+      if (typeof alvoDadosNuvem === 'function') {
+        const alvo = alvoDadosNuvem();
+        if (alvo?.user_id) {
+          return {
+            userId: String(alvo.user_id),
+            email: alvo.email || null,
+            name: alvo.name || null
+          };
+        }
+      }
+    } catch (e) {}
+    try {
+      if (typeof cloudUser !== 'undefined' && cloudUser) {
+        const id = cloudUser.id || cloudUser.uid || cloudUser.email;
+        if (id) return { userId: String(id), email: cloudUser.email || null, name: cloudUser.name || null };
+      }
+    } catch (e) {}
+    const tokenIdentity = identityFromSupabaseToken();
+    if (tokenIdentity) return { userId: String(tokenIdentity), email: null, name: null };
+    const active = window.__plantaoDataIsolationActiveKey || rawGet(ACTIVE_KEY) || '';
+    if (active.startsWith(USER_PREFIX) && !isStudentKey(active)) {
+      return { userId: active.slice(USER_PREFIX.length), email: null, name: null };
+    }
+    return { userId: safeId(activeDataKey()), email: null, name: null };
+  }
+
+  function dataOwnerId(data) {
+    return data?.[OWNER_FIELD]?.userId || data?.ownerUserId || data?.owner_user_id || data?.__ownerUserId || null;
+  }
+
+  function ownerMatches(data, target = currentTarget()) {
+    const owner = dataOwnerId(data);
+    if (!owner || !target?.userId) return true;
+    return String(owner) === String(target.userId);
+  }
+
+  function stampOwner(data, reason = 'runtime') {
+    if (!data || typeof data !== 'object') return data;
+    const target = currentTarget();
+    if (!target?.userId) return data;
+    data[OWNER_FIELD] = {
+      userId: String(target.userId),
+      email: target.email || null,
+      dataKey: activeDataKey(),
+      version: EXPECTED_ASSET_VERSION,
+      reason,
+      updatedAt: new Date().toISOString()
+    };
+    return data;
   }
 
   function mainDataKey() {
@@ -266,7 +358,108 @@ window.PLANTAO_SUPABASE_CONFIG = {
     if (!candidate) return false;
     rawSet(key, JSON.stringify(candidate.data));
     replaceDb(candidate.data);
+    stampOwner(db, 'local-recovery');
+    rawSet(key, JSON.stringify(db));
+    logEvent('local-recovery', { fromKey: candidate.key, score: candidate.score, summary: candidate.summary });
     try { if (typeof normalizarBanco === 'function') normalizarBanco(); } catch (e) {}
+    return true;
+  }
+
+  async function readRemoteData(target = currentTarget()) {
+    try {
+      if (
+        typeof supabaseClient === 'undefined' ||
+        !supabaseClient ||
+        !target?.userId
+      ) {
+        return null;
+      }
+      const { data, error } = await supabaseClient
+        .from('plantao_user_data')
+        .select('data,email,updated_at')
+        .eq('user_id', target.userId)
+        .maybeSingle();
+      if (error) {
+        logEvent('remote-read-error', { code: error.code || '', message: error.message || '' });
+        return null;
+      }
+      return data || null;
+    } catch (e) {
+      logEvent('remote-read-error', { message: String(e?.message || e) });
+      return null;
+    }
+  }
+
+  function cloudBackupDisabled() {
+    try { return sessionStorage.getItem(BACKUP_DISABLED_KEY) === '1'; } catch (e) { return false; }
+  }
+
+  function disableCloudBackup() {
+    try { sessionStorage.setItem(BACKUP_DISABLED_KEY, '1'); } catch (e) {}
+  }
+
+  function shouldDisableBackup(error) {
+    const msg = String(error?.message || error?.code || error || '').toLowerCase();
+    return error?.code === '42P01' ||
+      error?.code === '42501' ||
+      msg.includes('not exist') ||
+      msg.includes('schema cache') ||
+      msg.includes('permission');
+  }
+
+  async function createSilentCloudBackup(data, target = currentTarget(), reason = 'before-cloud-save') {
+    try {
+      if (!data || !target?.userId || cloudBackupDisabled()) return false;
+      const now = Date.now();
+      if (now - lastBackupAt < BACKUP_MIN_INTERVAL) return false;
+      lastBackupAt = now;
+      const snapshot = clone(data);
+      if (!snapshot[OWNER_FIELD]) {
+        snapshot[OWNER_FIELD] = {
+          userId: String(target.userId),
+          email: target.email || null,
+          dataKey: activeDataKey(),
+          version: EXPECTED_ASSET_VERSION,
+          reason: 'backup-stamp',
+          updatedAt: new Date(now).toISOString()
+        };
+      }
+      const { error } = await supabaseClient
+        .from(BACKUP_TABLE)
+        .insert({
+          user_id: target.userId,
+          email: target.email || null,
+          data: snapshot,
+          summary: dataSummary(snapshot),
+          reason,
+          created_at: new Date(now).toISOString()
+        });
+      if (error) {
+        if (shouldDisableBackup(error)) disableCloudBackup();
+        logEvent('cloud-backup-error', { code: error.code || '', message: error.message || '' });
+        return false;
+      }
+      logEvent('cloud-backup-created', { userId: target.userId, summary: dataSummary(snapshot) });
+      return true;
+    } catch (e) {
+      if (shouldDisableBackup(e)) disableCloudBackup();
+      logEvent('cloud-backup-error', { message: String(e?.message || e) });
+      return false;
+    }
+  }
+
+  function restoreLocalForOwner(target = currentTarget(), fallback = null) {
+    const fallbackOk = fallback && ownerMatches(fallback, target) && !isStarterData(fallback);
+    const candidate = allLocalDataCandidates(true)
+      .find(item => ownerMatches(item.data, target) && !isStarterData(item.data));
+    const data = candidate?.data || (fallbackOk ? fallback : null);
+    if (!data) return false;
+    replaceDb(data);
+    stampOwner(db, 'owner-restore');
+    rawSet(activeDataKey(), JSON.stringify(db));
+    logEvent('owner-local-restore', { fromKey: candidate?.key || 'fallback', summary: dataSummary(db) });
+    try { if (typeof normalizarBanco === 'function') normalizarBanco(); } catch (e) {}
+    try { if (typeof init === 'function') init(); } catch (e) {}
     return true;
   }
 
@@ -281,27 +474,30 @@ window.PLANTAO_SUPABASE_CONFIG = {
       ) {
         return false;
       }
-      const alvo = alvoDadosNuvem();
-      if (!alvo?.user_id) return false;
-      const { data, error } = await supabaseClient
-        .from('plantao_user_data')
-        .select('data')
-        .eq('user_id', alvo.user_id)
-        .maybeSingle();
-      if (error || !data?.data) return false;
+      const target = currentTarget();
+      if (!target?.userId) return false;
+      const data = await readRemoteData(target);
+      if (!data?.data) return false;
       const remote = data.data;
+      if (!ownerMatches(remote, target)) {
+        logEvent('remote-owner-mismatch', { expected: target.userId, found: dataOwnerId(remote) });
+        return restoreLocalForOwner(target);
+      }
       const shouldRestore = typeof salvariaPerdaCritica === 'function'
         ? salvariaPerdaCritica(db, remote)
         : dataScore(remote) > dataScore(db);
       if (!shouldRestore && !isStarterData(db)) return false;
 
       replaceDb(remote);
+      stampOwner(db, 'remote-restore');
       rawSet(activeDataKey(), JSON.stringify(db));
       try { dadosSupabaseCarregados = true; } catch (e) {}
       try { carregandoNuvem = true; } catch (e) {}
       try { if (typeof normalizarBanco === 'function') normalizarBanco(); } catch (e) {}
       try { carregandoNuvem = false; } catch (e) {}
+      stampOwner(db, 'remote-restore-normalized');
       rawSet(activeDataKey(), JSON.stringify(db));
+      logEvent('remote-restore', { userId: target.userId, summary: dataSummary(db) });
       try { if (typeof init === 'function') init(); } catch (e) {}
       return true;
     } catch (e) {
@@ -343,6 +539,7 @@ window.PLANTAO_SUPABASE_CONFIG = {
     document.body?.classList.remove('plantao-data-loading');
   }
 
+  ensureExpectedRuntimeVersion();
   patchStorage();
   persistMainKey(mainDataKey());
 
@@ -351,9 +548,14 @@ window.PLANTAO_SUPABASE_CONFIG = {
   window.__plantaoGetActiveDataKey = activeDataKey;
   window.__plantaoReadRawStorageKey = rawGet;
   window.__plantaoWriteRawStorageKey = rawSet;
+  window.__plantaoLogRuntimeEvent = logEvent;
   window.__plantaoPrepareUserData = identity => {
     if (identity) setActiveIdentity(identity);
-    return loadDbForActiveKey();
+    const loaded = loadDbForActiveKey();
+    stampOwner(db, 'prepare-user-data');
+    rawSet(activeDataKey(), JSON.stringify(db));
+    logEvent('prepare-user-data', { key: activeDataKey(), summary: dataSummary(db) });
+    return loaded;
   };
   window.__plantaoRecoverSilently = silentAutoRestoreIfNeeded;
 
@@ -387,9 +589,23 @@ window.PLANTAO_SUPABASE_CONFIG = {
     };
 
     window.carregarDadosSupabase = async function carregarDadosSupabaseSeguro() {
+      const target = currentTarget();
+      const before = clone(db);
       const result = await originalCarregarSupabase.apply(this, arguments);
       setTimeout(silentAutoRestoreIfNeeded, 500);
       if (result) {
+        if (!ownerMatches(db, target)) {
+          logEvent('load-owner-mismatch', { expected: target.userId, found: dataOwnerId(db) });
+          if (!restoreLocalForOwner(target, before)) {
+            window.__plantaoCloudDataReady = false;
+            keepBlocked();
+            setStatus('Nao foi possivel confirmar os dados desta conta agora.');
+            return false;
+          }
+        }
+        stampOwner(db, 'cloud-load');
+        rawSet(activeDataKey(), JSON.stringify(db));
+        logEvent('cloud-load', { userId: target.userId, summary: dataSummary(db) });
         window.__plantaoCloudDataReady = true;
         releaseBlocked();
         originalOcultar.call(this);
@@ -405,7 +621,33 @@ window.PLANTAO_SUPABASE_CONFIG = {
     if (typeof originalSalvarSupabase === 'function') {
       window.salvarDadosSupabase = async function salvarDadosSupabaseSeguro() {
         silentAutoRestoreIfNeeded();
+        const target = currentTarget();
+        if (!ownerMatches(db, target)) {
+          logEvent('save-owner-mismatch-blocked', { expected: target.userId, found: dataOwnerId(db) });
+          restoreLocalForOwner(target);
+          return;
+        }
         if (await restoreRemoteIfRicher()) return;
+        const remote = await readRemoteData(target);
+        if (remote?.data) {
+          if (!ownerMatches(remote.data, target)) {
+            logEvent('save-remote-owner-mismatch-blocked', { expected: target.userId, found: dataOwnerId(remote.data) });
+            restoreLocalForOwner(target);
+            return;
+          }
+          if (isStarterData(db) && dataScore(remote.data) > dataScore(db)) {
+            replaceDb(remote.data);
+            stampOwner(db, 'starter-save-block-restore');
+            rawSet(activeDataKey(), JSON.stringify(db));
+            try { if (typeof init === 'function') init(); } catch (e) {}
+            logEvent('starter-save-blocked', { userId: target.userId, remoteSummary: dataSummary(remote.data) });
+            return;
+          }
+          await createSilentCloudBackup(remote.data, target, 'Antes do salvamento na nuvem');
+        }
+        stampOwner(db, 'cloud-save');
+        rawSet(activeDataKey(), JSON.stringify(db));
+        logEvent('cloud-save-start', { userId: target.userId, summary: dataSummary(db) });
         return originalSalvarSupabase.apply(this, arguments);
       };
     }
