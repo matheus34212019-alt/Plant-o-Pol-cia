@@ -228,10 +228,11 @@
         return true;
     }
 
+    install();
     if(document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', install, true);
     } else {
-        install();
+        setTimeout(install, 0);
     }
 
     const observer = new MutationObserver(() => cleanupInternalUi());
