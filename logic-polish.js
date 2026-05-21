@@ -4,6 +4,7 @@
 
     const VERSION = 'v214-logic-layout';
     const WRAPPED = '__plantaoLogicPolishWrapped';
+    const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
     let weeklyAutoScrolled = false;
 
     function fn(name) {
@@ -225,6 +226,61 @@
         });
     }
 
+    function removeEmailsFromText(value, fallback = '') {
+        const cleaned = String(value || '')
+            .replace(EMAIL_PATTERN, '')
+            .replace(/\s+\|\s*$/, '')
+            .replace(/^\s+\|\s*/, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+        return cleaned || fallback;
+    }
+
+    function scrubStudentEmails(root = document) {
+        const scopes = [
+            '#ranking-content',
+            '#study-admin-panel',
+            '#perfil-content',
+            '#admin-student-banner',
+            '.admin-student-banner'
+        ];
+        root.querySelectorAll?.(scopes.join(',')).forEach(scope => {
+            scope.querySelectorAll('small').forEach(node => {
+                if(EMAIL_PATTERN.test(node.textContent || '')) {
+                    node.textContent = '';
+                    node.style.display = 'none';
+                }
+                EMAIL_PATTERN.lastIndex = 0;
+            });
+            scope.querySelectorAll('b,strong,span,td,div').forEach(node => {
+                if(!EMAIL_PATTERN.test(node.textContent || '')) {
+                    EMAIL_PATTERN.lastIndex = 0;
+                    return;
+                }
+                if(node.children.length) {
+                    EMAIL_PATTERN.lastIndex = 0;
+                    return;
+                }
+                node.textContent = removeEmailsFromText(node.textContent, 'Aluno');
+                EMAIL_PATTERN.lastIndex = 0;
+            });
+            const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+            const textNodes = [];
+            while(walker.nextNode()) textNodes.push(walker.currentNode);
+            textNodes.forEach(textNode => {
+                const parent = textNode.parentElement;
+                if(!parent || ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT'].includes(parent.tagName)) return;
+                const original = textNode.nodeValue || '';
+                if(!EMAIL_PATTERN.test(original)) {
+                    EMAIL_PATTERN.lastIndex = 0;
+                    return;
+                }
+                textNode.nodeValue = removeEmailsFromText(original, parent.closest('td') ? 'Aluno' : '');
+                EMAIL_PATTERN.lastIndex = 0;
+            });
+        });
+    }
+
     function cleanupInternalUi() {
         const selectors = [
             '#seguranca',
@@ -242,6 +298,7 @@
         polishDashboard();
         polishWeeklyGrid();
         polishTaskCards();
+        scrubStudentEmails();
         cleanupInternalUi();
     }
 
@@ -251,7 +308,10 @@
         function wrapped() {
             if(before) before.apply(this, arguments);
             const result = original.apply(this, arguments);
-            if(after) after.apply(this, arguments);
+            if(after) {
+                if(result && typeof result.finally === 'function') result.finally(() => after.apply(this, arguments));
+                else after.apply(this, arguments);
+            }
             return result;
         }
         wrapped[WRAPPED] = true;
@@ -268,6 +328,11 @@
         wrap('renderSemanal', normalizeCoreState, polishWeeklyGrid);
         wrap('renderDiario', normalizeCoreState, polishTaskCards);
         wrap('renderDiarioSemRecalcular', normalizeCoreState, polishTaskCards);
+        wrap('renderRankingAlunos', null, afterRender);
+        wrap('renderPainelProfessor', null, afterRender);
+        wrap('renderPerfil', null, afterRender);
+        wrap('renderAdminAccessList', null, afterRender);
+        wrap('renderAdminStudentBanner', null, afterRender);
         wrap('showTab', null, afterRender);
         afterRender();
         return true;
