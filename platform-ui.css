@@ -1,0 +1,521 @@
+/* v216 platform UI: harmonized shell, responsive tabs and privacy-safe surfaces */
+
+:root {
+    --platform-bg: #06111f;
+    --platform-panel: rgba(15, 23, 42, 0.82);
+    --platform-panel-strong: rgba(15, 23, 42, 0.96);
+    --platform-line: rgba(148, 163, 184, 0.18);
+    --platform-line-strong: rgba(103, 232, 249, 0.42);
+    --platform-text: #f8fafc;
+    --platform-muted: #b8c7dc;
+    --platform-blue: #3b82f6;
+    --platform-cyan: #22d3ee;
+    --platform-green: #10b981;
+    --platform-gold: #f59e0b;
+    --platform-danger: #ef4444;
+    --platform-radius: 8px;
+    --platform-shadow: 0 18px 50px rgba(2, 6, 23, 0.24);
+}
+
+html[data-plantao-core] {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: var(--platform-bg);
+    color: var(--platform-text);
+    text-rendering: optimizeLegibility;
+}
+
+.container {
+    display: grid;
+    gap: 28px;
+}
+
+.main {
+    min-width: 0;
+}
+
+.page.platform-page {
+    min-width: 0;
+    contain: layout paint;
+}
+
+.page.platform-page[hidden] {
+    display: none !important;
+}
+
+.page.platform-page.active {
+    animation: plantaoPageIn 140ms ease-out;
+}
+
+@keyframes plantaoPageIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+}
+
+.logo-box {
+    min-height: 72px;
+}
+
+.nav-item,
+.sub-link {
+    border-radius: var(--platform-radius);
+    outline: none;
+    transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.nav-item:hover,
+.sub-link:hover {
+    transform: translateX(2px);
+}
+
+.nav-item:focus-visible,
+.sub-link:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--platform-cyan);
+    outline-offset: 3px;
+}
+
+[onclick*="showTab('seguranca')"],
+[onclick*="showTab('diagnostico')"],
+[onclick*='showTab("seguranca")'],
+[onclick*='showTab("diagnostico")'],
+#seguranca,
+#diagnostico {
+    display: none !important;
+}
+
+.stats-grid {
+    gap: clamp(14px, 2vw, 24px);
+    margin-bottom: 8px;
+}
+
+.stat-card,
+.platform-card,
+.cycle-card,
+.ciclo-panel,
+.modal-box,
+.login-card {
+    border: 1px solid var(--platform-line);
+    border-radius: var(--platform-radius);
+    background: var(--platform-panel);
+    box-shadow: var(--platform-shadow);
+}
+
+.stat-card {
+    min-width: 0;
+}
+
+.stat-card small,
+.meta-sub,
+.login-status,
+.profile-info-row span,
+.admin-access-row small {
+    color: var(--platform-muted);
+}
+
+.stat-val {
+    letter-spacing: 0;
+    line-height: 1.05;
+}
+
+.bar-container,
+.road-bg {
+    overflow: hidden;
+}
+
+.page-header,
+.platform-page-header,
+#semanal > div:first-child,
+#fluxo > h2 {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.page-header h1,
+.page-header h2,
+#semanal h2,
+#fluxo > h2 {
+    margin: 0;
+    letter-spacing: 0;
+    line-height: 1.1;
+}
+
+.page-header .meta-sub {
+    margin-top: 6px;
+}
+
+.welcome-box,
+.cycle-card,
+.nav-days {
+    margin-bottom: 18px;
+}
+
+.nav-days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.btn,
+button {
+    min-height: 44px;
+    border-radius: var(--platform-radius);
+    letter-spacing: 0;
+    touch-action: manipulation;
+}
+
+.btn-sm {
+    min-height: 38px;
+}
+
+input,
+select,
+textarea {
+    border-radius: var(--platform-radius);
+    border-color: var(--platform-line);
+    background-color: rgba(2, 6, 23, 0.28);
+    color: var(--platform-text);
+}
+
+textarea {
+    min-height: 180px;
+    resize: vertical;
+}
+
+.import-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin: 14px 0;
+}
+
+#edital .stat-card,
+#config-h .stat-card,
+.ciclo-panel {
+    display: grid;
+    gap: 14px;
+}
+
+#lista-diaria,
+#tree,
+#check-c,
+#grid-h-in,
+#fluxo-content,
+#replanejar-content,
+#lancamentos-content,
+#perfil-content,
+#ranking-content {
+    min-width: 0;
+}
+
+.task-card,
+.sim-task,
+.study-row,
+.lancamento-row,
+.profile-info-row,
+.admin-access-row,
+.subject-flow-row,
+.ranking-row,
+.study-card-row {
+    border-radius: var(--platform-radius);
+}
+
+.task-card,
+.sim-task {
+    transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+.task-card:hover,
+.sim-task:hover {
+    border-color: var(--platform-line-strong);
+    transform: translateY(-1px);
+}
+
+.task-card strong,
+.sim-task strong,
+.study-row strong,
+.lancamento-row strong,
+.profile-info-row strong {
+    letter-spacing: 0;
+}
+
+#grid-semanal.weekly-grid {
+    display: flex;
+    gap: 16px;
+    padding-bottom: 14px;
+    scroll-snap-type: x proximity;
+}
+
+.day-column {
+    scroll-snap-align: start;
+    background: var(--platform-panel);
+}
+
+.day-head {
+    min-height: 100px;
+}
+
+.day-column .task-card,
+.day-column .sim-task {
+    width: 100%;
+}
+
+.perf-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.perf-tab {
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--platform-line);
+    border-radius: var(--platform-radius);
+    background: rgba(15, 23, 42, 0.62);
+    color: var(--platform-muted);
+}
+
+.perf-tab.active {
+    border-color: var(--platform-line-strong);
+    color: var(--platform-text);
+    background: rgba(8, 145, 178, 0.22);
+}
+
+.perf-page:not(.active) {
+    display: none !important;
+}
+
+.study-admin-table,
+.ranking-table,
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.study-admin-table th,
+.study-admin-table td,
+.ranking-table th,
+.ranking-table td,
+table th,
+table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--platform-line);
+    text-align: left;
+    vertical-align: middle;
+}
+
+.study-admin-table th,
+.ranking-table th,
+table th {
+    color: var(--platform-muted);
+    font-size: 0.82rem;
+}
+
+.study-admin-table td,
+.ranking-table td,
+table td {
+    overflow-wrap: anywhere;
+}
+
+#ranking-content .study-admin-table td small,
+#study-admin-panel .study-admin-table td small,
+#perfil-content .profile-info-card .profile-info-row:nth-child(2),
+#perfil-content .profile-main-card p,
+#perfil-content .profile-actions-card:has(input[value*="@"]) {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+.profile-grid,
+.perf-grid,
+.ranking-grid,
+.study-grid,
+.replan-grid,
+.backup-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.toast-area {
+    max-width: min(420px, calc(100vw - 24px));
+}
+
+.toast-card {
+    border-radius: var(--platform-radius);
+    background: var(--platform-panel-strong);
+}
+
+#save-status-pill,
+.diagnostic-toast,
+.security-toast {
+    display: none !important;
+}
+
+.login-card {
+    width: min(92vw, 540px);
+}
+
+.login-card h2 {
+    letter-spacing: 0.16em;
+}
+
+.login-email-box {
+    display: grid;
+    gap: 12px;
+}
+
+.login-status {
+    border-radius: var(--platform-radius);
+    padding: 12px 14px;
+    line-height: 1.45;
+}
+
+.modal-overlay {
+    backdrop-filter: blur(8px);
+}
+
+.modal-box {
+    max-width: min(92vw, 560px);
+}
+
+body.plantao-data-loading .main,
+body.plantao-data-loading .sidebar {
+    opacity: 0;
+    pointer-events: none;
+}
+
+@media (max-width: 1180px) {
+    .container {
+        gap: 22px;
+    }
+
+    .page-header,
+    .platform-page-header,
+    #semanal > div:first-child {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 900px) {
+    .main {
+        padding: 18px;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .page-header,
+    .platform-page-header,
+    #semanal > div:first-child {
+        flex-direction: column;
+    }
+
+    .page-header .btn,
+    .platform-page-header .btn {
+        width: 100%;
+    }
+
+    .import-options {
+        grid-template-columns: 1fr;
+    }
+
+    .study-admin-table,
+    .ranking-table,
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 640px) {
+    .main {
+        padding: 14px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card,
+    .platform-card,
+    .cycle-card,
+    .ciclo-panel {
+        padding: 16px;
+    }
+
+    .page-header h1,
+    .page-header h2,
+    #semanal h2,
+    #fluxo > h2 {
+        font-size: clamp(1.45rem, 8vw, 2rem);
+    }
+
+    .nav-days {
+        justify-content: stretch;
+    }
+
+    .nav-days .btn,
+    .btn,
+    button {
+        width: 100%;
+    }
+
+    .perf-tab {
+        flex: 1 1 calc(50% - 8px);
+    }
+
+    .study-admin-table th,
+    .study-admin-table td,
+    .ranking-table th,
+    .ranking-table td,
+    table th,
+    table td {
+        padding: 12px 10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html[data-plantao-core] {
+        scroll-behavior: auto;
+    }
+
+    .page.platform-page.active,
+    .nav-item,
+    .sub-link,
+    .task-card,
+    .sim-task {
+        animation: none;
+        transition: none;
+    }
+
+    .nav-item:hover,
+    .sub-link:hover,
+    .task-card:hover,
+    .sim-task:hover {
+        transform: none;
+    }
+}
