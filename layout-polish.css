@@ -1,4 +1,4 @@
-/* v214 logic/layout polish: visual layer only */
+/* v215 logic/layout polish: visual layer only */
 
 html {
     overflow-x: hidden;
@@ -35,6 +35,12 @@ body {
 #perfil-content .admin-access-row small,
 #admin-student-banner small,
 .admin-student-banner small {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+#perfil-content .profile-info-card .profile-info-row:nth-child(2),
+#perfil-content .profile-main-card p {
     display: none !important;
     visibility: hidden !important;
 }
