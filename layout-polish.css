@@ -30,13 +30,22 @@ body {
     pointer-events: none !important;
 }
 
+#study-admin-panel .study-admin-table td small,
+#ranking-content .study-admin-table td small,
+#perfil-content .admin-access-row small,
+#admin-student-banner small,
+.admin-student-banner small {
+    display: none !important;
+    visibility: hidden !important;
+}
+
 .stats-grid {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .stat-card,
 .task-card,
-.day-column,
+day-column,
 .profile-info-row,
 .admin-access-row,
 .lancamento-row,
