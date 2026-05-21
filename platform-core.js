@@ -2,9 +2,10 @@
     if(window.__plantaoPlatformCore) return;
     window.__plantaoPlatformCore = true;
 
-    const VERSION = 'v216-architecture';
+    const VERSION = 'v217-stability';
     const WRAPPED = '__plantaoPlatformWrapped';
     const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+    const MOJIBAKE_SEQUENCE = /[\u00c2-\u00c3][\u0080-\u00bf]/;
     const PRIVATE_PAGE_IDS = new Set(['seguranca', 'diagnostico']);
     const MAIN_PAGE_IDS = [
         'diaria',
@@ -30,6 +31,53 @@
     let enhancePending = false;
     let lastFingerprint = '';
     let lastMetrics = null;
+
+    function containsEmail(value) {
+        EMAIL_PATTERN.lastIndex = 0;
+        const found = EMAIL_PATTERN.test(String(value || ''));
+        EMAIL_PATTERN.lastIndex = 0;
+        return found;
+    }
+
+    function removeEmails(value, fallback = 'Aluno') {
+        EMAIL_PATTERN.lastIndex = 0;
+        const cleaned = String(value || '')
+            .replace(EMAIL_PATTERN, '')
+            .replace(/\s+\|\s*$/, '')
+            .replace(/^\s+\|\s*/, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+        EMAIL_PATTERN.lastIndex = 0;
+        return cleaned || fallback;
+    }
+
+    function privacyText(value, fallback = '') {
+        return containsEmail(value) ? removeEmails(value, fallback) : value;
+    }
+
+    function decodeLatin1Utf8(value) {
+        const text = String(value || '').replace(/\u00c3\u0192/g, '\u00c3');
+        if(!MOJIBAKE_SEQUENCE.test(text)) return text;
+        try {
+            const bytes = Uint8Array.from(Array.from(text, ch => ch.charCodeAt(0) & 255));
+            const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+            return decoded && !decoded.includes('\ufffd') ? decoded : text;
+        } catch(_) {
+            try {
+                return decodeURIComponent(escape(text));
+            } catch(__) {
+                return text;
+            }
+        }
+    }
+
+    function normalizeTextValue(value) {
+        if(typeof value !== 'string' || !value) return value;
+        return decodeLatin1Utf8(value)
+            .replace(/PLANT\u00c3\u0192O/g, 'PLANT\u00c3O')
+            .replace(/AMANH\u00c3\u0192/g, 'AMANH\u00c3')
+            .replace(/\bNAO\b/g, 'N\u00c3O');
+    }
 
     function globalValue(name) {
         try { return Function(`return typeof ${name} === "undefined" ? null : ${name};`)(); }
@@ -209,6 +257,11 @@
     }
 
     function prepareRender(name, args) {
+        if((name === 'showToast' || name === 'setCloudStatus' || name === 'confirmarAcaoPlano') && args?.length) {
+            for(let i = 0; i < args.length; i += 1) {
+                if(typeof args[i] === 'string') args[i] = privacyText(args[i], i === 0 ? 'Aviso' : 'Atualizado.');
+            }
+        }
         const db = ensureCoreShapes();
         if(!db) return;
         if(name === 'renderDiario' || name === 'renderDiarioSemRecalcular') {
@@ -255,7 +308,7 @@
     }
 
     function parseTabId(onclick) {
-        const match = String(onclick || '').match(/showTab\(['"]([^'"]+)['"]\)/);
+        const match = String(onclick || '').match(/showTab\(['"]([^'"]+)['"]/);
         return match ? match[1] : '';
     }
 
@@ -288,6 +341,12 @@
         document.querySelectorAll('.page').forEach(page => {
             page.classList.add('platform-page');
             page.setAttribute('role', 'tabpanel');
+            if(PRIVATE_PAGE_IDS.has(page.id)) {
+                page.classList.remove('active');
+                page.setAttribute('aria-hidden', 'true');
+                page.setAttribute('hidden', '');
+                return;
+            }
             page.setAttribute('aria-hidden', page.classList.contains('active') ? 'false' : 'true');
             if(!page.classList.contains('active')) page.setAttribute('hidden', '');
             else page.removeAttribute('hidden');
@@ -296,9 +355,17 @@
     }
 
     function syncActiveUi(id = null) {
-        const activeId = id || document.querySelector('.page.active')?.id || 'diaria';
+        const requestedId = id || document.querySelector('.page.active')?.id || 'diaria';
+        const activeId = PRIVATE_PAGE_IDS.has(requestedId) ? 'diaria' : requestedId;
         document.querySelectorAll('.page').forEach(page => {
-            const active = page.id === activeId && page.classList.contains('active');
+            if(PRIVATE_PAGE_IDS.has(page.id)) {
+                page.classList.remove('active');
+                page.toggleAttribute('hidden', true);
+                page.setAttribute('aria-hidden', 'true');
+                return;
+            }
+            const active = page.id === activeId && (id || page.classList.contains('active'));
+            if(active) page.classList.add('active');
             page.toggleAttribute('hidden', !active);
             page.setAttribute('aria-hidden', active ? 'false' : 'true');
         });
@@ -318,30 +385,102 @@
             '#admin-student-banner',
             '.admin-student-banner'
         ];
-        root.querySelectorAll?.(selectors.join(',')).forEach(scope => {
+        const scopeSelector = selectors.join(',');
+        const scopes = [];
+        if(root.matches?.(scopeSelector)) scopes.push(root);
+        root.querySelectorAll?.(scopeSelector).forEach(scope => scopes.push(scope));
+        scopes.forEach(scope => {
             scope.querySelectorAll('small').forEach(node => {
-                if(EMAIL_PATTERN.test(node.textContent || '')) {
+                if(containsEmail(node.textContent)) {
                     node.textContent = '';
                     node.style.display = 'none';
                 }
-                EMAIL_PATTERN.lastIndex = 0;
             });
             scope.querySelectorAll('.profile-info-row').forEach(row => {
                 const label = String(row.querySelector('span')?.textContent || '').trim().toLowerCase();
-                if(label === 'e-mail' || EMAIL_PATTERN.test(row.textContent || '')) row.style.display = 'none';
-                EMAIL_PATTERN.lastIndex = 0;
+                if(label === 'e-mail' || containsEmail(row.textContent)) row.style.display = 'none';
+            });
+            scope.querySelectorAll('input, textarea').forEach(input => {
+                if(containsEmail(input.value)) input.value = 'Aluno';
+            });
+            scope.querySelectorAll('b,strong,span,td,div,p,h3').forEach(node => {
+                if(node.children.length || !containsEmail(node.textContent)) return;
+                node.textContent = removeEmails(node.textContent, node.closest('td') ? 'Aluno' : '');
             });
             const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
             const nodes = [];
             while(walker.nextNode()) nodes.push(walker.currentNode);
             nodes.forEach(node => {
+                const parent = node.parentElement;
+                if(parent && ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT'].includes(parent.tagName)) return;
                 const text = node.nodeValue || '';
-                if(!EMAIL_PATTERN.test(text)) {
-                    EMAIL_PATTERN.lastIndex = 0;
-                    return;
+                if(!containsEmail(text)) return;
+                node.nodeValue = removeEmails(text, parent?.closest('td') ? 'Aluno' : '');
+            });
+        });
+    }
+
+    function isAdminUser() {
+        const admin = globalValue('usuarioAdmin');
+        if(typeof admin === 'function') {
+            try { return Boolean(admin()); } catch(_) {}
+        }
+        return false;
+    }
+
+    function cleanupInternalUi(root = document) {
+        const internalSelector = [
+            '#seguranca',
+            '#diagnostico',
+            '[onclick*="seguranca"]',
+            '[onclick*="diagnostico"]'
+        ].join(',');
+        root.querySelectorAll?.(internalSelector).forEach(el => {
+            if(el.id === 'seguranca' || el.id === 'diagnostico') {
+                el.classList.remove('active');
+                el.setAttribute('hidden', '');
+                el.setAttribute('aria-hidden', 'true');
+                return;
+            }
+            if(!isAdminUser()) {
+                const card = el.closest('.profile-actions-card, .stat-card');
+                if(card) {
+                    card.style.display = 'none';
+                    card.setAttribute('aria-hidden', 'true');
+                } else {
+                    el.style.display = 'none';
+                    el.setAttribute('aria-hidden', 'true');
                 }
-                node.nodeValue = text.replace(EMAIL_PATTERN, '').replace(/\s{2,}/g, ' ').trim() || 'Aluno';
-                EMAIL_PATTERN.lastIndex = 0;
+            }
+        });
+    }
+
+    function applyBrandText(root = document) {
+        document.title = 'PLANT\u00c3O';
+        root.querySelectorAll?.('.logo-box').forEach(el => {
+            el.innerHTML = '<i class="fas fa-shield-halved"></i> PLANT\u00c3O';
+        });
+        root.querySelectorAll?.('.login-card h2').forEach(el => {
+            el.textContent = 'PLANT\u00c3O';
+        });
+    }
+
+    function normalizeVisibleTexts(root = document) {
+        applyBrandText(root);
+        const walker = document.createTreeWalker(root.body || root, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        while(walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(node => {
+            const parent = node.parentElement;
+            if(parent && ['SCRIPT', 'STYLE', 'TEXTAREA'].includes(parent.tagName)) return;
+            const fixed = normalizeTextValue(node.nodeValue || '');
+            if(fixed !== node.nodeValue) node.nodeValue = fixed;
+        });
+        root.querySelectorAll?.('[placeholder],[title],[aria-label]').forEach(el => {
+            ['placeholder', 'title', 'aria-label'].forEach(attr => {
+                if(!el.hasAttribute(attr)) return;
+                const fixed = normalizeTextValue(el.getAttribute(attr));
+                if(fixed !== el.getAttribute(attr)) el.setAttribute(attr, fixed);
             });
         });
     }
@@ -374,6 +513,8 @@
             enhanceNavigation();
             enhancePages();
             syncActiveUi();
+            normalizeVisibleTexts();
+            cleanupInternalUi();
             scrubEmails();
             enhanceButtonsAndForms();
             enhancePageShell();
@@ -387,9 +528,11 @@
             if(before) before(name, arguments);
             const result = original.apply(this, arguments);
             if(result && typeof result.finally === 'function') {
-                result.finally(() => after(name, arguments));
+                result.finally(() => {
+                    if(after) after(name, arguments);
+                });
             } else {
-                after(name, arguments);
+                if(after) after(name, arguments);
             }
             return result;
         }
@@ -446,10 +589,14 @@
             'renderEvolucaoEstudo',
             'renderPainelProfessor',
             'save',
-            'normalizarBanco'
+            'normalizarBanco',
+            'showToast',
+            'setCloudStatus',
+            'confirmarAcaoPlano'
         ].forEach(name => {
-            wrapFunction(name, prepareRender, () => {
-                schedulePublish(name);
+            wrapFunction(name, prepareRender, (fnName, args) => {
+                if(fnName === 'showTab' && typeof args?.[0] === 'string') syncActiveUi(args[0]);
+                schedulePublish(fnName);
                 enhanceCurrentSurface();
             });
         });
@@ -465,6 +612,8 @@
             pending = true;
             raf(() => {
                 pending = false;
+                normalizeVisibleTexts();
+                cleanupInternalUi();
                 scrubEmails();
                 enhanceButtonsAndForms();
                 enhancePageShell();
@@ -472,10 +621,28 @@
         }).observe(document.body, { childList: true, subtree: true });
     }
 
+    function installTextNormalization() {
+        if(window.__plantaoTextNormalization) return;
+        window.__plantaoTextNormalization = true;
+        [0, 80, 250, 700, 1500, 3000].forEach(delay => {
+            setTimeout(() => {
+                normalizeVisibleTexts();
+                cleanupInternalUi();
+                scrubEmails();
+            }, delay);
+        });
+        window.addEventListener('load', () => {
+            normalizeVisibleTexts();
+            cleanupInternalUi();
+            scrubEmails();
+        }, { once: true });
+    }
+
     function install() {
         installWrappers();
         enhanceCurrentSurface();
         installObservers();
+        installTextNormalization();
         schedulePublish('install');
         window.PlantaoCore = {
             version: VERSION,
@@ -483,6 +650,8 @@
             get metrics() { return publishState('read'); },
             refresh(reason = 'manual') { schedulePublish(reason); },
             scrubEmails,
+            normalizeVisibleTexts,
+            cleanupInternalUi,
             enhance: enhanceCurrentSurface
         };
     }
