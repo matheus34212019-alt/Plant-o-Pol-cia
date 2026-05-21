@@ -3,6 +3,7 @@
     window.__plantaoProfileNavFix = true;
 
     const VERSION = 'v220-profile-nav';
+    let profileRenderPending = false;
 
     function qs(selector, root = document) {
         try { return root.querySelector(selector); } catch(_) { return null; }
@@ -58,8 +59,13 @@
         page.removeAttribute('hidden');
         page.removeAttribute('aria-hidden');
         page.style.display = '';
-        if(typeof window.renderPerfil === 'function') {
-            try { window.renderPerfil(); } catch(error) { console.warn('[PLANTAO] renderPerfil protegido:', error); }
+        const content = qs('#perfil-content');
+        if(!profileRenderPending && content && !content.children.length && typeof window.renderPerfil === 'function') {
+            profileRenderPending = true;
+            setTimeout(() => {
+                profileRenderPending = false;
+                try { window.renderPerfil(); } catch(error) { console.warn('[PLANTAO] renderPerfil protegido:', error); }
+            }, 0);
         }
     }
 
