@@ -1,0 +1,11 @@
+{
+  "name": "PLANTÃO",
+  "short_name": "PLANTÃO",
+  "description": "Plataforma de estudos e mentoria.",
+  "start_url": "./?v=219-site-name",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#061422",
+  "theme_color": "#061422",
+  "orientation": "portrait-primary"
+}
