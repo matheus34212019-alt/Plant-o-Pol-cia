@@ -40,7 +40,8 @@ body {
 }
 
 #perfil-content .profile-info-card .profile-info-row:nth-child(2),
-#perfil-content .profile-main-card p {
+#perfil-content .profile-main-card p,
+#perfil-content .profile-actions-card:has(input[value*="@"]) {
     display: none !important;
     visibility: hidden !important;
 }
