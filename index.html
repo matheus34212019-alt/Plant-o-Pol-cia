@@ -6,17 +6,18 @@
     <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>PLANTÃO</title>
+    <title>PLANTÃƒO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="styles.css?v=190">
-    <link rel="stylesheet" href="layout-polish.css?v=214-logic-layout">
+    <link rel="stylesheet" href="layout-polish.css?v=216-architecture">
+    <link rel="stylesheet" href="platform-ui.css?v=216-architecture">
 </head>
 <body>
     <div id="login-screen">
         <div class="login-card">
-            <h2 style="font-weight:800; margin-bottom:20px;">PLANTÃO</h2>
+            <h2 style="font-weight:800; margin-bottom:20px;">PLANTÃƒO</h2>
             <button class="btn google-btn" style="width:100%;" onclick="loginGoogle()"><i class="fab fa-google"></i> ENTRAR COM GOOGLE</button>
             <div class="login-email-box">
                 <input type="email" id="login-email" placeholder="E-mail">
@@ -60,7 +61,7 @@
                 <div>
                     <label style="font-size: 0.75rem; font-weight: 700;">Disciplina:</label>
                     <select id="extra-mat" onchange="atualizarAssuntosExtra()">
-                        <option value="">Selecione a Matéria</option>
+                        <option value="">Selecione a MatÃ©ria</option>
                     </select>
                 </div>
                 <div>
@@ -75,8 +76,8 @@
                     <label style="font-size: 0.75rem; font-weight: 700;">Modalidade:</label>
                     <select id="extra-tipo">
                         <option value="E">Estudo</option>
-                        <option value="Rev">Revisão</option>
-                        <option value="Ex">Exercícios</option>
+                        <option value="Rev">RevisÃ£o</option>
+                        <option value="Ex">ExercÃ­cios</option>
                     </select>
                 </div>
                 <div>
@@ -89,7 +90,7 @@
                     </select>
                 </div>
             </div>
-            <button class="btn" style="width:100%; margin-top: 25px;" onclick="salvarExtra()">INCLUIR NO PLANTÃO</button>
+            <button class="btn" style="width:100%; margin-top: 25px;" onclick="salvarExtra()">INCLUIR NO PLANTÃƒO</button>
         </div>
     </div>
 
@@ -99,7 +100,7 @@
             <h3 style="margin-bottom:10px;"><i class="fas fa-pen-to-square"></i> Registro de Desempenho</h3>
             <p id="label-ex-assunto" style="font-size:0.85rem; color:var(--text-sec); margin-bottom:15px;"></p>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                <div><label>Questões</label><input type="number" id="ex-total" oninput="calcCebraspe()"></div>
+                <div><label>QuestÃµes</label><input type="number" id="ex-total" oninput="calcCebraspe()"></div>
                 <div><label>Acertos</label><input type="number" id="ex-acertos" oninput="calcCebraspe()"></div>
             </div>
             <div id="cebraspe-feedback" class="feedback-box">Aguardando dados...</div>
@@ -120,7 +121,7 @@
                 <label>Quanto tempo extra precisa?</label>
                 <input type="number" id="teoria-extra-horas" min="0.5" step="0.5" value="1">
                 <button class="btn" style="width:100%; margin-bottom:10px;" onclick="aplicarTempoExtraTeoria('hoje')">ADICIONAR NO MESMO DIA</button>
-                <button class="btn btn-outline" style="width:100%;" onclick="aplicarTempoExtraTeoria('semana')">REPLANEJAR PRÓXIMOS DIAS</button>
+                <button class="btn btn-outline" style="width:100%;" onclick="aplicarTempoExtraTeoria('semana')">REPLANEJAR PRÃ“XIMOS DIAS</button>
             </div>
         </div>
     </div>
@@ -128,7 +129,7 @@
     <div id="toast-area" class="toast-area"></div>
 
     <aside class="sidebar">
-        <div class="logo-box"><i class="fas fa-shield-halved"></i> PLANTÃO</div>
+        <div class="logo-box"><i class="fas fa-shield-halved"></i> PLANTÃƒO</div>
         <div class="nav-item active" onclick="showTab('diaria', this)"><i class="fas fa-calendar-day"></i><span>Painel Hoje</span></div>
         <div class="nav-item" onclick="showTab('semanal', this)"><i class="fas fa-calendar-week"></i><span>CRONOGRAMA</span></div>
         <div class="nav-item" onclick="showTab('performance', this)"><i class="fas fa-chart-pie"></i><span>Meu Desempenho</span></div>
@@ -138,13 +139,13 @@
         <div id="sub-plano" class="submenu">
             <div class="sub-link" onclick="showTab('edital')">Importar Edital</div>
             <div class="sub-link" onclick="showTab('ciclo')">Ciclo Ativo</div>
-            <div class="sub-link" onclick="showTab('config-h')">Horas Diárias</div>
+            <div class="sub-link" onclick="showTab('config-h')">Horas DiÃ¡rias</div>
             <div class="sub-link" onclick="showTab('sinalizar')">Sinalizar Base</div>
             <div class="sub-link" onclick="showTab('fluxo')">Ajustar Fluxos</div>
-            <div class="sub-link" onclick="showTab('replanejar')">Replanejar Horários</div>
-            <div class="sub-link" onclick="showTab('lancamentos')">Lançamentos</div>
-            <div class="sub-link" onclick="showTab('seguranca')">Segurança</div>
-            <div class="sub-link" onclick="showTab('diagnostico')">Diagnóstico</div>
+            <div class="sub-link" onclick="showTab('replanejar')">Replanejar HorÃ¡rios</div>
+            <div class="sub-link" onclick="showTab('lancamentos')">LanÃ§amentos</div>
+            <div class="sub-link" onclick="showTab('seguranca')">SeguranÃ§a</div>
+            <div class="sub-link" onclick="showTab('diagnostico')">DiagnÃ³stico</div>
         </div>
     </aside>
 
@@ -152,22 +153,22 @@
         <div class="container">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <small>Missão da Semana</small>
+                    <small>MissÃ£o da Semana</small>
                     <div id="prog-dia" class="stat-val">0%</div>
                     <div class="bar-container"><div id="bar-dia" class="bar-fill"></div></div>
                 </div>
                 <div class="stat-card"><small>Horas Acumuladas</small><div id="horas-hoje" class="stat-val">0.0h</div></div>
-                <div class="stat-card"><small>Precisão de Tiro</small><div id="precisao-dia" class="stat-val" style="color:#10b981">0%</div></div>
+                <div class="stat-card"><small>PrecisÃ£o de Tiro</small><div id="precisao-dia" class="stat-val" style="color:#10b981">0%</div></div>
             </div>
             <div id="admin-student-banner" class="admin-student-banner" style="display:none;"></div>
 
             <div id="diaria" class="page active">
                 <div class="welcome-box">
-                    <h3 id="welcome-title" style="margin:0;">FORÇA E HONRA!</h3>
+                    <h3 id="welcome-title" style="margin:0;">FORÃ‡A E HONRA!</h3>
                     <div id="streak-info"><i class="fas fa-fire"></i> STREAK: <span id="streak-val">0</span> DIAS</div>
                 </div>
                 <div class="stat-card cycle-card">
-                    <div style="display:flex; justify-content:space-between;"><small>Perseguição ao Edital</small><span id="ciclo-estimativa"></span></div>
+                    <div style="display:flex; justify-content:space-between;"><small>PerseguiÃ§Ã£o ao Edital</small><span id="ciclo-estimativa"></span></div>
                     <div class="road-bg">
                         <div id="viatura-progresso"><i class="fas fa-car-side"></i></div>
                         <div id="bar-ciclo-total" class="road-fill"></div>
@@ -176,10 +177,10 @@
                 </div>
                 <div class="nav-days">
                     <button id="btn-hoje" class="btn btn-outline btn-sm" onclick="navDay(0)" style="display:none;"><i class="fas fa-undo"></i> VOLTAR PARA HOJE</button>
-                    <button id="btn-amanha" class="btn btn-sm" onclick="navDay(1)">VER AMANHÃ <i class="fas fa-arrow-right"></i></button>
+                    <button id="btn-amanha" class="btn btn-sm" onclick="navDay(1)">VER AMANHÃƒ <i class="fas fa-arrow-right"></i></button>
                 </div>
                 <div class="page-header">
-                    <h1 id="view-title">Missão de Hoje</h1>
+                    <h1 id="view-title">MissÃ£o de Hoje</h1>
                     <button class="btn btn-sm btn-outline replan-btn" onclick="replanejarAgora()"><i class="fas fa-rotate"></i> REPLANEJAR ATRASOS</button>
                 </div>
                 <p id="meta-status" class="meta-sub"></p>
@@ -189,11 +190,11 @@
             <div id="semanal" class="page">
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
                     <div>
-                        <h2>CRONOGRAMA PLANTÃO</h2>
+                        <h2>CRONOGRAMA PLANTÃƒO</h2>
                         <div style="display: flex; gap: 10px;">
                             <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #3b82f6;"></i> Estudo</span>
-                            <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #f59e0b;"></i> Revisão</span>
-                            <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #10b981;"></i> Exercício</span>
+                            <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #f59e0b;"></i> RevisÃ£o</span>
+                            <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #10b981;"></i> ExercÃ­cio</span>
                             <span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #ef4444;"></i> Atrasado</span>
                         </div>
                     </div>
@@ -205,12 +206,12 @@
                 <div class="page-header">
                     <div>
                         <h2>Meu Desempenho</h2>
-                        <p class="meta-sub">Leitura dos seus lançamentos, questões e horas estudadas.</p>
+                        <p class="meta-sub">Leitura dos seus lanÃ§amentos, questÃµes e horas estudadas.</p>
                     </div>
                 </div>
                 <div class="perf-tabs">
                     <button class="perf-tab active" onclick="showPerfTab('geral', this)">Geral</button>
-                    <button class="perf-tab" onclick="showPerfTab('questoes', this)">Questões</button>
+                    <button class="perf-tab" onclick="showPerfTab('questoes', this)">QuestÃµes</button>
                     <button class="perf-tab" onclick="showPerfTab('melhores', this)">Melhores</button>
                     <button class="perf-tab" onclick="showPerfTab('prioridades', this)">Prioridades</button>
                 </div>
@@ -224,7 +225,7 @@
                 <div class="page-header">
                     <div>
                         <h2>Ranking dos Alunos</h2>
-                        <p class="meta-sub">Comparativo de horas estudadas, precisão e sequência de dias.</p>
+                        <p class="meta-sub">Comparativo de horas estudadas, precisÃ£o e sequÃªncia de dias.</p>
                     </div>
                     <button class="btn btn-sm btn-outline" onclick="renderRankingAlunos()">
                         <i class="fas fa-rotate"></i> ATUALIZAR
@@ -246,14 +247,14 @@
             <div id="edital" class="page">
                 <div class="stat-card">
                     <h3>Importar Edital</h3>
-                    <input type="text" id="add-mat" placeholder="Nome da Matéria">
+                    <input type="text" id="add-mat" placeholder="Nome da MatÃ©ria">
                     <div class="import-options">
                         <div>
                             <label for="add-horas">Horas de estudo por assunto</label>
                             <input type="number" id="add-horas" min="0.5" step="0.5" value="1.5">
                         </div>
                         <div>
-                            <label for="add-peso">Peso da matéria no ciclo</label>
+                            <label for="add-peso">Peso da matÃ©ria no ciclo</label>
                             <input type="number" id="add-peso" min="1" max="5" step="1" value="1">
                         </div>
                     </div>
@@ -265,8 +266,8 @@
                 <div class="stat-card ciclo-panel">
                     <div class="cycle-panel-head">
                         <div>
-                            <h3>Matérias em Giro</h3>
-                            <p class="meta-sub">Selecione as matérias que entram no planejamento ativo.</p>
+                            <h3>MatÃ©rias em Giro</h3>
+                            <p class="meta-sub">Selecione as matÃ©rias que entram no planejamento ativo.</p>
                         </div>
                     </div>
                     <div id="check-c"></div>
@@ -274,13 +275,13 @@
                 </div>
             </div>
             <div id="config-h" class="page">
-                <div class="stat-card"><h3>Carga Horária Semanal</h3><div id="grid-h-in"></div><button class="btn" style="width:100%;" onclick="saveH()">SALVAR</button></div>
+                <div class="stat-card"><h3>Carga HorÃ¡ria Semanal</h3><div id="grid-h-in"></div><button class="btn" style="width:100%;" onclick="saveH()">SALVAR</button></div>
             </div>
             <div id="sinalizar" class="page">
                 <div class="page-header">
                     <div>
-                        <h2>Sinalização da Base</h2>
-                        <p class="meta-sub">Marque assuntos já dominados ou traga um assunto de volta para o ciclo inicial.</p>
+                        <h2>SinalizaÃ§Ã£o da Base</h2>
+                        <p class="meta-sub">Marque assuntos jÃ¡ dominados ou traga um assunto de volta para o ciclo inicial.</p>
                     </div>
                 </div>
                 <div id="tree"></div>
@@ -290,8 +291,8 @@
             <div id="replanejar" class="page">
                 <div class="page-header">
                     <div>
-                        <h2>Replanejar Horários</h2>
-                        <p class="meta-sub">Use quando você perdeu o dia e quer recomeçar o planejamento amanhã.</p>
+                        <h2>Replanejar HorÃ¡rios</h2>
+                        <p class="meta-sub">Use quando vocÃª perdeu o dia e quer recomeÃ§ar o planejamento amanhÃ£.</p>
                     </div>
                 </div>
                 <div id="replanejar-content"></div>
@@ -299,8 +300,8 @@
             <div id="lancamentos" class="page">
                 <div class="page-header">
                     <div>
-                        <h2>Base de Lançamentos</h2>
-                        <p class="meta-sub">Atividades marcadas como concluídas no sistema.</p>
+                        <h2>Base de LanÃ§amentos</h2>
+                        <p class="meta-sub">Atividades marcadas como concluÃ­das no sistema.</p>
                     </div>
                 </div>
                 <div id="lancamentos-content"></div>
@@ -308,8 +309,8 @@
             <div id="seguranca" class="page">
                 <div class="page-header">
                     <div>
-                        <h2>Segurança dos Dados</h2>
-                        <p class="meta-sub">Versões, desfazer e exportação do planejamento desta conta.</p>
+                        <h2>SeguranÃ§a dos Dados</h2>
+                        <p class="meta-sub">VersÃµes, desfazer e exportaÃ§Ã£o do planejamento desta conta.</p>
                     </div>
                 </div>
                 <div id="seguranca-content"></div>
@@ -317,8 +318,8 @@
             <div id="diagnostico" class="page">
                 <div class="page-header">
                     <div>
-                        <h2>Diagnóstico do Plano</h2>
-                        <p class="meta-sub">Verificação de inconsistências, carga horária e planejamento.</p>
+                        <h2>DiagnÃ³stico do Plano</h2>
+                        <p class="meta-sub">VerificaÃ§Ã£o de inconsistÃªncias, carga horÃ¡ria e planejamento.</p>
                     </div>
                     <button class="btn btn-sm btn-outline" onclick="renderDiagnosticoPlano()">
                         <i class="fas fa-rotate"></i> ATUALIZAR
@@ -357,16 +358,17 @@
     <script src="study-intelligence.js?v=212-study-intelligence"></script>
     <script src="planner-fix.js?v=195-partial-study"></script>
     <script src="exercise-guard.js?v=193-exercicio-apos-revisao"></script>
-    <script src="logic-polish.js?v=214-logic-layout"></script>
+    <script src="logic-polish.js?v=216-architecture"></script>
+    <script src="platform-core.js?v=216-architecture"></script>
     <script>
         (function forcePlainBrand() {
             function applyBrand() {
-                document.title = 'PLANTÃO';
+                document.title = 'PLANTÃƒO';
                 document.querySelectorAll('.logo-box').forEach(function(el) {
-                    el.innerHTML = '<i class="fas fa-shield-halved"></i> PLANTÃO';
+                    el.innerHTML = '<i class="fas fa-shield-halved"></i> PLANTÃƒO';
                 });
                 document.querySelectorAll('.login-card h2').forEach(function(el) {
-                    el.textContent = 'PLANTÃO';
+                    el.textContent = 'PLANTÃƒO';
                 });
             }
             applyBrand();
@@ -377,4 +379,4 @@
     </script>
 </body>
 </html>
-<!-- deploy: v214-logic-layout -->
+<!-- deploy: v216-architecture -->
