@@ -2,7 +2,7 @@
     if(window.__plantaoProfileNavFix) return;
     window.__plantaoProfileNavFix = true;
 
-    const VERSION = 'v220-profile-nav';
+    const VERSION = 'v222-login-stable';
     let profileRenderPending = false;
 
     function qs(selector, root = document) {
@@ -98,13 +98,6 @@
         wrap('renderPerfil', () => ensureProfile('render-perfil'));
         wrap('ocultarTelaLogin', () => ensureProfile('login'));
 
-        const sidebar = qs('.sidebar');
-        if(sidebar && !sidebar.__plantaoProfileNavObserver) {
-            sidebar.__plantaoProfileNavObserver = true;
-            const observer = new MutationObserver(() => ensureProfile('sidebar-change'));
-            observer.observe(sidebar, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden', 'aria-hidden'] });
-        }
-
         qsa('.nav-item, .sub-link').forEach(item => {
             if(item.dataset.profileNavClickReady) return;
             item.dataset.profileNavClickReady = '1';
@@ -122,4 +115,5 @@
     window.addEventListener('load', () => ensureProfile('load'));
     setTimeout(() => ensureProfile('late-500'), 500);
     setTimeout(() => ensureProfile('late-1500'), 1500);
+    setTimeout(() => ensureProfile('late-3500'), 3500);
 })();
