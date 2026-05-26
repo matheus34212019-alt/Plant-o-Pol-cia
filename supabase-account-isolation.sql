@@ -1,0 +1,129 @@
+-- Account isolation policies for PLANTAO.
+-- Run once in the Supabase SQL Editor after the application tables exist.
+-- The public browser key is safe only while row level security remains enabled.
+
+begin;
+
+create table if not exists public.plantao_user_data (
+    user_id uuid primary key,
+    email text,
+    data jsonb not null default '{}'::jsonb,
+    updated_at timestamptz not null default now()
+);
+
+create table if not exists public.plantao_user_access (
+    email text primary key,
+    user_id uuid,
+    name text,
+    phone text,
+    contest text,
+    age integer,
+    role text not null default 'aluno',
+    status text not null default 'pending',
+    requested_at timestamptz not null default now(),
+    approved_at timestamptz,
+    approved_by text
+);
+
+create table if not exists public.plantao_admin_backups (
+    id uuid primary key default gen_random_uuid(),
+    admin_email text,
+    student_user_id uuid not null,
+    student_email text,
+    before_data jsonb not null,
+    note text,
+    created_at timestamptz not null default now()
+);
+
+alter table public.plantao_user_data enable row level security;
+alter table public.plantao_user_access enable row level security;
+alter table public.plantao_admin_backups enable row level security;
+
+do $$
+declare
+    existing_policy record;
+begin
+    for existing_policy in
+        select tablename, policyname
+        from pg_policies
+        where schemaname = 'public'
+          and tablename in ('plantao_user_data', 'plantao_user_access', 'plantao_admin_backups')
+    loop
+        execute format('drop policy if exists %I on public.%I', existing_policy.policyname, existing_policy.tablename);
+    end loop;
+end $$;
+
+drop policy if exists plantao_user_data_read_own on public.plantao_user_data;
+drop policy if exists plantao_user_data_write_own on public.plantao_user_data;
+drop policy if exists plantao_user_data_admin_all on public.plantao_user_data;
+
+create policy plantao_user_data_read_own
+on public.plantao_user_data
+for select
+to authenticated
+using (auth.uid() = user_id);
+
+create policy plantao_user_data_write_own
+on public.plantao_user_data
+for all
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+create policy plantao_user_data_admin_all
+on public.plantao_user_data
+for all
+to authenticated
+using (lower(coalesce(auth.jwt() ->> 'email', '')) = 'matheus34212019@gmail.com')
+with check (lower(coalesce(auth.jwt() ->> 'email', '')) = 'matheus34212019@gmail.com');
+
+drop policy if exists plantao_access_submit_request on public.plantao_user_access;
+drop policy if exists plantao_access_read_own on public.plantao_user_access;
+drop policy if exists plantao_access_admin_all on public.plantao_user_access;
+
+create policy plantao_access_submit_request
+on public.plantao_user_access
+for insert
+to anon, authenticated
+with check (
+    lower(coalesce(role, 'aluno')) = 'aluno'
+    and lower(coalesce(status, 'pending')) = 'pending'
+    and approved_at is null
+    and approved_by is null
+);
+
+create policy plantao_access_read_own
+on public.plantao_user_access
+for select
+to authenticated
+using (
+    auth.uid() = user_id
+    or lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+);
+
+create policy plantao_access_admin_all
+on public.plantao_user_access
+for all
+to authenticated
+using (lower(coalesce(auth.jwt() ->> 'email', '')) = 'matheus34212019@gmail.com')
+with check (lower(coalesce(auth.jwt() ->> 'email', '')) = 'matheus34212019@gmail.com');
+
+drop policy if exists plantao_admin_backups_admin_all on public.plantao_admin_backups;
+
+create policy plantao_admin_backups_admin_all
+on public.plantao_admin_backups
+for all
+to authenticated
+using (lower(coalesce(auth.jwt() ->> 'email', '')) = 'matheus34212019@gmail.com')
+with check (lower(coalesce(auth.jwt() ->> 'email', '')) = 'matheus34212019@gmail.com');
+
+create index if not exists plantao_user_data_updated_idx
+on public.plantao_user_data (updated_at desc);
+
+create index if not exists plantao_user_access_status_idx
+on public.plantao_user_access (status, requested_at desc);
+
+create index if not exists plantao_admin_backups_student_idx
+on public.plantao_admin_backups (student_user_id, created_at desc);
+
+commit;
