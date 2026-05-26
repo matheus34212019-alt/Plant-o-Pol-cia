@@ -2,7 +2,7 @@
     if(window.__plantaoOverdueReplanFix) return;
     window.__plantaoOverdueReplanFix = true;
 
-    const VERSION = 'v223-overdue-replan';
+    const VERSION = 'v224-atomic-overdue-replan';
     const EPSILON = 0.01;
     const MAX_LOOKAHEAD_DAYS = 540;
 
@@ -25,15 +25,15 @@
     }
 
     function dayKey(date) {
-        const dateKeyFn = fn('dateKey');
-        if(dateKeyFn) return dateKeyFn(date);
+        const local = fn('dateKey');
+        if(local) return local(date);
         const d = new Date(date);
         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
     }
 
     function dateFromKey(key) {
-        const keyToDate = fn('keyToDate');
-        if(keyToDate) return keyToDate(key);
+        const local = fn('keyToDate');
+        if(local) return local(key);
         const [day, month, year] = String(key || '').split('/').map(Number);
         return new Date(year || 2000, Math.max(0, (month || 1) - 1), day || 1);
     }
@@ -44,178 +44,158 @@
         return d;
     }
 
-    function addDays(date, days) {
-        const addDaysFn = fn('addDays');
-        if(addDaysFn) return addDaysFn(date, days);
+    function plusDays(date, days) {
+        const local = fn('addDays');
+        if(local) return local(date, days);
         const next = new Date(date);
         next.setDate(next.getDate() + days);
         return next;
     }
 
     function isExtra(task) {
-        const isExtraTask = fn('isExtraTask');
-        if(isExtraTask) return Boolean(isExtraTask(task));
+        const local = fn('isExtraTask');
+        if(local) return Boolean(local(task));
         return Boolean(task && (task.extra === true || task.l === 'Extra' || task.k === 'Extra'));
-    }
-
-    function planned(tasks) {
-        return (Array.isArray(tasks) ? tasks : []).filter(task => !isExtra(task));
     }
 
     function hours(task) {
         return Math.max(0, Number.parseFloat(task?.h) || 0);
     }
 
-    function roundHours(value) {
+    function rounded(value) {
         return Math.round(Math.max(0, value) * 10) / 10;
     }
 
-    function taskIdentity(task) {
-        return [
-            task?.itemId || task?.id || '',
-            task?.m || '',
-            task?.a || '',
-            task?.k || '',
-            task?.l || ''
-        ].join('|').toLowerCase();
-    }
-
-    function dayLimit(data, date) {
+    function limitForDay(data, date) {
         return Math.max(0, Number.parseFloat(data?.h?.[date.getDay()]) || 0);
     }
 
     function plannedHours(tasks) {
-        return planned(tasks).reduce((sum, task) => sum + hours(task), 0);
-    }
-
-    function ensureDay(data, key) {
-        if(!Array.isArray(data.metaFixa[key])) data.metaFixa[key] = [];
-        return data.metaFixa[key];
-    }
-
-    function preserveOldDay(data, key) {
-        const tasks = Array.isArray(data.metaFixa[key]) ? data.metaFixa[key] : [];
-        const kept = tasks.filter(task => task?.c || isExtra(task));
-        if(kept.length) data.metaFixa[key] = kept;
-        else delete data.metaFixa[key];
-    }
-
-    function existingFutureTask(data, task, today) {
-        const identity = taskIdentity(task);
-        return Object.entries(data.metaFixa || {}).some(([key, tasks]) => {
-            if(startOfDay(key) < today) return false;
-            return planned(tasks).some(candidate => !candidate.c && taskIdentity(candidate) === identity);
-        });
-    }
-
-    function makeMovedTask(task, key, blockHours) {
-        const next = clone(task);
-        next.c = false;
-        next.h = roundHours(blockHours);
-        next.data = key;
-        next.replanejadoDe = task.data || '';
-        next.replanejadoEm = new Date().toISOString();
-        delete next.perf;
-        return next;
-    }
-
-    function addTaskToFuture(data, task, today) {
-        if(existingFutureTask(data, task, today)) return { moved: true, placedHours: hours(task), reused: true };
-        let remaining = roundHours(hours(task));
-        let placedHours = 0;
-
-        for(let offset = 0; remaining > EPSILON && offset <= MAX_LOOKAHEAD_DAYS; offset += 1) {
-            const date = startOfDay(addDays(today, offset));
-            const key = dayKey(date);
-            const limit = dayLimit(data, date);
-            if(limit <= EPSILON) continue;
-            if(Array.isArray(data.diasPausados) && data.diasPausados.includes(key)) continue;
-
-            const tasks = ensureDay(data, key);
-            const free = roundHours(Math.max(0, limit - plannedHours(tasks)));
-            if(free <= EPSILON) continue;
-
-            const block = roundHours(Math.min(free, remaining));
-            if(block <= EPSILON) continue;
-            tasks.push(makeMovedTask(task, key, block));
-            remaining = roundHours(remaining - block);
-            placedHours = roundHours(placedHours + block);
-
-            const lockDay = fn('atualizarPlanoDiaTravado');
-            if(lockDay) {
-                try { lockDay(key); } catch(_) {}
-            }
-        }
-
-        return { moved: remaining <= EPSILON, placedHours, remaining };
+        return (Array.isArray(tasks) ? tasks : [])
+            .filter(task => !isExtra(task))
+            .reduce((sum, task) => sum + hours(task), 0);
     }
 
     function collectOverdue(data, today) {
-        const collector = fn('getAtrasosAteHoje');
-        if(collector) return collector(today).map(row => ({ task: clone(row.task), dia: row.dia }));
-        const out = [];
+        const rows = [];
         Object.entries(data.metaFixa || {}).forEach(([key, tasks]) => {
             if(startOfDay(key) >= today) return;
-            planned(tasks).filter(task => !task.c).forEach(task => out.push({ task: clone(task), dia: key }));
+            (Array.isArray(tasks) ? tasks : []).forEach((task, index) => {
+                if(task && !task.c && !isExtra(task)) rows.push({ id: `${key}-${index}`, day: key, index, task: clone(task) });
+            });
         });
-        return out.sort((a, b) => startOfDay(a.dia) - startOfDay(b.dia));
+        return rows.sort((a, b) => startOfDay(a.day) - startOfDay(b.day) || a.index - b.index);
     }
 
-    function refreshUi(today) {
-        const save = fn('save');
-        const updateDashboard = fn('updateDashboard');
-        const init = fn('init');
-        if(save) save();
-        if(updateDashboard) updateDashboard();
-        if(init) {
-            try { vDate = new Date(today); } catch(_) {}
-            init();
+    function removeOriginal(draft, row) {
+        const tasks = Array.isArray(draft.metaFixa?.[row.day]) ? draft.metaFixa[row.day] : null;
+        const index = tasks ? tasks.findIndex(task => task?.__replanSourceId === row.id) : -1;
+        if(index < 0 || tasks[index].c || isExtra(tasks[index])) return false;
+        tasks.splice(index, 1);
+        if(!tasks.length) delete draft.metaFixa[row.day];
+        return true;
+    }
+
+    function movedTask(task, destination, blockHours, origin) {
+        const next = clone(task);
+        next.c = false;
+        next.h = rounded(blockHours);
+        next.data = destination;
+        next.replanejadoDe = origin;
+        next.replanejadoEm = new Date().toISOString();
+        delete next.perf;
+        delete next.__replanSourceId;
+        return next;
+    }
+
+    function placeEntireTask(draft, row, today) {
+        let remaining = rounded(hours(row.task));
+        const touched = [];
+        for(let offset = 0; remaining > EPSILON && offset <= MAX_LOOKAHEAD_DAYS; offset += 1) {
+            const date = startOfDay(plusDays(today, offset));
+            const key = dayKey(date);
+            const limit = limitForDay(draft, date);
+            if(limit <= EPSILON || (draft.diasPausados || []).includes(key)) continue;
+            const tasks = Array.isArray(draft.metaFixa[key]) ? draft.metaFixa[key] : (draft.metaFixa[key] = []);
+            const available = rounded(Math.max(0, limit - plannedHours(tasks)));
+            if(available <= EPSILON) continue;
+            const block = rounded(Math.min(available, remaining));
+            tasks.push(movedTask(row.task, key, block, row.day));
+            touched.push(key);
+            remaining = rounded(remaining - block);
         }
+        return { complete: remaining <= EPSILON, touched };
     }
 
-    function replanejarAtrasosComRedistribuicao() {
+    function commit(data, draft, touched) {
+        Object.values(draft.metaFixa || {}).forEach(tasks => {
+            (Array.isArray(tasks) ? tasks : []).forEach(task => delete task.__replanSourceId);
+        });
+        data.metaFixa = draft.metaFixa;
+        const lock = fn('atualizarPlanoDiaTravado');
+        if(lock) [...new Set(touched)].forEach(day => {
+            try { lock(day); } catch(_) {}
+        });
+        const save = fn('save');
+        if(save) save();
+        const dashboard = fn('updateDashboard');
+        if(dashboard) dashboard();
+        const init = fn('init');
+        if(init) init();
+    }
+
+    function replanejarAtrasosAtomico() {
         const data = state();
-        if(!data || !data.metaFixa) return;
+        if(!data?.metaFixa) return;
         const today = startOfDay(new Date());
         const overdue = collectOverdue(data, today);
         const toast = fn('showToast');
-
         if(!overdue.length) {
-            if(toast) toast('Sem atrasos', 'Nenhuma pendência antiga foi encontrada para replanejar.');
+            if(toast) toast('Sem atrasos', 'Nenhuma pend\u00eancia antiga foi encontrada.');
             return;
         }
-
         const confirmAction = fn('confirmarAcaoPlano');
-        if(confirmAction && !confirmAction(
-            'Replanejar atrasos',
-            `${overdue.length} atividade(s) pendente(s) serão redistribuídas nos próximos dias.`
-        )) return;
+        if(confirmAction && !confirmAction('Replanejar atrasos', `${overdue.length} atividade(s) pendente(s) ser\u00e3o redistribu\u00eddas.`)) return;
 
-        [...new Set(overdue.map(row => row.dia))].forEach(key => preserveOldDay(data, key));
-
+        let draft = clone(data);
+        overdue.forEach(row => {
+            const task = draft.metaFixa?.[row.day]?.[row.index];
+            if(task) task.__replanSourceId = row.id;
+        });
         let moved = 0;
         let pending = 0;
-        overdue.forEach(({ task, dia }) => {
-            const result = addTaskToFuture(data, { ...task, data: dia }, today);
-            if(result.moved) moved += 1;
-            else pending += 1;
+        const touched = [];
+        overdue.forEach(row => {
+            const candidate = clone(draft);
+            if(!removeOriginal(candidate, row)) {
+                pending += 1;
+                return;
+            }
+            const placement = placeEntireTask(candidate, row, today);
+            if(!placement.complete) {
+                pending += 1;
+                return;
+            }
+            draft = candidate;
+            moved += 1;
+            touched.push(row.day, ...placement.touched);
         });
 
-        refreshUi(today);
-        if(toast) {
-            const text = pending
-                ? `${moved} atividade(s) foram redistribuídas. Ajuste suas horas diárias para encaixar ${pending} pendência(s) restantes.`
-                : 'As pendências antigas foram removidas dos dias atrasados e redistribuídas no cronograma futuro.';
-            toast('Atrasos replanejados', text);
+        if(moved) commit(data, draft, touched);
+        if(!toast) return;
+        if(pending) {
+            toast('Replanejamento conclu\u00eddo', `${moved} atividade(s) movida(s). ${pending} permanecem em atraso por falta de horas livres.`);
+        } else {
+            toast('Replanejamento conclu\u00eddo', 'Todas as pend\u00eancias foram movidas para dias com capacidade.');
         }
     }
 
     function install() {
         const current = fn('replanejarAgora');
         if(!current || current.__plantaoOverdueReplanFix) return false;
-        replanejarAtrasosComRedistribuicao.__plantaoOverdueReplanFix = true;
-        replanejarAtrasosComRedistribuicao.__plantaoOriginal = current;
-        setFn('replanejarAgora', replanejarAtrasosComRedistribuicao);
+        replanejarAtrasosAtomico.__plantaoOverdueReplanFix = true;
+        replanejarAtrasosAtomico.__plantaoOriginal = current;
+        setFn('replanejarAgora', replanejarAtrasosAtomico);
         document.documentElement.dataset.overdueReplan = VERSION;
         return true;
     }
