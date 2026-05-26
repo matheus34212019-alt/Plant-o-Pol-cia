@@ -2,7 +2,7 @@
     if(window.__plantaoRuntimeIntegrityGuard) return;
     window.__plantaoRuntimeIntegrityGuard = true;
 
-    const VERSION = 'v229-runtime-integrity';
+    const VERSION = 'v230-runtime-integrity';
     const SAFE_SYNC_VERSION = 'v229-conditional-revision-save';
     const OWNER_FIELD = '__plantaoOwner';
     const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
@@ -205,6 +205,8 @@
             .btn.btn-outline:hover, button.btn.btn-outline:hover { background: #f8fafc !important; border-color: #94a3b8 !important; color: #0f172a !important; }
             .feedback-box { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; }
             .feedback-box strong, .feedback-box span, .feedback-box p { color: inherit !important; }
+            .login-card .btn.btn-link { background: transparent !important; border: 0 !important; box-shadow: none !important; color: #2563eb !important; min-height: 40px; }
+            .login-card .btn.btn-link:hover { background: #eff6ff !important; color: #1d4ed8 !important; }
         `;
         document.head.appendChild(style);
     }
