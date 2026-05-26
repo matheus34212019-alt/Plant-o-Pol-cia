@@ -114,5 +114,5 @@ test('edicao concorrente preserva a copia local e nao sobrescreve a nuvem', asyn
     assert.equal(runtime.unsafeCalls(), 0);
     assert.equal(runtime.backups.length, 1);
     assert.ok(runtime.localStorage.keys().some(key => key.startsWith('plantao_conflict_copy_v1_')));
-    assert.match(runtime.toasts[0].title, /Atualiza/);
+    assert.match(runtime.toasts[0].title, /Mudan/);
 });
