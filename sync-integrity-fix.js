@@ -228,7 +228,7 @@
                     preserveLocalConflict(data, currentTarget);
                     await createSilentBackup(data, currentTarget, 'Alteracao local preservada por conflito');
                     status('error', 'Altera\u00e7\u00f5es preservadas neste dispositivo');
-                    userMessage('Atualiza\u00e7\u00e3o em outro dispositivo', 'Suas altera\u00e7\u00f5es foram preservadas. Recarregue a p\u00e1gina para sincronizar com seguran\u00e7a.');
+                    userMessage('Mudan\u00e7as recentes detectadas', 'Suas altera\u00e7\u00f5es ficaram preservadas neste aparelho. Atualize a p\u00e1gina antes de continuar.');
                     log('cloud-conflict-preserved-v225', { userId: currentTarget.userId });
                     return;
                 }
@@ -247,7 +247,7 @@
                     preserveLocalConflict(data, currentTarget);
                     await createSilentBackup(data, currentTarget, 'Alteracao local preservada por conflito');
                     status('error', 'Altera\u00e7\u00f5es preservadas neste dispositivo');
-                    userMessage('Atualiza\u00e7\u00e3o em outro dispositivo', 'Suas altera\u00e7\u00f5es foram preservadas. Recarregue a p\u00e1gina para sincronizar com seguran\u00e7a.');
+                    userMessage('Mudan\u00e7as recentes detectadas', 'Suas altera\u00e7\u00f5es ficaram preservadas neste aparelho. Atualize a p\u00e1gina antes de continuar.');
                     log('atomic-conflict-preserved-v225', { userId: currentTarget.userId });
                     return;
                 }
@@ -257,7 +257,7 @@
             } catch(error) {
                 preserveLocalConflict(data, currentTarget);
                 status('error', 'Erro ao salvar');
-                userMessage('N\u00e3o foi poss\u00edvel salvar agora', 'As altera\u00e7\u00f5es continuam preservadas neste dispositivo. Tente novamente quando a conex\u00e3o estiver dispon\u00edvel.');
+                userMessage('Erro ao salvar suas altera\u00e7\u00f5es', 'As altera\u00e7\u00f5es continuam preservadas neste dispositivo. Tente novamente quando a conex\u00e3o estiver dispon\u00edvel.');
                 log('cloud-save-error-v225', { message: String(error?.message || error) });
             }
         }
