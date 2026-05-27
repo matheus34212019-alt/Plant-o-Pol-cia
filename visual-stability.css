@@ -1,4 +1,4 @@
-/* v234 visual stability and readable study surfaces: final style overrides only */
+/* v235 visual stability and readable study surfaces: final style overrides only */
 
 :root {
     --border: #e2e8f0;
@@ -380,6 +380,55 @@ button.btn.btn-outline:hover {
 }
 
 #ciclo .icon-danger-btn:hover {
+    background: #ffe4e6 !important;
+    border-color: #fda4af !important;
+    color: #9f1239 !important;
+}
+
+/* v235: completed launches remain readable on the corporate light surface. */
+#lancamentos .lancamento-row {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+#lancamentos .lancamento-date strong,
+#lancamentos .lancamento-main b,
+#lancamentos .lancamento-hours {
+    color: #0f172a !important;
+}
+
+#lancamentos .lancamento-date span,
+#lancamentos .lancamento-main small {
+    color: #475569 !important;
+}
+
+#lancamentos .tag-ex {
+    background: #ecfdf5 !important;
+    color: #065f46 !important;
+    border: 1px solid #a7f3d0 !important;
+}
+
+#lancamentos .tag-rev {
+    background: #fffbeb !important;
+    color: #92400e !important;
+    border: 1px solid #fde68a !important;
+}
+
+#lancamentos .tag-e {
+    background: #eff6ff !important;
+    color: #1e40af !important;
+    border: 1px solid #bfdbfe !important;
+}
+
+#lancamentos .danger-btn {
+    background: #fff1f2 !important;
+    border-color: #fecdd3 !important;
+    color: #be123c !important;
+}
+
+#lancamentos .danger-btn:hover {
     background: #ffe4e6 !important;
     border-color: #fda4af !important;
     color: #9f1239 !important;
