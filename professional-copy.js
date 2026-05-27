@@ -2,7 +2,7 @@
     if(window.__plantaoProfessionalCopy) return;
     window.__plantaoProfessionalCopy = true;
 
-    const VERSION = 'v231-stable-brand';
+    const VERSION = 'v237-complete-visible-copy';
     const legacyTextRepairs = [
         ['PLANT?O', 'PLANT\u00c3O'],
         ['PLANT\u00c3\u0192O', 'PLANT\u00c3O'],
@@ -51,12 +51,50 @@
         ['permiss?o', 'permiss\u00e3o'],
         ['Sess?o', 'Sess\u00e3o'],
         ['sess?o', 'sess\u00e3o'],
+        ['Seguran?a', 'Seguran\u00e7a'],
+        ['seguran?a', 'seguran\u00e7a'],
+        ['Pol?ticas', 'Pol\u00edticas'],
+        ['pol?ticas', 'pol\u00edticas'],
+        ['Conex?o', 'Conex\u00e3o'],
+        ['conex?o', 'conex\u00e3o'],
+        ['C?digo', 'C\u00f3digo'],
+        ['c?digo', 'c\u00f3digo'],
         ['N?o', 'N\u00e3o'],
         ['n?o', 'n\u00e3o'],
         ['Voc?', 'Voc\u00ea'],
         ['voc?', 'voc\u00ea'],
+        ['j? est?', 'j\u00e1 est\u00e1'],
+        ['s? entra', 's\u00f3 entra'],
+        ['S? entra', 'S\u00f3 entra'],
+        ['C?pia', 'C\u00f3pia'],
+        ['c?pia', 'c\u00f3pia'],
+        ['Tamb?m', 'Tamb\u00e9m'],
+        ['tamb?m', 'tamb\u00e9m'],
+        ['Ser?', 'Ser\u00e1'],
+        ['ser?', 'ser\u00e1'],
+        ['?ltimo', '\u00faltimo'],
+        ['?ltima', '\u00faltima'],
+        ['Pend?ncia', 'Pend\u00eancia'],
+        ['pend?ncia', 'pend\u00eancia'],
+        ['Di?ria', 'Di\u00e1ria'],
+        ['di?ria', 'di\u00e1ria'],
+        ['DI?RIAS', 'DI\u00c1RIAS'],
+        ['Exclu?do', 'Exclu\u00eddo'],
+        ['exclu?do', 'exclu\u00eddo'],
+        ['Exclus?o', 'Exclus\u00e3o'],
+        ['exclus?o', 'exclus\u00e3o'],
         ['Amanh?', 'Amanh\u00e3'],
         ['amanh?', 'amanh\u00e3'],
+        ['Entrar?', 'Entrar\u00e1'],
+        ['entrar?', 'entrar\u00e1'],
+        ['Come?ar', 'Come\u00e7ar'],
+        ['come?ar', 'come\u00e7ar'],
+        ['Parab?ns', 'Parab\u00e9ns'],
+        ['parab?ns', 'parab\u00e9ns'],
+        ['In?cio', 'In\u00edcio'],
+        ['in?cio', 'in\u00edcio'],
+        ['aparecer?o', 'aparecer\u00e3o'],
+        ['aparecer?', 'aparecer\u00e1'],
         ['pr?ximos', 'pr\u00f3ximos'],
         ['pr?ximo', 'pr\u00f3ximo'],
         ['espa?o', 'espa\u00e7o'],
@@ -174,6 +212,13 @@
         document.documentElement.dataset.professionalUi = VERSION;
     }
 
+    function installDialogCopyRepair() {
+        if(window.__plantaoCopyDialogRepair || typeof window.confirm !== 'function') return;
+        const originalConfirm = window.confirm.bind(window);
+        window.confirm = message => originalConfirm(replaceText(String(message || '')));
+        window.__plantaoCopyDialogRepair = true;
+    }
+
     let queued = false;
     const queuedRoots = new Set();
     function scheduleApply(mutations = []) {
@@ -197,6 +242,7 @@
 
     function install() {
         applyCopy();
+        installDialogCopyRepair();
         if(window.__plantaoProfessionalCopyObserver) return;
         const observer = new MutationObserver(scheduleApply);
         observer.observe(document.body, { childList: true, subtree: true, characterData: true });

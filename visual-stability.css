@@ -1,4 +1,4 @@
-/* v236 visual stability and readable study surfaces: final style overrides only */
+/* v238 visual stability and readable study surfaces: final style overrides only */
 
 :root {
     --border: #e2e8f0;
@@ -528,4 +528,252 @@ button.btn.btn-outline:hover {
     #fluxo .subject-flow-row .btn {
         width: 100%;
     }
+}
+
+/* v237: final light-theme coverage for replanning and reviewed subjects. */
+#replanejar .replan-card,
+#replanejar .replan-note {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+#replanejar .replan-card.active {
+    background: #f0fdf4 !important;
+    border-color: #bbf7d0 !important;
+}
+
+#replanejar .replan-icon {
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    box-shadow: none !important;
+}
+
+#replanejar .replan-status {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+#replanejar .replan-status span,
+#replanejar .replan-steps div {
+    color: #475569 !important;
+}
+
+#replanejar .replan-status strong {
+    color: #0f172a !important;
+}
+
+#replanejar .replan-steps i {
+    color: #047857 !important;
+}
+
+#sinalizar .review-panel {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+#sinalizar .review-header {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+#sinalizar .review-header h3,
+#sinalizar .review-row b {
+    color: #0f172a !important;
+}
+
+#sinalizar .review-header p,
+#sinalizar .review-row small,
+#sinalizar .empty-state span {
+    color: #475569 !important;
+}
+
+#sinalizar .review-header span,
+#sinalizar .review-chips span {
+    background: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+    color: #1e40af !important;
+}
+
+#sinalizar .review-row {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+#sinalizar .empty-state,
+#lancamentos .empty-state,
+#fluxo .empty-state,
+#ciclo .empty-state,
+#replanejar .empty-state {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #475569 !important;
+}
+
+#sinalizar .empty-state strong,
+#lancamentos .empty-state strong,
+#fluxo .empty-state strong,
+#ciclo .empty-state strong,
+#replanejar .empty-state strong {
+    color: #0f172a !important;
+}
+
+/* v238: dynamic reporting surfaces are always legible on the light dashboard. */
+#performance .perf-kpi,
+#performance .perf-rank-row,
+#performance .perf-subject-group,
+#performance .perf-question-row,
+#performance .perf-metric,
+#performance .priority-row,
+#ranking .ranking-row,
+#perfil .profile-info-row,
+#perfil .admin-access-row {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+#performance .perf-kpi small,
+#performance .perf-rank-row small,
+#performance .perf-subject-head small,
+#performance .perf-question-row small,
+#performance .priority-row small,
+#perfil .profile-info-row span,
+#perfil .admin-access-row small {
+    color: #475569 !important;
+}
+
+#performance .perf-kpi strong,
+#performance .perf-metric span,
+#performance .perf-metric b,
+#performance .perf-rank-row b,
+#performance .perf-rank-row strong,
+#performance .perf-subject-head b,
+#performance .perf-question-row b,
+#performance .perf-question-row strong,
+#performance .priority-row b,
+#performance .priority-row span,
+#ranking .ranking-row b,
+#ranking .ranking-row strong,
+#perfil .profile-info-row strong,
+#perfil .admin-access-row b {
+    color: #0f172a !important;
+}
+
+#ranking .ranking-row small {
+    color: #475569 !important;
+}
+
+#ranking .ranking-pos {
+    background: #eff6ff !important;
+    border-color: #bfdbfe !important;
+    color: #1d4ed8 !important;
+}
+
+#inteligencia .stat-card,
+#caderno-erros .stat-card,
+#simulados .stat-card,
+#busca-global .stat-card,
+#evolucao .stat-card,
+#inteligencia .study-card-row,
+#caderno-erros .study-card-row,
+#simulados .study-card-row,
+#busca-global .study-card-row,
+#evolucao .study-card-row,
+#evolucao .study-kpi {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+#inteligencia h3,
+#caderno-erros h3,
+#simulados h3,
+#busca-global h3,
+#evolucao h3,
+#inteligencia .study-row b,
+#caderno-erros .study-row b,
+#simulados .study-row b,
+#busca-global .study-row b,
+#evolucao .study-kpi strong,
+#evolucao .study-month-sim b {
+    color: #0f172a !important;
+}
+
+#inteligencia .study-row small,
+#caderno-erros .study-row small,
+#simulados .study-row small,
+#busca-global .study-row small,
+#evolucao .study-kpi small,
+#evolucao .study-month-sim span,
+#evolucao .study-calendar-empty,
+#evolucao .study-month-legend,
+#evolucao .study-bar-row small {
+    color: #475569 !important;
+}
+
+#evolucao .study-bar-row strong,
+#inteligencia .study-admin-table b {
+    color: #0f172a !important;
+}
+
+#evolucao .study-month-cell,
+body #evolucao .study-month-cell {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+#evolucao .study-month-cell.has-study,
+body #evolucao .study-month-cell.has-study {
+    background: #eff6ff !important;
+    border-color: #bfdbfe !important;
+}
+
+#evolucao .study-month-day,
+#evolucao .study-month-metric b {
+    color: #0f172a !important;
+}
+
+#evolucao .study-month-metric span {
+    color: #1d4ed8 !important;
+}
+
+#inteligencia .study-alert.ok strong {
+    color: #166534 !important;
+}
+
+#inteligencia .study-alert.warn strong {
+    color: #92400e !important;
+}
+
+#inteligencia .study-alert.danger strong {
+    color: #991b1b !important;
+}
+
+#inteligencia .study-alert.info strong {
+    color: #1d4ed8 !important;
+}
+
+#performance .empty-state,
+#ranking .empty-state,
+#perfil .empty-state,
+#inteligencia .empty-state,
+#caderno-erros .empty-state,
+#simulados .empty-state,
+#busca-global .empty-state,
+#evolucao .empty-state {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #475569 !important;
+}
+
+#performance .empty-state strong,
+#ranking .empty-state strong,
+#perfil .empty-state strong,
+#inteligencia .empty-state strong,
+#caderno-erros .empty-state strong,
+#simulados .empty-state strong,
+#busca-global .empty-state strong,
+#evolucao .empty-state strong {
+    color: #0f172a !important;
 }

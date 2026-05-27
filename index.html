@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="layout-polish.css?v=216-architecture">
     <link rel="stylesheet" href="platform-ui.css?v=217-stability">
     <link rel="stylesheet" href="professional-theme.css?v=227-corporate-readability">
-    <link rel="stylesheet" href="visual-stability.css?v=236-readable-flow-surfaces">
+    <link rel="stylesheet" href="visual-stability.css?v=238-readable-dynamic-surfaces">
 </head>
 <body>
     <div id="login-screen">
@@ -155,8 +155,6 @@
             <div class="sub-link" onclick="showTab('fluxo')">Ajustar Fluxos</div>
             <div class="sub-link" onclick="showTab('replanejar')">Replanejar Horários</div>
             <div class="sub-link" onclick="showTab('lancamentos')">Lançamentos</div>
-            <div class="sub-link" onclick="showTab('seguranca')">Segurança</div>
-            <div class="sub-link" onclick="showTab('diagnostico')">Diagnóstico</div>
         </div>
     </aside>
 
@@ -317,27 +315,6 @@
                 </div>
                 <div id="lancamentos-content"></div>
             </div>
-            <div id="seguranca" class="page">
-                <div class="page-header">
-                    <div>
-                        <h2>Segurança dos Dados</h2>
-                        <p class="meta-sub">Versões, desfazer e exportação do planejamento desta conta.</p>
-                    </div>
-                </div>
-                <div id="seguranca-content"></div>
-            </div>
-            <div id="diagnostico" class="page">
-                <div class="page-header">
-                    <div>
-                        <h2>Diagnóstico do Plano</h2>
-                        <p class="meta-sub">Verificação de inconsistências, carga horária e planejamento.</p>
-                    </div>
-                    <button class="btn btn-sm btn-outline" onclick="renderDiagnosticoPlano()">
-                        <i class="fas fa-rotate"></i> ATUALIZAR
-                    </button>
-                </div>
-                <div id="diagnostico-content"></div>
-            </div>
         </div>
     </main>
     <script>
@@ -381,7 +358,7 @@
     <script src="integrity-ui-fix.js?v=224b-integrity-ui"></script>
 <script src="sync-integrity-fix.js?v=225b-revision-safe-save"></script>
 <script src="account-recovery-fix.js?v=232-own-account-session-restore"></script>
-<script src="professional-copy.js?v=231-stable-brand"></script>
+<script src="professional-copy.js?v=237-complete-visible-copy"></script>
     <script>
         (function forcePlainBrand() {
             function applyBrand() {
@@ -401,4 +378,4 @@
     </script>
 </body>
 </html>
-<!-- deploy: v236-readable-flow-surfaces -->
+<!-- deploy: v238-readable-dynamic-surfaces -->
