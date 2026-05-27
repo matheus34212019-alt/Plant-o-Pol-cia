@@ -1,4 +1,4 @@
-/* v228 visual stability: final style overrides only */
+/* v233 visual stability and readable study surfaces: final style overrides only */
 
 :root {
     --border: #e2e8f0;
@@ -190,4 +190,117 @@ body .study-month-cell {
         min-height: 54px;
         flex-basis: 54px;
     }
+}
+
+/* v233: readable light-theme surfaces for study base and smart queue. */
+#sinalizar .base-summary-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+#sinalizar .base-summary-card small {
+    color: #475569 !important;
+}
+
+#sinalizar .base-summary-card strong {
+    color: #0f172a !important;
+}
+
+#sinalizar .base-summary-card.accent {
+    background: #eff6ff !important;
+    border-color: #bfdbfe !important;
+}
+
+#sinalizar .base-summary-card.accent strong {
+    color: #1d4ed8 !important;
+}
+
+#sinalizar .base-folder,
+#sinalizar .folder-content,
+#sinalizar .sinal-row {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+#sinalizar .folder-header,
+#sinalizar .folder-actions {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+#sinalizar .folder-title b,
+#sinalizar .sinal-info span {
+    color: #0f172a !important;
+}
+
+#sinalizar .folder-title small,
+#sinalizar .sinal-info small {
+    color: #475569 !important;
+}
+
+#sinalizar .folder-progress span {
+    color: #1d4ed8 !important;
+}
+
+#sinalizar .sinal-row.done {
+    background: #f0fdf4 !important;
+}
+
+#sinalizar .sinal-row.done .sinal-info small {
+    color: #166534 !important;
+}
+
+.study-row b,
+.study-row strong {
+    color: #0f172a !important;
+}
+
+.study-row small,
+.study-note,
+.study-muted {
+    color: #475569 !important;
+}
+
+.study-score {
+    color: #2563eb !important;
+}
+
+.study-chip {
+    background: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+    color: #1e40af !important;
+}
+
+.study-chip.warn {
+    background: #fffbeb !important;
+    border-color: #fcd34d !important;
+    color: #92400e !important;
+}
+
+.study-chip.danger {
+    background: #fef2f2 !important;
+    border-color: #fecaca !important;
+    color: #991b1b !important;
+}
+
+.study-inline-status {
+    color: #1d4ed8 !important;
+}
+
+.study-alert.ok strong {
+    color: #166534 !important;
+}
+
+.study-alert.warn strong {
+    color: #92400e !important;
+}
+
+.study-alert.danger strong {
+    color: #991b1b !important;
+}
+
+.study-alert.info strong {
+    color: #1d4ed8 !important;
 }
