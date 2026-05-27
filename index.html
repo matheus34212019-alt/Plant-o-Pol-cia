@@ -338,12 +338,12 @@
             setTimeout(window.__plantaoLoadSupabaseFallback, 3500);
         })();
     </script>
-<script src="supabase-config.js?v=213-security-time"></script>
+<script src="supabase-config.js?v=239-private-owner"></script>
     <script src="account-isolation-fix.js?v=208-contas"></script>
 <script src="readable-login-guard.js?v=210-login-normal"></script>
     <script src="subtle-system-guard.js?v=211-subtle-system"></script>
-    <script src="script.js?v=213-security-time"></script>
-<script src="runtime-integrity-guard.js?v=231-runtime-integrity"></script>
+    <script src="script.js?v=239-private-surface"></script>
+<script src="runtime-integrity-guard.js?v=239-stable-brand-runtime"></script>
 <script src="study-intelligence.js?v=212-study-intelligence"></script>
     <script src="evolution-calendar.js?v=218-month-calendar"></script>
     <script src="hours-persistence-fix.js?v=224-safe-hours-save"></script>
@@ -351,31 +351,32 @@
     <script src="exercise-guard.js?v=193-exercicio-apos-revisao"></script>
     <script src="schedule-hardening.js?v=224-secure-timer"></script>
     <script src="logic-polish.js?v=217-stability"></script>
-    <script src="platform-core.js?v=217-stability"></script>
+    <script src="platform-core.js?v=239-stable-brand"></script>
     <script src="profile-nav-fix.js?v=222-login-stable"></script>
     <script src="overdue-replan-fix.js?v=224-atomic-overdue-replan"></script>
     <script src="history-preservation-fix.js?v=224-independent-history"></script>
-    <script src="integrity-ui-fix.js?v=224b-integrity-ui"></script>
+    <script src="integrity-ui-fix.js?v=239-private-ui-actions"></script>
 <script src="sync-integrity-fix.js?v=225b-revision-safe-save"></script>
 <script src="account-recovery-fix.js?v=232-own-account-session-restore"></script>
 <script src="professional-copy.js?v=237-complete-visible-copy"></script>
+<script src="final-system-review.js?v=240-final-system-review"></script>
     <script>
-        (function forcePlainBrand() {
+        (function preservePlainBrand() {
             function applyBrand() {
                 document.title = 'PLANTÃO';
                 document.querySelectorAll('.logo-box').forEach(function(el) {
-                    el.innerHTML = '<i class="fas fa-shield-halved"></i> PLANTÃO';
+                    if(!el.querySelector('.fa-shield-halved') || el.textContent.trim() !== 'PLANTÃO') {
+                        el.innerHTML = '<i class="fas fa-shield-halved"></i> PLANTÃO';
+                    }
                 });
                 document.querySelectorAll('.login-card h2').forEach(function(el) {
-                    el.textContent = 'PLANTÃO';
+                    if(el.textContent.trim() !== 'PLANTÃO') el.textContent = 'PLANTÃO';
                 });
             }
             applyBrand();
-            window.addEventListener('load', applyBrand);
-            setTimeout(applyBrand, 500);
-            setTimeout(applyBrand, 1500);
+            window.addEventListener('load', applyBrand, { once: true });
         })();
     </script>
 </body>
 </html>
-<!-- deploy: v238-readable-dynamic-surfaces -->
+<!-- deploy: v239-complete-system-review -->
