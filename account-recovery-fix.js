@@ -117,7 +117,7 @@
     async function recoverOwnData() {
         const client = value('supabaseClient', null);
         const currentTarget = target();
-        if(!client || !currentTarget?.userId || !needsRecovery(state())) return false;
+        if(!client || !currentTarget?.userId || value('dadosSupabaseCarregados', false) === false || !needsRecovery(state())) return false;
         const fromBackup = await bestOwnBackup(client, currentTarget);
         const restored = fromBackup || await bestLegacyMainRecord(client, currentTarget);
         if(!restored || !setState(restored)) return false;
@@ -144,9 +144,20 @@
         return true;
     }
 
-    if(!install()) {
+    function retryLoadedSessionRecovery() {
+        [400, 1200, 3000, 7000].forEach(delay => {
+            setTimeout(() => recoverOwnData(), delay);
+        });
+    }
+
+    if(install()) {
+        retryLoadedSessionRecovery();
+    } else {
         const timer = setInterval(() => {
-            if(install()) clearInterval(timer);
+            if(install()) {
+                clearInterval(timer);
+                retryLoadedSessionRecovery();
+            }
         }, 120);
         setTimeout(() => clearInterval(timer), 12000);
     }
