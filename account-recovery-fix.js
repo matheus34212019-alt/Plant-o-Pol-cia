@@ -2,7 +2,7 @@
     if(window.__plantaoOwnAccountRecovery) return;
     window.__plantaoOwnAccountRecovery = true;
 
-    const VERSION = 'v231-own-account-restore';
+    const VERSION = 'v232-own-account-session-restore';
     const OWNER_FIELD = '__plantaoOwner';
     const WRAPPED = '__plantaoOwnAccountRecoveryWrapped';
 
