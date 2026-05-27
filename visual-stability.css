@@ -1,4 +1,4 @@
-/* v233 visual stability and readable study surfaces: final style overrides only */
+/* v234 visual stability and readable study surfaces: final style overrides only */
 
 :root {
     --border: #e2e8f0;
@@ -25,6 +25,10 @@
     transition: none !important;
     animation: none !important;
     transform: none !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    color: #0f172a !important;
 }
 
 .logo-box i {
@@ -184,6 +188,32 @@ body .study-month-cell {
     color: inherit !important;
 }
 
+.btn.btn-outline,
+button.btn.btn-outline {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+}
+
+.btn.btn-outline:hover,
+button.btn.btn-outline:hover {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+}
+
+.feedback-box {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+.feedback-box strong,
+.feedback-box span,
+.feedback-box p {
+    color: inherit !important;
+}
+
 @media (max-width: 900px) {
     .logo-box {
         height: 54px;
@@ -303,4 +333,54 @@ body .study-month-cell {
 
 .study-alert.info strong {
     color: #1d4ed8 !important;
+}
+
+/* v234: cycle selection uses the same readable light palette. */
+#ciclo .ciclo-row {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+#ciclo .ciclo-row.active {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+
+#ciclo .ciclo-info b {
+    color: #0f172a !important;
+}
+
+#ciclo .ciclo-info small {
+    color: #475569 !important;
+}
+
+#ciclo .cycle-badges span {
+    background: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+    color: #1e40af !important;
+}
+
+#ciclo .ciclo-row.active .cycle-badges span:last-child {
+    background: #ecfdf5 !important;
+    border-color: #bbf7d0 !important;
+    color: #166534 !important;
+}
+
+#ciclo .ciclo-row:not(.active) .cycle-badges span:last-child {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+}
+
+#ciclo .icon-danger-btn {
+    background: #fff1f2 !important;
+    border: 1px solid #fecdd3 !important;
+    color: #be123c !important;
+}
+
+#ciclo .icon-danger-btn:hover {
+    background: #ffe4e6 !important;
+    border-color: #fda4af !important;
+    color: #9f1239 !important;
 }
