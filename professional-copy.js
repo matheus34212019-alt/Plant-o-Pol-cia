@@ -2,7 +2,7 @@
     if(window.__plantaoProfessionalCopy) return;
     window.__plantaoProfessionalCopy = true;
 
-    const VERSION = 'v227-corporate-readability';
+    const VERSION = 'v231-stable-brand';
     const legacyTextRepairs = [
         ['PLANT?O', 'PLANT\u00c3O'],
         ['PLANT\u00c3\u0192O', 'PLANT\u00c3O'],
@@ -152,30 +152,46 @@
         return parent && !parent.closest('script, style, textarea, input, [data-preserve-copy="true"]');
     }
 
+    function applyTextNode(node) {
+        if(!node || !isDisplayNode(node)) return;
+        const next = replaceText(node.nodeValue);
+        if(next !== node.nodeValue) node.nodeValue = next;
+    }
+
     function applyCopy(root = document.body) {
         if(!root) return;
-        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-        const nodes = [];
-        while(walker.nextNode()) nodes.push(walker.currentNode);
-        nodes.filter(isDisplayNode).forEach(node => {
-            const next = replaceText(node.nodeValue);
-            if(next !== node.nodeValue) node.nodeValue = next;
-        });
+        if(root.nodeType === Node.TEXT_NODE) {
+            applyTextNode(root);
+        } else {
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+            while(walker.nextNode()) applyTextNode(walker.currentNode);
+        }
 
         const logoIcon = document.querySelector('.logo-box i');
-        if(logoIcon) logoIcon.className = 'fas fa-graduation-cap';
+        if(logoIcon) logoIcon.className = 'fas fa-shield-halved';
         const sequenceIcon = document.querySelector('#streak-info i');
         if(sequenceIcon) sequenceIcon.className = 'fas fa-calendar-check';
         document.documentElement.dataset.professionalUi = VERSION;
     }
 
     let queued = false;
-    function scheduleApply() {
+    const queuedRoots = new Set();
+    function scheduleApply(mutations = []) {
+        mutations.forEach(mutation => {
+            if(mutation.type === 'characterData') {
+                queuedRoots.add(mutation.target);
+                return;
+            }
+            mutation.addedNodes.forEach(node => queuedRoots.add(node));
+        });
+        if(!queuedRoots.size) queuedRoots.add(document.body);
         if(queued) return;
         queued = true;
         requestAnimationFrame(() => {
             queued = false;
-            applyCopy();
+            const roots = [...queuedRoots];
+            queuedRoots.clear();
+            roots.forEach(applyCopy);
         });
     }
 
