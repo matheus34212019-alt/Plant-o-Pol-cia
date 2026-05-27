@@ -140,7 +140,7 @@
     <div id="toast-area" class="toast-area"></div>
 
     <aside class="sidebar">
-        <div class="logo-box"><i class="fas fa-graduation-cap"></i> PLANTÃO</div>
+        <div class="logo-box"><i class="fas fa-shield-halved"></i> PLANTÃO</div>
         <div class="nav-item active" onclick="showTab('diaria', this)"><i class="fas fa-calendar-day"></i><span>Painel Hoje</span></div>
         <div class="nav-item" onclick="showTab('semanal', this)"><i class="fas fa-calendar-week"></i><span>Cronograma</span></div>
         <div class="nav-item" onclick="showTab('performance', this)"><i class="fas fa-chart-pie"></i><span>Meu Desempenho</span></div>
@@ -361,13 +361,13 @@
             setTimeout(window.__plantaoLoadSupabaseFallback, 3500);
         })();
     </script>
-    <script src="supabase-config.js?v=213-security-time"></script>
+<script src="supabase-config.js?v=213-security-time"></script>
     <script src="account-isolation-fix.js?v=208-contas"></script>
-    <script src="readable-login-guard.js?v=210-login-normal"></script>
+<script src="readable-login-guard.js?v=210-login-normal"></script>
     <script src="subtle-system-guard.js?v=211-subtle-system"></script>
     <script src="script.js?v=213-security-time"></script>
-    <script src="runtime-integrity-guard.js?v=230-runtime-integrity"></script>
-    <script src="study-intelligence.js?v=212-study-intelligence"></script>
+<script src="runtime-integrity-guard.js?v=231-runtime-integrity"></script>
+<script src="study-intelligence.js?v=212-study-intelligence"></script>
     <script src="evolution-calendar.js?v=218-month-calendar"></script>
     <script src="hours-persistence-fix.js?v=224-safe-hours-save"></script>
     <script src="planner-fix.js?v=195-partial-study"></script>
@@ -379,14 +379,15 @@
     <script src="overdue-replan-fix.js?v=224-atomic-overdue-replan"></script>
     <script src="history-preservation-fix.js?v=224-independent-history"></script>
     <script src="integrity-ui-fix.js?v=224b-integrity-ui"></script>
-    <script src="sync-integrity-fix.js?v=225b-revision-safe-save"></script>
-    <script src="professional-copy.js?v=227-corporate-readability"></script>
+<script src="sync-integrity-fix.js?v=225b-revision-safe-save"></script>
+<script src="account-recovery-fix.js?v=231-own-account-restore"></script>
+<script src="professional-copy.js?v=231-stable-brand"></script>
     <script>
         (function forcePlainBrand() {
             function applyBrand() {
                 document.title = 'PLANTÃO';
                 document.querySelectorAll('.logo-box').forEach(function(el) {
-                    el.innerHTML = '<i class="fas fa-graduation-cap"></i> PLANTÃO';
+                    el.innerHTML = '<i class="fas fa-shield-halved"></i> PLANTÃO';
                 });
                 document.querySelectorAll('.login-card h2').forEach(function(el) {
                     el.textContent = 'PLANTÃO';
@@ -400,4 +401,4 @@
     </script>
 </body>
 </html>
-<!-- deploy: v230-runtime-integrity -->
+<!-- deploy: v231-own-account-stable-brand -->
