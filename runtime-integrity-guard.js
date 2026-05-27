@@ -2,7 +2,7 @@
     if(window.__plantaoRuntimeIntegrityGuard) return;
     window.__plantaoRuntimeIntegrityGuard = true;
 
-    const VERSION = 'v230-runtime-integrity';
+    const VERSION = 'v231-runtime-integrity';
     const SAFE_SYNC_VERSION = 'v229-conditional-revision-save';
     const OWNER_FIELD = '__plantaoOwner';
     const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
@@ -200,7 +200,8 @@
         const style = document.createElement('style');
         style.id = 'plantao-v229-visual-patch';
         style.textContent = `
-            .logo-box { background: transparent !important; border-color: transparent !important; box-shadow: none !important; color: #0f172a !important; }
+            .logo-box { min-height: 64px; display: flex !important; align-items: center !important; background: transparent !important; border-color: transparent !important; box-shadow: none !important; color: #0f172a !important; }
+            .logo-box i { width: 48px !important; height: 48px !important; flex: 0 0 48px !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; transition: none !important; }
             .btn.btn-outline, button.btn.btn-outline { background: #fff !important; border-color: #cbd5e1 !important; color: #334155 !important; }
             .btn.btn-outline:hover, button.btn.btn-outline:hover { background: #f8fafc !important; border-color: #94a3b8 !important; color: #0f172a !important; }
             .feedback-box { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; }
