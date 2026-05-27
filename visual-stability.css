@@ -1,4 +1,4 @@
-/* v235 visual stability and readable study surfaces: final style overrides only */
+/* v236 visual stability and readable study surfaces: final style overrides only */
 
 :root {
     --border: #e2e8f0;
@@ -432,4 +432,100 @@ button.btn.btn-outline:hover {
     background: #ffe4e6 !important;
     border-color: #fda4af !important;
     color: #9f1239 !important;
+}
+
+/* v236: adjustable study flows keep the same readable corporate surface. */
+#fluxo .flow-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    padding: 0 !important;
+}
+
+#fluxo .flow-toggle-head {
+    padding: 20px 24px !important;
+    background: #ffffff !important;
+    transition: background-color 140ms ease !important;
+}
+
+#fluxo .flow-toggle-head:hover {
+    background: #f8fafc !important;
+}
+
+#fluxo .flow-info b,
+#fluxo .subject-flow-row b {
+    color: #0f172a !important;
+}
+
+#fluxo .flow-info small,
+#fluxo .subject-flow-row small,
+#fluxo .subject-flow-row label,
+#fluxo .subject-flow-head {
+    color: #475569 !important;
+}
+
+#fluxo .flow-expand-btn {
+    background: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+    color: #1d4ed8 !important;
+}
+
+#fluxo .flow-expand-btn:hover {
+    background: #dbeafe !important;
+    border-color: #93c5fd !important;
+}
+
+#fluxo .flow-body {
+    margin-top: 0 !important;
+    padding: 0 24px 22px !important;
+}
+
+#fluxo .flow-row-inner,
+#fluxo .subject-flow-list {
+    border-color: #e2e8f0 !important;
+}
+
+#fluxo .subject-flow-head {
+    padding: 2px 0 6px;
+}
+
+#fluxo .subject-flow-row {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+#fluxo .subject-flow-row:hover {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+
+#fluxo input {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+#fluxo input:focus-visible {
+    border-color: #2563eb !important;
+    outline: 2px solid rgba(37, 99, 235, 0.18) !important;
+}
+
+@media (max-width: 900px) {
+    #fluxo .flow-toggle-head {
+        padding: 16px !important;
+    }
+
+    #fluxo .flow-body {
+        padding: 0 16px 16px !important;
+    }
+
+    #fluxo .flow-row-inner {
+        gap: 14px;
+    }
+
+    #fluxo .subject-flow-row .btn {
+        width: 100%;
+    }
 }
