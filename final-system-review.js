@@ -2,7 +2,7 @@
     if(window.__plantaoFinalSystemReview) return;
     window.__plantaoFinalSystemReview = true;
 
-    const VERSION = 'v240-final-system-review';
+    const VERSION = 'v241-final-system-review';
     const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
     const adminActionTargets = new Map();
     let adminActionRevision = 0;
@@ -102,6 +102,82 @@
             .logo-box, .logo-box * { transition: none !important; animation: none !important; }
             [onclick*="seguranca"], [onclick*="diagnostico"], [data-safety-link] { display: none !important; }
             #seguranca, #diagnostico { display: none !important; }
+            .stat-card,
+            .study-kpi,
+            .study-alert,
+            .ranking-card,
+            .perf-subject-group,
+            .subject-flow-row,
+            .lancamento-row,
+            .profile-main-card,
+            .profile-info-card,
+            .profile-actions-card,
+            .backup-card,
+            .backup-summary,
+            .admin-access-card,
+            .admin-access-row,
+            .replan-card,
+            .replan-note {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                border-color: #e2e8f0 !important;
+                box-shadow: 0 1px 2px rgba(15, 23, 42, .05) !important;
+            }
+            .stat-card h1,
+            .stat-card h2,
+            .stat-card h3,
+            .stat-card h4,
+            .stat-card b,
+            .stat-card strong,
+            .study-kpi strong,
+            .ranking-card b,
+            .perf-subject-group b,
+            .subject-flow-row b,
+            .lancamento-main b,
+            .profile-main-card strong,
+            .profile-info-card strong,
+            .admin-access-row b {
+                color: #0f172a !important;
+                opacity: 1 !important;
+            }
+            .stat-card p,
+            .stat-card small,
+            .stat-card label,
+            .study-kpi span,
+            .ranking-card small,
+            .perf-subject-group small,
+            .subject-flow-row small,
+            .lancamento-main small,
+            .profile-main-card span,
+            .profile-info-card span,
+            .admin-access-row small {
+                color: #475569 !important;
+                opacity: 1 !important;
+            }
+            .tag,
+            .badge,
+            .access-pill,
+            .chip,
+            .mini-badge {
+                color: #1e3a8a !important;
+                background: #eff6ff !important;
+                border-color: #bfdbfe !important;
+                opacity: 1 !important;
+            }
+            .danger-btn,
+            .tag-atrasado,
+            .badge-danger {
+                color: #991b1b !important;
+                background: #fef2f2 !important;
+                border-color: #fecaca !important;
+            }
+            .success,
+            .tag-ex,
+            .badge-success {
+                color: #065f46 !important;
+                background: #ecfdf5 !important;
+                border-color: #a7f3d0 !important;
+            }
             @media (max-width: 900px) {
                 .logo-box {
                     width: 216px !important;
@@ -113,6 +189,70 @@
             }
         `;
         document.head.appendChild(style);
+    }
+
+    function parseRgb(color) {
+        const match = String(color || '').match(/rgba?\(([^)]+)\)/i);
+        if(!match) return null;
+        const parts = match[1].split(',').map(part => parseFloat(part.trim()));
+        if(parts.length < 3 || parts.some((value, index) => index < 3 && Number.isNaN(value))) return null;
+        const alpha = parts.length >= 4 && !Number.isNaN(parts[3]) ? parts[3] : 1;
+        return { r: parts[0], g: parts[1], b: parts[2], a: alpha };
+    }
+
+    function relativeLuminance({ r, g, b }) {
+        const transform = value => {
+            const channel = Math.max(0, Math.min(255, value)) / 255;
+            return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+        };
+        return 0.2126 * transform(r) + 0.7152 * transform(g) + 0.0722 * transform(b);
+    }
+
+    function contrastRatio(foreground, background) {
+        const light = Math.max(relativeLuminance(foreground), relativeLuminance(background));
+        const dark = Math.min(relativeLuminance(foreground), relativeLuminance(background));
+        return (light + 0.05) / (dark + 0.05);
+    }
+
+    function effectiveBackground(el) {
+        let current = el;
+        while(current && current.nodeType === 1) {
+            const bg = parseRgb(getComputedStyle(current).backgroundColor);
+            if(bg && bg.a > 0.05) return bg;
+            current = current.parentElement;
+        }
+        return { r: 255, g: 255, b: 255, a: 1 };
+    }
+
+    function hasOwnReadableText(el) {
+        return Array.from(el.childNodes || []).some(node => node.nodeType === Node.TEXT_NODE && node.nodeValue.trim().length > 0);
+    }
+
+    function fixLowContrastText(root = document) {
+        const source = root.nodeType === 1 ? root : document.body;
+        if(!source) return;
+        const ignored = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'SVG', 'PATH', 'CANVAS', 'OPTION']);
+        const nodes = source === document.body
+            ? Array.from(document.body.querySelectorAll('*'))
+            : [source, ...Array.from(source.querySelectorAll?.('*') || [])];
+        let checked = 0;
+        for(const el of nodes) {
+            if(checked > 2600) break;
+            if(!el || ignored.has(el.tagName) || !hasOwnReadableText(el)) continue;
+            const rects = el.getClientRects?.();
+            if(!rects || rects.length === 0) continue;
+            checked += 1;
+            const styles = getComputedStyle(el);
+            const color = parseRgb(styles.color);
+            if(!color || color.a < 0.25) continue;
+            const bg = effectiveBackground(el);
+            const ratio = contrastRatio(color, bg);
+            if(ratio >= 4.2 && Number(styles.opacity || 1) >= 0.78) continue;
+            const bgIsLight = relativeLuminance(bg) > 0.45;
+            const isMeta = ['SMALL', 'LABEL'].includes(el.tagName) || el.className.toString().match(/meta|muted|sub|hint|desc|label/i);
+            el.style.color = bgIsLight ? (isMeta ? '#475569' : '#0f172a') : '#f8fafc';
+            if(Number(styles.opacity || 1) < 0.78) el.style.opacity = '1';
+        }
     }
 
     function stabilizeBrand(root = document) {
@@ -321,6 +461,7 @@
             stabilizeBrand();
             hideInternalUi();
             scrubEmails();
+            fixLowContrastText();
             document.documentElement.dataset.finalSystemReview = VERSION;
         });
     }
