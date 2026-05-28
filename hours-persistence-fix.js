@@ -85,32 +85,48 @@
     document.head.appendChild(script);
 })();
 
-(function plantaoStrictAccountGuardLoader() {
-    if(window.__plantaoStrictAccountGuardLoader) return;
-    window.__plantaoStrictAccountGuardLoader = true;
-    if(window.__plantaoStrictAccountGuardRequested) return;
-    const script = document.createElement('script');
-    script.src = 'account-strict-guard.js?v=247-login-unlock';
-    script.defer = true;
-    document.head.appendChild(script);
-})();
+(function plantaoAccountSafetyOrderedLoader() {
+    if(window.__plantaoAccountSafetyOrderedLoader) return;
+    window.__plantaoAccountSafetyOrderedLoader = true;
 
-(function plantaoAccountRowBootstrapLoader() {
-    if(window.__plantaoAccountRowBootstrapLoader) return;
-    window.__plantaoAccountRowBootstrapLoader = true;
-    if(window.__plantaoAccountRowBootstrapFix) return;
-    const script = document.createElement('script');
-    script.src = 'account-row-bootstrap-fix.js?v=247-login-unlock-bootstrap';
-    script.defer = true;
-    document.head.appendChild(script);
-})();
+    const queue = [
+        {
+            src: 'account-strict-guard.js?v=247-login-unlock',
+            loaded: () => window.__plantaoStrictAccountGuard
+        },
+        {
+            src: 'account-row-bootstrap-fix.js?v=247-login-unlock-bootstrap',
+            loaded: () => window.__plantaoAccountRowBootstrapFix
+        },
+        {
+            src: 'login-unlock-fix.js?v=247-login-unlock',
+            loaded: () => window.__plantaoLoginUnlockFix
+        }
+    ];
 
-(function plantaoLoginUnlockLoader() {
-    if(window.__plantaoLoginUnlockLoader) return;
-    window.__plantaoLoginUnlockLoader = true;
-    if(window.__plantaoLoginUnlockFix) return;
-    const script = document.createElement('script');
-    script.src = 'login-unlock-fix.js?v=247-login-unlock';
-    script.defer = true;
-    document.head.appendChild(script);
+    function loadNext(index) {
+        const item = queue[index];
+        if(!item) return;
+        if(item.loaded()) {
+            loadNext(index + 1);
+            return;
+        }
+
+        const existing = Array.from(document.scripts || [])
+            .find(script => (script.src || '').includes(item.src.split('?')[0]));
+        if(existing) {
+            existing.addEventListener('load', () => loadNext(index + 1), { once: true });
+            setTimeout(() => loadNext(index + 1), 900);
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = item.src;
+        script.async = false;
+        script.onload = () => loadNext(index + 1);
+        script.onerror = () => loadNext(index + 1);
+        document.head.appendChild(script);
+    }
+
+    loadNext(0);
 })();
