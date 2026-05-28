@@ -2,7 +2,7 @@
     if(window.__plantaoStrictAccountGuardRequested) return;
     window.__plantaoStrictAccountGuardRequested = true;
 
-    const VERSION = 'v243-strict-account-supabase';
+    const VERSION = 'v245-own-remote-row';
     const OWNER_FIELD = '__plantaoOwner';
     const WRAPPED = '__plantaoStrictAccountGuardWrapped';
     const QUARANTINE_PREFIX = 'plantao_quarantined_foreign_data_v1_';
@@ -64,6 +64,10 @@
             h: { 1: 4, 2: 4, 3: 4, 4: 4, 5: 4, 6: 4, 0: 4 },
             metaFixa: {}
         };
+    }
+
+    function ownedDefaultData(currentTarget, reason) {
+        return stampOwner(defaultData(), currentTarget, reason);
     }
 
     function setState(data) {
@@ -189,18 +193,40 @@
         return false;
     }
 
-    async function createEmptyRemote(currentTarget) {
+    async function createEmptyRemote(currentTarget, data = null, reason = 'strict-empty-remote') {
         try {
             const supabase = client();
-            if(!supabase || !currentTarget?.userId || isEditingStudent()) return;
+            if(!supabase || !currentTarget?.userId) return false;
+            const payloadData = stampOwner(clone(data || defaultData()), currentTarget, reason);
             const payload = {
                 user_id: currentTarget.userId,
                 email: currentTarget.email || null,
-                data: state(),
+                data: payloadData,
                 updated_at: new Date().toISOString()
             };
-            await supabase.from('plantao_user_data').upsert(payload, { onConflict: 'user_id' });
-        } catch(_) {}
+            const result = await supabase.from('plantao_user_data').upsert(payload, { onConflict: 'user_id' });
+            if(result?.error) throw result.error;
+            log('strict-empty-remote-created', { userId: currentTarget.userId, reason });
+            return true;
+        } catch(error) {
+            log('strict-empty-remote-create-error', { userId: currentTarget?.userId || null, reason, message: String(error?.message || error) });
+            return false;
+        }
+    }
+
+    async function ensureRemoteRow(currentTarget, reason = 'strict-ensure-remote-row') {
+        if(!client() || !currentTarget?.userId) return false;
+        const { row, error } = await readRemote(currentTarget);
+        if(error) throw error;
+        if(row?.data) {
+            if(ownerMismatch(row.data, currentTarget)) {
+                preserveQuarantine(row.data, currentTarget, `${reason}-owner-mismatch`);
+                log('strict-ensure-remote-owner-mismatch', { userId: currentTarget.userId, reason });
+                return false;
+            }
+            return true;
+        }
+        return createEmptyRemote(currentTarget, ownedDefaultData(currentTarget, reason), reason);
     }
 
     function installLoadGuard() {
@@ -220,12 +246,18 @@
                     return finalizeLoadedData(row.data, currentTarget, 'strict-remote-user-id');
                 }
 
-                if(isEditingStudent()) return blockLoad(currentTarget, 'student-without-remote-row');
+                if(isEditingStudent()) {
+                    const emptyStudentData = ownedDefaultData(currentTarget, 'strict-empty-student-remote');
+                    const created = await createEmptyRemote(currentTarget, emptyStudentData, 'strict-empty-student-remote');
+                    if(!created) return blockLoad(currentTarget, 'student-empty-remote-create-failed');
+                    return finalizeLoadedData(emptyStudentData, currentTarget, 'strict-empty-student-remote');
+                }
                 const current = state();
                 if(score(current) > 0 && !ownerOf(current)) preserveQuarantine(current, currentTarget, 'remote-empty-ownerless-local');
                 if(ownerMismatch(current, currentTarget)) preserveQuarantine(current, currentTarget, 'remote-empty-owner-mismatch-local');
-                finalizeLoadedData(defaultData(), currentTarget, 'strict-empty-remote');
-                await createEmptyRemote(currentTarget);
+                const emptyData = ownedDefaultData(currentTarget, 'strict-empty-remote');
+                finalizeLoadedData(emptyData, currentTarget, 'strict-empty-remote');
+                await createEmptyRemote(currentTarget, state(), 'strict-empty-remote');
                 return true;
             } catch(error) {
                 status('error', 'Erro ao carregar dados da conta');
@@ -364,10 +396,45 @@
         return Boolean(fn('entrarPerfilAluno')?.__plantaoStrictAdminSwitchWrapped);
     }
 
+    function installApprovalGuard() {
+        const original = fn('alterarAcessoAluno');
+        if(typeof original !== 'function' || original.__plantaoStrictApprovalWrapped) return Boolean(original?.__plantaoStrictApprovalWrapped);
+        async function alterarAcessoAlunoEstrito(email, statusValue) {
+            const result = await original.apply(this, arguments);
+            if(String(statusValue || '').toLowerCase() !== 'approved') return result;
+            const cleanEmail = decodeURIComponent(String(email || '')).toLowerCase();
+            const accessList = value('adminAccessList', []);
+            const aluno = Array.isArray(accessList)
+                ? accessList.find(item => String(item.email || '').toLowerCase() === cleanEmail)
+                : null;
+            if(!aluno?.user_id) {
+                log('strict-approval-without-user-id', { email: cleanEmail });
+                return result;
+            }
+            const nomeAlunoFn = fn('nomePublicoAluno');
+            const currentTarget = {
+                userId: String(aluno.user_id),
+                email: cleanEmail,
+                name: nomeAlunoFn ? nomeAlunoFn(aluno) : (aluno.name || cleanEmail || 'Aluno')
+            };
+            try {
+                await ensureRemoteRow(currentTarget, 'strict-approval-empty-row');
+            } catch(error) {
+                log('strict-approval-empty-row-error', { userId: currentTarget.userId, message: String(error?.message || error) });
+            }
+            return result;
+        }
+        alterarAcessoAlunoEstrito.__plantaoStrictApprovalWrapped = true;
+        alterarAcessoAlunoEstrito.__plantaoOriginal = original;
+        setFn('alterarAcessoAluno', alterarAcessoAlunoEstrito);
+        return true;
+    }
+
     function install() {
         const loadReady = installLoadGuard();
         const saveReady = installSaveGuard();
         const switchReady = installAdminSwitchGuard();
+        installApprovalGuard();
         return loadReady && saveReady && switchReady;
     }
 
