@@ -85,6 +85,87 @@
     document.head.appendChild(script);
 })();
 
+(function plantaoOAuthSessionReturnFix() {
+    if(window.__plantaoOAuthSessionReturnFix) return;
+    window.__plantaoOAuthSessionReturnFix = true;
+
+    const WRAPPED = '__plantaoOAuthSessionReturnWrapped';
+
+    function fn(name) {
+        try { return Function(`return typeof ${name} === "function" ? ${name} : null;`)(); }
+        catch(_) { return typeof window[name] === 'function' ? window[name] : null; }
+    }
+
+    function value(name) {
+        try { return Function(`return typeof ${name} === "undefined" ? null : ${name};`)(); }
+        catch(_) { return window[name] || null; }
+    }
+
+    function setFn(name, replacement) {
+        try { Function('replacement', `${name} = replacement;`)(replacement); } catch(_) {}
+        try { window[name] = replacement; } catch(_) {}
+    }
+
+    function rememberSession(result) {
+        const session = result?.data?.session || result?.session || null;
+        if(session?.user) {
+            window.__plantaoOAuthReturnedSession = session;
+            try { fn('setCloudStatus')?.('Login confirmado. Carregando seus dados...'); } catch(_) {}
+        }
+        return result;
+    }
+
+    function wrapClient(client) {
+        const auth = client?.auth;
+        if(!auth?.exchangeCodeForSession || auth.exchangeCodeForSession[WRAPPED]) return client;
+        const originalExchange = auth.exchangeCodeForSession.bind(auth);
+        auth.exchangeCodeForSession = async function exchangeCodeForSessionComSessaoGuardada() {
+            return rememberSession(await originalExchange.apply(this, arguments));
+        };
+        auth.exchangeCodeForSession[WRAPPED] = true;
+        return client;
+    }
+
+    function patchClientFactory() {
+        const original = fn('criarClienteSupabase');
+        if(!original || original[WRAPPED]) return false;
+        function criarClienteSupabaseComRetornoOAuth() {
+            return wrapClient(original.apply(this, arguments));
+        }
+        criarClienteSupabaseComRetornoOAuth[WRAPPED] = true;
+        criarClienteSupabaseComRetornoOAuth.__plantaoOriginal = original;
+        setFn('criarClienteSupabase', criarClienteSupabaseComRetornoOAuth);
+        const activeClient = value('supabaseClient');
+        if(activeClient) wrapClient(activeClient);
+        return true;
+    }
+
+    function patchSessionWaiter() {
+        const original = fn('esperarSessaoSupabase');
+        if(!original || original[WRAPPED]) return false;
+        async function esperarSessaoSupabaseComRetornoOAuth() {
+            const returned = window.__plantaoOAuthReturnedSession;
+            if(returned?.user) return returned;
+            const session = await original.apply(this, arguments);
+            return session || window.__plantaoOAuthReturnedSession || null;
+        }
+        esperarSessaoSupabaseComRetornoOAuth[WRAPPED] = true;
+        esperarSessaoSupabaseComRetornoOAuth.__plantaoOriginal = original;
+        setFn('esperarSessaoSupabase', esperarSessaoSupabaseComRetornoOAuth);
+        return true;
+    }
+
+    function install() {
+        return patchClientFactory() && patchSessionWaiter();
+    }
+
+    install();
+    const timer = setInterval(() => {
+        if(install()) clearInterval(timer);
+    }, 50);
+    setTimeout(() => clearInterval(timer), 6000);
+})();
+
 (function plantaoAccountSafetyOrderedLoader() {
     if(window.__plantaoAccountSafetyOrderedLoader) return;
     window.__plantaoAccountSafetyOrderedLoader = true;
