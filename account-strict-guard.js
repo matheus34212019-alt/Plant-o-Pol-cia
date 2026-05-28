@@ -22,6 +22,11 @@
         try { window[name] = replacement; } catch(_) {}
     }
 
+    function setValue(name, replacement) {
+        try { Function('replacement', `${name} = replacement;`)(replacement); } catch(_) {}
+        try { window[name] = replacement; } catch(_) {}
+    }
+
     function clone(data) {
         return JSON.parse(JSON.stringify(data || {}));
     }
@@ -93,6 +98,21 @@
         return data;
     }
 
+    function activeDataOwner(identity, forced = false) {
+        try {
+            if(typeof window.__plantaoSetDataOwner === 'function') return window.__plantaoSetDataOwner(identity, forced);
+        } catch(_) {}
+        return null;
+    }
+
+    function clearForcedOwner() {
+        try { window.__plantaoForcedDataKey = ''; } catch(_) {}
+        try {
+            const user = value('cloudUser', null);
+            if(user?.id) activeDataOwner(user.id, false);
+        } catch(_) {}
+    }
+
     function storeLocal(data) {
         try { localStorage.setItem('prf_v120', JSON.stringify(data)); } catch(_) {}
     }
@@ -156,6 +176,7 @@
         document.body?.classList.remove('plantao-data-loading');
         document.documentElement.dataset.strictAccountGuard = VERSION;
         log('strict-account-load', { userId: currentTarget.userId, reason, score: score(state()) });
+        try { fn('init')?.(); } catch(_) {}
         return true;
     }
 
@@ -247,10 +268,107 @@
         return true;
     }
 
+    function installAdminSwitchGuard() {
+        const originalOpen = fn('entrarPerfilAluno');
+        const originalBack = fn('voltarPerfilAdmin');
+        if(originalOpen && !originalOpen.__plantaoStrictAdminSwitchWrapped) {
+            async function entrarPerfilAlunoEstrito(email) {
+                const supabase = client();
+                const isAdmin = fn('usuarioAdmin');
+                if(!supabase || !(isAdmin && isAdmin())) return originalOpen.apply(this, arguments);
+
+                const cleanEmail = decodeURIComponent(String(email || '')).toLowerCase();
+                const accessList = value('adminAccessList', []);
+                const aluno = Array.isArray(accessList)
+                    ? accessList.find(item => String(item.email || '').toLowerCase() === cleanEmail)
+                    : null;
+                const toast = fn('showToast');
+                if(!aluno || aluno.status !== 'approved') {
+                    toast?.('Aluno nao aprovado', 'Aprove o aluno antes de abrir o perfil.');
+                    return;
+                }
+                if(!aluno.user_id) {
+                    toast?.('Aluno sem login completo', 'Esse aluno precisa entrar pelo Google ou e-mail uma vez antes de editar os dados dele.');
+                    return;
+                }
+
+                const nomeAlunoFn = fn('nomePublicoAluno');
+                const nomeAluno = nomeAlunoFn ? nomeAlunoFn(aluno) : (aluno.name || cleanEmail || 'Aluno');
+                const confirm = fn('confirmarAcaoPlano');
+                if(confirm && !confirm('Abrir perfil de aluno', `Voce vai editar os dados de ${nomeAluno}. Confirme para evitar alterar o aluno errado.`)) return;
+
+                const adminUser = value('cloudUser', null);
+                const adminTarget = adminUser?.id ? { userId: String(adminUser.id), email: adminUser.email || null } : null;
+                const current = state();
+                if(adminTarget && !ownerMismatch(current, adminTarget)) {
+                    await fn('salvarDadosSupabase')?.(true);
+                } else if(current && score(current) > 0) {
+                    preserveQuarantine(current, adminTarget, 'admin-open-student-owner-mismatch-before-save');
+                }
+
+                activeDataOwner(aluno.user_id, true);
+                setValue('adminStudentContext', {
+                    user_id: aluno.user_id,
+                    email: cleanEmail,
+                    name: nomeAluno
+                });
+                setValue('adminEditBackupReady', false);
+                window.__plantaoCloudDataReady = false;
+
+                const loaded = await fn('carregarDadosSupabase')?.();
+                if(!loaded) {
+                    setValue('adminStudentContext', null);
+                    setValue('adminEditBackupReady', false);
+                    clearForcedOwner();
+                    await fn('carregarDadosSupabase')?.();
+                    return;
+                }
+
+                fn('renderAdminStudentBanner')?.();
+                fn('renderPerfil')?.();
+                fn('updateDashboard')?.();
+                const showTab = fn('showTab');
+                if(showTab) showTab('diaria', document.querySelector(".nav-item[onclick*='diaria']") || document.querySelector('.nav-item'));
+                else fn('renderDiario')?.(value('vDate', new Date()));
+            }
+            entrarPerfilAlunoEstrito.__plantaoStrictAdminSwitchWrapped = true;
+            entrarPerfilAlunoEstrito.__plantaoOriginal = originalOpen;
+            setFn('entrarPerfilAluno', entrarPerfilAlunoEstrito);
+        }
+
+        if(originalBack && !originalBack.__plantaoStrictAdminSwitchWrapped) {
+            async function voltarPerfilAdminEstrito() {
+                const editing = isEditingStudent();
+                if(!editing) return originalBack.apply(this, arguments);
+                const currentTarget = target();
+                if(currentTarget?.userId && !ownerMismatch(state(), currentTarget)) {
+                    await fn('salvarDadosSupabase')?.(true);
+                }
+                setValue('adminStudentContext', null);
+                setValue('adminEditBackupReady', false);
+                clearForcedOwner();
+                const loaded = await fn('carregarDadosSupabase')?.();
+                if(loaded) {
+                    fn('renderAdminStudentBanner')?.();
+                    fn('renderPerfil')?.();
+                    fn('updateDashboard')?.();
+                    const showTab = fn('showTab');
+                    if(showTab) showTab('perfil', document.querySelector(".nav-item[onclick*='perfil']"));
+                }
+            }
+            voltarPerfilAdminEstrito.__plantaoStrictAdminSwitchWrapped = true;
+            voltarPerfilAdminEstrito.__plantaoOriginal = originalBack;
+            setFn('voltarPerfilAdmin', voltarPerfilAdminEstrito);
+        }
+
+        return Boolean(fn('entrarPerfilAluno')?.__plantaoStrictAdminSwitchWrapped);
+    }
+
     function install() {
         const loadReady = installLoadGuard();
         const saveReady = installSaveGuard();
-        return loadReady && saveReady;
+        const switchReady = installAdminSwitchGuard();
+        return loadReady && saveReady && switchReady;
     }
 
     install();
