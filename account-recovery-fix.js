@@ -65,6 +65,17 @@
         return Boolean(permitUnstamped);
     }
 
+    function stampOwner(data, currentTarget, reason) {
+        if(!data || !currentTarget?.userId) return data;
+        data[OWNER_FIELD] = {
+            userId: currentTarget.userId,
+            version: VERSION,
+            reason,
+            updatedAt: new Date().toISOString()
+        };
+        return data;
+    }
+
     function score(data) {
         const subjects = Array.isArray(data?.lista) ? data.lista.length : 0;
         const tasks = Object.values(data?.metaFixa || {}).flat().filter(Boolean);
@@ -87,7 +98,7 @@
             if(result.error) return null;
             return (result.data || [])
                 .map(row => row?.data)
-                .filter(data => data && belongsToTarget(data, currentTarget, true) && score(data) > 0)
+                .filter(data => data && belongsToTarget(data, currentTarget, false) && score(data) > 0)
                 .sort((a, b) => score(b) - score(a))[0] || null;
         } catch(_) {
             return null;
@@ -107,7 +118,7 @@
             if(result.error) return null;
             return (result.data || [])
                 .map(row => row?.data)
-                .filter(data => data && belongsToTarget(data, currentTarget, true) && score(data) > 0)
+                .filter(data => data && belongsToTarget(data, currentTarget, false) && score(data) > 0)
                 .sort((a, b) => score(b) - score(a))[0] || null;
         } catch(_) {
             return null;
@@ -120,7 +131,7 @@
         if(!client || !currentTarget?.userId || value('dadosSupabaseCarregados', false) === false || !needsRecovery(state())) return false;
         const fromBackup = await bestOwnBackup(client, currentTarget);
         const restored = fromBackup || await bestLegacyMainRecord(client, currentTarget);
-        if(!restored || !setState(restored)) return false;
+        if(!restored || !setState(stampOwner(clone(restored), currentTarget, 'account-recovery'))) return false;
         try { Function('dadosSupabaseCarregados = true;')(); } catch(_) {}
         fn('normalizarBanco')?.();
         try { localStorage.setItem('prf_v120', JSON.stringify(state())); } catch(_) {}
