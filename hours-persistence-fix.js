@@ -84,3 +84,13 @@
     script.defer = true;
     document.head.appendChild(script);
 })();
+
+(function plantaoStrictAccountGuardLoader() {
+    if(window.__plantaoStrictAccountGuardLoader) return;
+    window.__plantaoStrictAccountGuardLoader = true;
+    if(window.__plantaoStrictAccountGuardRequested) return;
+    const script = document.createElement('script');
+    script.src = 'account-strict-guard.js?v=243-strict-account-supabase';
+    script.defer = true;
+    document.head.appendChild(script);
+})();
