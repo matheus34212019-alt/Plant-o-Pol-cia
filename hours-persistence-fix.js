@@ -90,7 +90,7 @@
     window.__plantaoStrictAccountGuardLoader = true;
     if(window.__plantaoStrictAccountGuardRequested) return;
     const script = document.createElement('script');
-    script.src = 'account-strict-guard.js?v=245-own-remote-row';
+    script.src = 'account-strict-guard.js?v=247-login-unlock';
     script.defer = true;
     document.head.appendChild(script);
 })();
@@ -100,7 +100,17 @@
     window.__plantaoAccountRowBootstrapLoader = true;
     if(window.__plantaoAccountRowBootstrapFix) return;
     const script = document.createElement('script');
-    script.src = 'account-row-bootstrap-fix.js?v=245-own-row-bootstrap';
+    script.src = 'account-row-bootstrap-fix.js?v=247-login-unlock-bootstrap';
+    script.defer = true;
+    document.head.appendChild(script);
+})();
+
+(function plantaoLoginUnlockLoader() {
+    if(window.__plantaoLoginUnlockLoader) return;
+    window.__plantaoLoginUnlockLoader = true;
+    if(window.__plantaoLoginUnlockFix) return;
+    const script = document.createElement('script');
+    script.src = 'login-unlock-fix.js?v=247-login-unlock';
     script.defer = true;
     document.head.appendChild(script);
 })();
