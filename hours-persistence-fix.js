@@ -90,7 +90,17 @@
     window.__plantaoStrictAccountGuardLoader = true;
     if(window.__plantaoStrictAccountGuardRequested) return;
     const script = document.createElement('script');
-    script.src = 'account-strict-guard.js?v=243-strict-account-supabase';
+    script.src = 'account-strict-guard.js?v=245-own-remote-row';
+    script.defer = true;
+    document.head.appendChild(script);
+})();
+
+(function plantaoAccountRowBootstrapLoader() {
+    if(window.__plantaoAccountRowBootstrapLoader) return;
+    window.__plantaoAccountRowBootstrapLoader = true;
+    if(window.__plantaoAccountRowBootstrapFix) return;
+    const script = document.createElement('script');
+    script.src = 'account-row-bootstrap-fix.js?v=245-own-row-bootstrap';
     script.defer = true;
     document.head.appendChild(script);
 })();
