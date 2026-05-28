@@ -74,3 +74,13 @@
     const retry = setInterval(install, 250);
     setTimeout(() => clearInterval(retry), 10000);
 })();
+
+(function plantaoLaunchDedupeLoader() {
+    if(window.__plantaoLaunchDedupeLoader) return;
+    window.__plantaoLaunchDedupeLoader = true;
+    if(window.__plantaoLaunchDedupeFix) return;
+    const script = document.createElement('script');
+    script.src = 'launch-dedupe-fix.js?v=242-launch-dedupe';
+    script.defer = true;
+    document.head.appendChild(script);
+})();
