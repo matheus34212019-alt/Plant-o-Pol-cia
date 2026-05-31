@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="visual-stability.css?v=260-layout-restore">
     <link rel="stylesheet" href="app-polish.css?v=260-layout-restore">
     <link rel="stylesheet" href="tablet-fix.css?v=260-layout-restore">
-    <link rel="stylesheet" href="login-contrast-fix.css?v=273-light-planner">
+    <link rel="stylesheet" href="login-contrast-fix.css?v=274-fast-clicks">
     <style id="login-critical-contrast">
         #login-screen { background: #f4f7fb !important; color: #0f172a !important; }
         #login-screen .login-card { background: #ffffff !important; color: #0f172a !important; border: 1px solid rgba(15, 23, 42, 0.10) !important; box-shadow: 0 24px 64px rgba(15, 23, 42, 0.12) !important; }
@@ -141,20 +141,9 @@
                 <div class="stat-card"><small>Precisão de Tiro</small><div id="precisao-dia" class="stat-val" style="color:#10b981">0%</div></div>
             </div>
             <div id="admin-student-banner" class="admin-student-banner" style="display:none;"></div>
-
-            <div id="diaria" class="page active">
-                <div class="welcome-box"><h3 id="welcome-title" style="margin:0;">FORÇA E HONRA!</h3><div id="streak-info"><i class="fas fa-fire"></i> STREAK: <span id="streak-val">0</span> DIAS</div></div>
-                <div class="stat-card cycle-card"><div style="display:flex; justify-content:space-between;"><small>Perseguição ao Edital</small><span id="ciclo-estimativa"></span></div><div class="road-bg"><div id="viatura-progresso"><i class="fas fa-car-side"></i></div><div id="bar-ciclo-total" class="road-fill"></div></div><div id="perc-ciclo" class="perc-text">0% cumprido</div></div>
-                <div class="nav-days"><button id="btn-hoje" class="btn btn-outline btn-sm" onclick="navDay(0)" style="display:none;"><i class="fas fa-undo"></i> VOLTAR PARA HOJE</button><button id="btn-amanha" class="btn btn-sm" onclick="navDay(1)">VER AMANHÃ <i class="fas fa-arrow-right"></i></button></div>
-                <div class="page-header"><h1 id="view-title">Missão de Hoje</h1><button class="btn btn-sm btn-outline replan-btn" onclick="replanejarAgora()"><i class="fas fa-rotate"></i> REPLANEJAR ATRASOS</button></div>
-                <p id="meta-status" class="meta-sub"></p>
-                <div id="lista-diaria"></div>
-            </div>
-
+            <div id="diaria" class="page active"><div class="welcome-box"><h3 id="welcome-title" style="margin:0;">FORÇA E HONRA!</h3><div id="streak-info"><i class="fas fa-fire"></i> STREAK: <span id="streak-val">0</span> DIAS</div></div><div class="stat-card cycle-card"><div style="display:flex; justify-content:space-between;"><small>Perseguição ao Edital</small><span id="ciclo-estimativa"></span></div><div class="road-bg"><div id="viatura-progresso"><i class="fas fa-car-side"></i></div><div id="bar-ciclo-total" class="road-fill"></div></div><div id="perc-ciclo" class="perc-text">0% cumprido</div></div><div class="nav-days"><button id="btn-hoje" class="btn btn-outline btn-sm" onclick="navDay(0)" style="display:none;"><i class="fas fa-undo"></i> VOLTAR PARA HOJE</button><button id="btn-amanha" class="btn btn-sm" onclick="navDay(1)">VER AMANHÃ <i class="fas fa-arrow-right"></i></button></div><div class="page-header"><h1 id="view-title">Missão de Hoje</h1><button class="btn btn-sm btn-outline replan-btn" onclick="replanejarAgora()"><i class="fas fa-rotate"></i> REPLANEJAR ATRASOS</button></div><p id="meta-status" class="meta-sub"></p><div id="lista-diaria"></div></div>
             <div id="semanal" class="page"><div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;"><div><h2>Cronograma PLANTÃO</h2><div style="display: flex; gap: 10px;"><span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #3b82f6;"></i> Estudo</span><span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #f59e0b;"></i> Revisão</span><span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #10b981;"></i> Exercício</span><span style="font-size: 0.7rem;"><i class="fas fa-square" style="color: #ef4444;"></i> Atrasado</span></div></div></div><div id="grid-semanal" class="weekly-grid"></div></div>
-
             <div id="performance" class="page"><div class="page-header"><div><h2>Meu Desempenho</h2><p class="meta-sub">Leitura dos seus lançamentos, questões e horas estudadas.</p></div></div><div class="perf-tabs"><button class="perf-tab active" onclick="showPerfTab('geral', this)">Geral</button><button class="perf-tab" onclick="showPerfTab('questoes', this)">Questões</button><button class="perf-tab" onclick="showPerfTab('melhores', this)">Melhores</button><button class="perf-tab" onclick="showPerfTab('prioridades', this)">Prioridades</button></div><div id="perf-geral" class="perf-page active"></div><div id="perf-questoes" class="perf-page"></div><div id="perf-melhores" class="perf-page"></div><div id="perf-prioridades" class="perf-page"></div></div>
-
             <div id="ranking" class="page"><div class="page-header"><div><h2>Ranking dos Alunos</h2><p class="meta-sub">Comparativo de horas estudadas, precisão e sequência de dias.</p></div><button class="btn btn-sm btn-outline" onclick="renderRankingAlunos()"><i class="fas fa-rotate"></i> ATUALIZAR</button></div><div id="ranking-content"></div></div>
             <div id="perfil" class="page"><div class="page-header"><div><h2>Meu Perfil</h2><p class="meta-sub">Dados da conta usada para sincronizar seu planejamento.</p></div></div><div id="perfil-content"></div></div>
             <div id="edital" class="page"><div class="stat-card"><h3>Importar Edital</h3><input type="text" id="add-mat" placeholder="Nome da Matéria"><div class="import-options"><div><label for="add-horas">Horas de estudo por assunto</label><input type="number" id="add-horas" min="0.5" step="0.5" value="1.5"></div><div><label for="add-peso">Peso da matéria no ciclo</label><input type="number" id="add-peso" min="1" max="5" step="1" value="1"></div></div><textarea id="add-ass" placeholder="Cole os assuntos aqui..."></textarea><button class="btn" style="width:100%;" onclick="impEdital()">PROCESSAR CARGA</button></div></div>
@@ -166,16 +155,7 @@
             <div id="lancamentos" class="page"><div class="page-header"><div><h2>Base de Lançamentos</h2><p class="meta-sub">Atividades marcadas como concluídas no sistema.</p></div></div><div id="lancamentos-content"></div></div>
         </div>
     </main>
-    <script>
-        (function loadSupabaseSdk() {
-            var loadedUrls = {};
-            function load(src) { if(loadedUrls[src]) return; loadedUrls[src] = true; var script = document.createElement('script'); script.src = src; script.async = true; script.crossOrigin = 'anonymous'; document.head.appendChild(script); }
-            window.__plantaoLoadSupabaseFallback = function() { if(window.supabase && window.supabase.createClient) return; load('https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js'); };
-            load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js');
-            setTimeout(window.__plantaoLoadSupabaseFallback, 1200);
-            setTimeout(window.__plantaoLoadSupabaseFallback, 3500);
-        })();
-    </script>
+    <script>(function loadSupabaseSdk(){var loadedUrls={};function load(src){if(loadedUrls[src])return;loadedUrls[src]=true;var script=document.createElement('script');script.src=src;script.async=true;script.crossOrigin='anonymous';document.head.appendChild(script);}window.__plantaoLoadSupabaseFallback=function(){if(window.supabase&&window.supabase.createClient)return;load('https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js');};load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js');setTimeout(window.__plantaoLoadSupabaseFallback,1200);setTimeout(window.__plantaoLoadSupabaseFallback,3500);})();</script>
     <script src="supabase-config.js?v=260-layout-restore"></script>
     <script src="account-isolation-fix.js?v=260-layout-restore"></script>
     <script src="readable-login-guard.js?v=260-layout-restore"></script>
@@ -184,32 +164,14 @@
     <script src="runtime-integrity-guard.js?v=260-layout-restore"></script>
     <script src="study-intelligence.js?v=260-layout-restore"></script>
     <script src="evolution-calendar.js?v=260-layout-restore"></script>
-    <script src="hours-persistence-fix.js?v=260-layout-restore"></script>
-    <script src="planner-rules.js?v=273-light-planner"></script>
-    <script src="planner-fix.js?v=273-light-planner"></script>
+    <script src="planner-rules.js?v=274-fast-clicks"></script>
+    <script src="planner-fix.js?v=274-fast-clicks"></script>
     <script src="exercise-guard.js?v=260-layout-restore"></script>
-    <script src="schedule-hardening.js?v=260-layout-restore"></script>
     <script src="logic-polish.js?v=260-layout-restore"></script>
     <script src="platform-core.js?v=260-layout-restore"></script>
     <script src="profile-nav-fix.js?v=260-layout-restore"></script>
-    <script src="overdue-replan-fix.js?v=260-layout-restore"></script>
-    <script src="history-preservation-fix.js?v=260-layout-restore"></script>
-    <script src="integrity-ui-fix.js?v=260-layout-restore"></script>
-    <script src="sync-integrity-fix.js?v=260-layout-restore"></script>
-    <script src="account-recovery-fix.js?v=260-layout-restore"></script>
     <script src="professional-copy.js?v=260-layout-restore"></script>
-    <script src="final-system-review.js?v=260-layout-restore"></script>
     <script src="tablet-fix.js?v=260-layout-restore"></script>
-    <script>
-        (function preservePlainBrand() {
-            function applyBrand() {
-                document.title = 'PLANTÃO';
-                document.querySelectorAll('.logo-box').forEach(function(el) { if(!el.querySelector('.fa-shield-halved') || el.textContent.trim() !== 'PLANTÃO') el.innerHTML = '<i class="fas fa-shield-halved"></i> PLANTÃO'; });
-                document.querySelectorAll('.login-card h2').forEach(function(el) { if(el.textContent.trim() !== 'PLANTÃO') el.textContent = 'PLANTÃO'; });
-            }
-            applyBrand();
-            window.addEventListener('load', applyBrand, { once: true });
-        })();
-    </script>
+    <script>(function preservePlainBrand(){function applyBrand(){document.title='PLANTÃO';document.querySelectorAll('.logo-box').forEach(function(el){if(!el.querySelector('.fa-shield-halved')||el.textContent.trim()!=='PLANTÃO')el.innerHTML='<i class="fas fa-shield-halved"></i> PLANTÃO';});document.querySelectorAll('.login-card h2').forEach(function(el){if(el.textContent.trim()!=='PLANTÃO')el.textContent='PLANTÃO';});}applyBrand();window.addEventListener('load',applyBrand,{once:true});})();</script>
 </body>
 </html>
