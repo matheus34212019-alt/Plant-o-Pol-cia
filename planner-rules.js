@@ -30,7 +30,7 @@
     }
 
     function installQuietToasts() {
-        if (typeof window.showToast !== 'function' || window.showToast.__quietPlannerV266) return;
+        if (typeof window.showToast !== 'function' || window.showToast.__quietPlannerV267) return;
         const original = window.showToast;
         const quietTitles = /cronograma|dados sincronizados|progresso preservado|nuvem ativada|tempo extra replanejado|rotina|planejamento/i;
         window.showToast = function quietPlannerToast(title, message, type) {
@@ -39,7 +39,7 @@
             if (quietTitles.test(text) && !important) return;
             return original.apply(this, arguments);
         };
-        window.showToast.__quietPlannerV266 = true;
+        window.showToast.__quietPlannerV267 = true;
     }
 
     function taskHours(task) {
@@ -78,55 +78,46 @@
         return Number.isFinite(fromItem) ? fromItem : 0;
     }
 
-    function allTasks(state = getDb()) {
-        return Object.values(state?.metaFixa || {}).flat().filter(Boolean);
+    function taskEntries(state = getDb()) {
+        const entries = [];
+        Object.entries(state?.metaFixa || {}).forEach(([key, tasks]) => {
+            (tasks || []).forEach(task => entries.push({ key, task }));
+        });
+        return entries;
     }
 
-    function openInitialStudyForMatter(materia, state = getDb()) {
-        if (!appReady(state) || !materia) return null;
-        return (state.lista || [])
-            .filter(item => item.m === materia && (!item.f || (parseFloat(item.hF) || 0) < (parseFloat(item.h?.E) || 0) - 0.01 || (parseFloat(item.extraTeoria) || 0) > 0.01))
-            .sort((a, b) => orderOf(a, state) - orderOf(b, state))[0] || null;
-    }
-
-    function scheduledPendingStudyBlocker(task, state = getDb(), batch = []) {
-        if (!task?.m || isExtraTask(task) || isDone(task)) return null;
+    function earlierPendingStudyEntries(task, state = getDb(), batchEntries = []) {
+        if (!task?.m || isExtraTask(task) || isDone(task)) return [];
         const taskOrder = orderOf(task, state);
-        const pendingStudies = allTasks(state)
-            .concat(batch || [])
-            .filter(candidate => candidate && candidate.m === task.m && isStudy(candidate) && candidate.k === 'E' && !isExtraTask(candidate) && !isDone(candidate));
-        return pendingStudies
-            .filter(candidate => !samePlannedItem(candidate, findItemForTask(task, state) || task) && orderOf(candidate, state) < taskOrder)
-            .sort((a, b) => orderOf(a, state) - orderOf(b, state))[0] || null;
+        return taskEntries(state)
+            .concat(batchEntries || [])
+            .filter(entry => {
+                const candidate = entry.task;
+                if (!candidate || candidate.m !== task.m || candidate.k !== 'E' || !isStudy(candidate) || isExtraTask(candidate) || isDone(candidate)) return false;
+                if (samePlannedItem(candidate, findItemForTask(task, state) || task)) return false;
+                return orderOf(candidate, state) < taskOrder;
+            });
     }
 
-    function pendingExtraForMatter(materia, state = getDb()) {
-        if (!appReady(state) || !materia) return null;
-        const extraTask = allTasks(state).find(task => task?.extraStudy === true && !isDone(task) && task.m === materia);
-        if (extraTask) return extraTask;
-        return (state.lista || []).find(item => item.m === materia && (parseFloat(item.extraTeoria) || 0) > 0.01 && (parseFloat(item.hF) || 0) < (parseFloat(item.h?.E) || 0) - 0.01) || null;
+    function violatesPreviousLessonDate(task, targetKey, state = getDb(), batchEntries = []) {
+        if (!targetKey) return false;
+        return earlierPendingStudyEntries(task, state, batchEntries).some(entry => targetKey <= entry.key);
     }
 
-    function isLaterSameMatter(task, blocker, state = getDb()) {
-        if (!task || !blocker || task.m !== blocker.m || task.a === blocker.a || isExtraTask(task) || isDone(task)) return false;
-        const taskOrder = orderOf(task, state);
-        const blockerOrder = orderOf(blocker, state);
-        return taskOrder && blockerOrder ? taskOrder > blockerOrder : true;
-    }
-
-    function blockedByCycle(task, state = getDb(), batch = []) {
-        if (!appReady(state) || !task || isDone(task) || isExtraTask(task)) return false;
-        const scheduledBlocker = scheduledPendingStudyBlocker(task, state, batch);
-        if (scheduledBlocker) return true;
-
-        const extraBlocker = pendingExtraForMatter(task.m, state);
-        if (extraBlocker && isLaterSameMatter(task, extraBlocker, state)) return true;
-
-        const openInitial = openInitialStudyForMatter(task.m, state);
-        if (!openInitial) return false;
+    function sameItemTheoryPending(task, state = getDb()) {
+        if (!task || task.k === 'E' || isExtraTask(task) || isDone(task)) return false;
         const item = findItemForTask(task, state);
-        if (task.k !== 'E') return true;
-        return !!item && item.id !== openInitial.id;
+        if (!item) return false;
+        const total = parseFloat(item.h?.E) || 0;
+        const done = parseFloat(item.hF) || 0;
+        const extra = parseFloat(item.extraTeoria) || 0;
+        return extra > 0.01 || done < total - 0.01;
+    }
+
+    function blockedByCycle(task, targetKey, state = getDb(), batchEntries = []) {
+        if (!appReady(state) || !task || isDone(task) || isExtraTask(task)) return false;
+        if (sameItemTheoryPending(task, state)) return true;
+        return violatesPreviousLessonDate(task, targetKey, state, batchEntries);
     }
 
     function saveNow() {
@@ -142,9 +133,10 @@
             const extra = roundHours(parseFloat(item.extraTeoria) || 0);
             const total = roundHours(parseFloat(item.h?.E) || 0);
             if (extra <= 0.01 || total <= 0) return;
-            const actualStudied = roundHours(Math.max(0, total - extra));
-            if ((parseFloat(item.hF) || 0) > actualStudied + 0.01 || item.f || item.done?.E) {
-                item.hF = actualStudied;
+
+            const studiedToday = roundHours(Math.max(0, total - extra));
+            if ((parseFloat(item.hF) || 0) > studiedToday + 0.01 || item.f || item.done?.E) {
+                item.hF = studiedToday;
                 item.f = false;
                 item.sinalizado = false;
                 item.cicloConcluidoManual = false;
@@ -156,13 +148,15 @@
                 item.extraTeoriaSaldoCorrigido = true;
                 changed = true;
             }
-            allTasks(state)
-                .filter(task => task.k === 'E' && !isExtraTask(task) && isDone(task) && samePlannedItem(task, item))
-                .forEach(task => {
-                    if (Math.abs(taskHours(task) - actualStudied) > 0.01) {
-                        task.h = actualStudied;
-                        task.hReal = actualStudied;
-                        task.tempoLancado = actualStudied;
+
+            taskEntries(state)
+                .filter(entry => entry.task?.k === 'E' && !isExtraTask(entry.task) && isDone(entry.task) && samePlannedItem(entry.task, item))
+                .forEach(entry => {
+                    const task = entry.task;
+                    if (Math.abs(taskHours(task) - studiedToday) > 0.01) {
+                        task.h = studiedToday;
+                        task.hReal = studiedToday;
+                        task.tempoLancado = studiedToday;
                         changed = true;
                     }
                 });
@@ -174,12 +168,17 @@
         if (!appReady(state)) return false;
         let changed = false;
         Object.keys(state.metaFixa || {}).sort().forEach(key => {
-            const kept = [];
+            const keptTasks = [];
+            const keptEntries = [];
             (state.metaFixa[key] || []).forEach(task => {
-                if (blockedByCycle(task, state, kept)) changed = true;
-                else kept.push(task);
+                if (blockedByCycle(task, key, state, keptEntries)) {
+                    changed = true;
+                    return;
+                }
+                keptTasks.push(task);
+                keptEntries.push({ key, task });
             });
-            if (kept.length) state.metaFixa[key] = kept;
+            if (keptTasks.length) state.metaFixa[key] = keptTasks;
             else delete state.metaFixa[key];
         });
         return changed;
@@ -214,7 +213,7 @@
             const targetDate = addDays(startDate, offset);
             const key = dateKey(targetDate);
             const tasks = data.metaFixa[key] || [];
-            if (canFit(tasks, targetDate, task)) {
+            if (!blockedByCycle(task, key, data) && canFit(tasks, targetDate, task)) {
                 data.metaFixa[key] = tasks.concat(task);
                 return key;
             }
@@ -242,10 +241,10 @@
         }, hours);
     }
 
-    function markItemPending(item, totalHours, extraHours, actualStudied) {
+    function markItemPending(item, totalHours, extraHours, studiedHours) {
         item.h = item.h || {};
         item.h.E = roundHours(totalHours);
-        item.hF = roundHours(actualStudied);
+        item.hF = roundHours(studiedHours);
         item.extraTeoria = roundHours(extraHours);
         item.extraTeoriaSaldoCorrigido = true;
         item.done = item.done || {E:false, Rev:false, Ex:false};
@@ -260,11 +259,13 @@
 
     function setCompletedStudyCard(item, hours) {
         const data = getDb();
-        allTasks(data).filter(task => task?.k === 'E' && !isExtraTask(task) && isDone(task) && samePlannedItem(task, item)).forEach(task => {
-            task.h = roundHours(hours);
-            task.hReal = roundHours(hours);
-            task.tempoLancado = roundHours(hours);
-        });
+        taskEntries(data)
+            .filter(entry => entry.task?.k === 'E' && !isExtraTask(entry.task) && isDone(entry.task) && samePlannedItem(entry.task, item))
+            .forEach(entry => {
+                entry.task.h = roundHours(hours);
+                entry.task.hReal = roundHours(hours);
+                entry.task.tempoLancado = roundHours(hours);
+            });
     }
 
     function getPendingTheoryTask() {
@@ -288,18 +289,21 @@
         const baseTask = getPendingTheoryTask();
         const item = findItemForTask(baseTask, data);
         if (!baseTask || !item) return false;
+
         const today = getViewDate();
         const extraHours = Math.max(MIN_TASK_HOURS, parseFloat(hours) || 0);
         const totalBefore = roundHours(parseFloat(item.h?.E) || taskHours(baseTask));
         const previousExtra = roundHours(parseFloat(item.extraTeoria) || 0);
         const nextExtra = roundHours(previousExtra + extraHours);
-        const actualStudied = roundHours(Math.max(0, totalBefore - nextExtra));
-        markItemPending(item, totalBefore, nextExtra, actualStudied);
-        setCompletedStudyCard(item, actualStudied);
+        const studiedHours = roundHours(Math.max(0, totalBefore - nextExtra));
+
+        markItemPending(item, totalBefore, nextExtra, studiedHours);
+        setCompletedStudyCard(item, studiedHours);
         placeTask(makeExtraStudyTask(baseTask, item, extraHours, dateKey(today)), today);
         normalizePartialStudyHours(data);
         filterInvalidScheduledTasks(data);
         saveNow();
+
         if (typeof renderSemanal === 'function') renderSemanal();
         if (typeof renderDiario === 'function') renderDiario(today);
         if (typeof updateDashboard === 'function') updateDashboard();
@@ -315,22 +319,27 @@
     }
 
     function wrapPlanner() {
-        if (typeof window.planejarDia !== 'function' || window.planejarDia.__cycleRulesV266) return;
+        if (typeof window.planejarDia !== 'function' || window.planejarDia.__cycleRulesV267) return;
         const original = window.planejarDia;
         window.planejarDia = function wrappedPlanejarDia(state, date, limit, mutarEstado) {
             const planned = original.apply(this, arguments) || [];
             if (!appReady(state)) return planned;
+            const key = dateKey(date);
             const accepted = [];
+            const acceptedEntries = [];
             planned.forEach(task => {
-                if (!blockedByCycle(task, state, accepted)) accepted.push(task);
+                if (!blockedByCycle(task, key, state, acceptedEntries)) {
+                    accepted.push(task);
+                    acceptedEntries.push({ key, task });
+                }
             });
             return accepted;
         };
-        window.planejarDia.__cycleRulesV266 = true;
+        window.planejarDia.__cycleRulesV267 = true;
     }
 
     function wrapTempoExtra() {
-        if (typeof window.aplicarTempoExtraTeoria !== 'function' || window.aplicarTempoExtraTeoria.__cycleRulesV266) return;
+        if (typeof window.aplicarTempoExtraTeoria !== 'function' || window.aplicarTempoExtraTeoria.__cycleRulesV267) return;
         const original = window.aplicarTempoExtraTeoria;
         window.aplicarTempoExtraTeoria = function wrappedTempoExtra(destino) {
             const hours = Math.max(MIN_TASK_HOURS, parseFloat(document.getElementById('teoria-extra-horas')?.value) || 1);
@@ -341,17 +350,17 @@
             runLightCorrections();
             return result;
         };
-        window.aplicarTempoExtraTeoria.__cycleRulesV266 = true;
+        window.aplicarTempoExtraTeoria.__cycleRulesV267 = true;
     }
 
     function wrapRenderer(name) {
-        if (typeof window[name] !== 'function' || window[name].__cycleRulesV266) return;
+        if (typeof window[name] !== 'function' || window[name].__cycleRulesV267) return;
         const original = window[name];
         window[name] = function wrappedRenderer() {
             runLightCorrections();
             return original.apply(this, arguments);
         };
-        window[name].__cycleRulesV266 = true;
+        window[name].__cycleRulesV267 = true;
     }
 
     function boot() {
