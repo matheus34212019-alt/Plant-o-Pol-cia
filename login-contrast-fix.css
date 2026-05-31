@@ -1,52 +1,50 @@
-/* v261: restore login and home contrast after professional theme overrides */
+/* v262: critical login/home contrast overrides */
 
 #login-screen {
-    background:
-        radial-gradient(circle at 18% 12%, rgba(37, 99, 235, 0.24), transparent 34%),
-        radial-gradient(circle at 82% 10%, rgba(15, 118, 110, 0.2), transparent 32%),
-        linear-gradient(180deg, #07111f 0%, #0b1220 52%, #111827 100%) !important;
+    background: linear-gradient(180deg, #07111f 0%, #0b1220 55%, #111827 100%) !important;
     color: #f8fafc !important;
 }
 
 #login-screen .login-card {
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(7, 12, 22, 0.98)) !important;
-    border: 1px solid rgba(125, 211, 252, 0.34) !important;
-    box-shadow: 0 28px 70px rgba(2, 6, 23, 0.42) !important;
+    background: #0f172a !important;
     color: #f8fafc !important;
+    border: 1px solid rgba(125, 211, 252, 0.45) !important;
+    box-shadow: 0 24px 64px rgba(2, 6, 23, 0.5) !important;
 }
 
 #login-screen .login-card h2,
-#login-screen .login-card h2::before {
+#login-screen .login-card h2::before,
+#login-screen .login-card label,
+#login-screen .login-status,
+#login-screen .login-divider span {
     color: #f8fafc !important;
-    text-shadow: 0 1px 0 rgba(15, 23, 42, 0.5) !important;
 }
 
 #login-screen input:not([type="checkbox"]),
 #login-screen textarea,
 #login-screen select {
-    background: #0f172a !important;
+    background: #111827 !important;
     color: #f8fafc !important;
-    border: 1px solid rgba(148, 163, 184, 0.42) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(148, 163, 184, 0.58) !important;
+    box-shadow: none !important;
 }
 
 #login-screen input::placeholder {
-    color: #94a3b8 !important;
+    color: #cbd5e1 !important;
     opacity: 1 !important;
 }
 
-#login-screen .btn,
 #login-screen .google-btn {
-    background: linear-gradient(135deg, #f8fafc, #dbeafe) !important;
+    background: #f8fafc !important;
     color: #0f172a !important;
-    border-color: rgba(255, 255, 255, 0.72) !important;
+    border-color: #e2e8f0 !important;
     box-shadow: 0 16px 34px rgba(37, 99, 235, 0.24) !important;
 }
 
 #login-screen .btn-outline {
-    background: rgba(15, 23, 42, 0.72) !important;
+    background: #111827 !important;
     color: #f8fafc !important;
-    border-color: rgba(125, 211, 252, 0.42) !important;
+    border-color: rgba(125, 211, 252, 0.5) !important;
     box-shadow: none !important;
 }
 
@@ -57,18 +55,13 @@
     box-shadow: none !important;
 }
 
-#login-screen .login-status,
-#login-screen .login-divider span {
-    color: #cbd5e1 !important;
-}
-
+#login-screen .login-divider,
 #login-screen .login-divider::before,
-#login-screen .login-divider::after,
-#login-screen .login-divider {
-    border-color: rgba(148, 163, 184, 0.32) !important;
+#login-screen .login-divider::after {
+    border-color: rgba(148, 163, 184, 0.34) !important;
 }
 
-body:not(:has(#login-screen[style*="display: none"])) .main,
+.main,
 body.plantao-polished .main {
     background: linear-gradient(180deg, #f8fafc 0%, #eef4f8 100%) !important;
 }
@@ -87,15 +80,12 @@ body.plantao-polished .welcome-box * {
 }
 
 .cycle-card,
-body.plantao-polished .cycle-card {
-    background: #ffffff !important;
-    border-color: #bfdbfe !important;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
-}
-
-.stats-grid .stat-card {
-    border-color: #d7e3ef !important;
-    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06) !important;
+body.plantao-polished .cycle-card,
+.stats-grid .stat-card,
+.task-card,
+.day-column,
+.stat-card {
+    background-color: #ffffff !important;
 }
 
 .stat-val,
@@ -115,10 +105,4 @@ body.plantao-polished .cycle-card {
 .nav-item.active i,
 .nav-item.active span {
     color: #1e3a8a !important;
-}
-
-.task-card,
-.day-column,
-.stat-card {
-    background-color: #ffffff !important;
 }
