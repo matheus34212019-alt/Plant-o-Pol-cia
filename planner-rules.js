@@ -88,7 +88,13 @@
     function pendingExtraForMatter(materia) {
         const data = getDb();
         const tasks = Object.values(data?.metaFixa || {}).flat();
-        return tasks.find(task => task?.extraStudy === true && !isDone(task) && task.m === materia);
+        const taskBlocker = tasks.find(task => task?.extraStudy === true && !isDone(task) && task.m === materia);
+        if (taskBlocker) return taskBlocker;
+        return (data?.lista || []).find(item => (
+            item?.m === materia &&
+            (parseFloat(item.extraTeoria) || 0) > 0.01 &&
+            (parseFloat(item.hF) || 0) < (parseFloat(item.h?.E) || 0) - 0.01
+        )) || null;
     }
 
     function isBlockedByExtra(task) {
@@ -181,6 +187,86 @@
 
     function roundHours(value) {
         return Math.round((parseFloat(value) || 0) * 10) / 10;
+    }
+
+    function samePlannedItem(task, item) {
+        if (!task || !item) return false;
+        if (task.itemId && item.id && task.itemId === item.id) return true;
+        return task.m === item.m && task.a === item.a;
+    }
+
+    function findItemForTask(task) {
+        const data = getDb();
+        return (data?.lista || []).find(item => samePlannedItem(task, item)) || null;
+    }
+
+    function repairPartialStudyHours() {
+        const data = getDb();
+        if (!data?.metaFixa || !Array.isArray(data.lista)) return false;
+        let changed = false;
+
+        Object.values(data.metaFixa).flat().forEach(task => {
+            if (!task || task.k !== 'E' || !isDone(task) || isExtraTask(task)) return;
+            const item = findItemForTask(task);
+            if (!item) return;
+            const doneHours = parseFloat(item.hF) || 0;
+            const totalHours = parseFloat(item.h?.E) || 0;
+            const extra = parseFloat(item.extraTeoria) || 0;
+            if (extra > 0.01 && doneHours > 0 && doneHours < totalHours - 0.01 && Math.abs(taskHours(task) - doneHours) > 0.01) {
+                task.h = roundHours(doneHours);
+                changed = true;
+            }
+        });
+
+        const aula13 = data.lista.find(item =>
+            item?.m === 'DIREITO ADMINISTRATIVO' &&
+            /Aula\s*13/i.test(item.a || '') &&
+            /Agentes/i.test(item.a || '')
+        );
+        if (aula13) {
+            const before = JSON.stringify(aula13);
+            aula13.h = aula13.h || {};
+            aula13.h.E = Math.max(parseFloat(aula13.h.E) || 0, 2);
+            aula13.hF = 1;
+            aula13.extraTeoria = Math.max(parseFloat(aula13.extraTeoria) || 0, 1);
+            aula13.done = aula13.done || {E:false, Rev:false, Ex:false};
+            aula13.done.E = false;
+            aula13.done.Rev = false;
+            aula13.done.Ex = false;
+            aula13.f = false;
+            aula13.sinalizado = false;
+            aula13.cicloConcluidoManual = false;
+            aula13.revCycle = null;
+            if (JSON.stringify(aula13) !== before) changed = true;
+
+            Object.values(data.metaFixa).flat().forEach(task => {
+                if (!samePlannedItem(task, aula13) || task.k !== 'E' || !isDone(task) || isExtraTask(task)) return;
+                if (Math.abs(taskHours(task) - 1) > 0.01) {
+                    task.h = 1;
+                    changed = true;
+                }
+            });
+        }
+
+        return changed;
+    }
+
+    function restoreTodayStudyHours() {
+        const data = getDb();
+        const key = dateKey(getViewDate());
+        const tasks = data?.metaFixa?.[key] || [];
+        let changed = false;
+        tasks.forEach(task => {
+            if (!task || task.k !== 'E' || isDone(task) || isExtraTask(task)) return;
+            const item = findItemForTask(task);
+            if (!item) return;
+            const remaining = Math.max(0, (parseFloat(item.h?.E) || taskHours(task)) - (parseFloat(item.hF) || 0));
+            if (remaining >= MIN_TASK_HOURS && Math.abs(taskHours(task) - remaining) > 0.01) {
+                task.h = roundHours(Math.min(remaining, MAX_HOURS_PER_MATTER_DAY));
+                changed = true;
+            }
+        });
+        return changed;
     }
 
     function balanceDayPlan(tasks, date) {
@@ -330,7 +416,11 @@
         if (!data?.metaFixa) return;
         Object.values(data.metaFixa).flat().forEach(task => {
             if (!task || !isDone(task)) return;
-            const real = task.hExtra || task.tempoLancado || task.hReal || task.hFeita;
+            const item = findItemForTask(task);
+            const partial = item && task.k === 'E' && (parseFloat(item.extraTeoria) || 0) > 0.01
+                ? parseFloat(item.hF) || 0
+                : 0;
+            const real = partial || task.tempoLancado || task.hReal || task.hFeita;
             if (real && parseFloat(real) > 0) setTaskHours(task, real);
             if (task.extraStudy && taskHours(task) > (parseFloat(task.hExtra) || taskHours(task))) {
                 setTaskHours(task, task.hExtra);
@@ -372,7 +462,9 @@
         wrapPlanner();
         wrapTempoExtra();
         ['renderDiario', 'renderSemanal', 'renderLancamentos', 'updateDashboard'].forEach(wrapRender);
+        repairPartialStudyHours();
         replaceBlockedActivities();
+        restoreTodayStudyHours();
         replanFutureDays();
         clampLaunchHours();
         if (balanceExistingPlans()) saveNow();
