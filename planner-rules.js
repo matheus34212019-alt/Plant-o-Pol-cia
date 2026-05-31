@@ -6,7 +6,7 @@
     const pad = n => String(n).padStart(2, '0');
     const roundHours = value => Math.round((parseFloat(value) || 0) * 10) / 10;
     const cleanDate = value => {
-        const date = new Date(value || new Date());
+        const date = value instanceof Date ? new Date(value) : parseDateKey(value) || new Date(value || new Date());
         date.setHours(0, 0, 0, 0);
         return date;
     };
@@ -25,6 +25,20 @@
     const isExtraTask = task => task?.extra === true || task?.l === 'Extra' || task?.k === 'Extra';
     const isStudy = task => task?.k === 'E' || task?.l === 'Estudo' || !task?.k;
 
+    function parseDateKey(value) {
+        if (!value || value instanceof Date) return value || null;
+        const text = String(value);
+        const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (iso) return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+        const br = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (br) return new Date(Number(br[3]), Number(br[2]) - 1, Number(br[1]));
+        return null;
+    }
+
+    function normalizeDayKey(key) {
+        return dateKey(parseDateKey(key) || key);
+    }
+
     function appReady(state = getDb()) {
         return !!(state && Array.isArray(state.lista) && state.metaFixa && typeof state.metaFixa === 'object');
     }
@@ -34,12 +48,12 @@
         const original = window.showToast.__plantaoOriginalToast || window.showToast;
         window.showToast = function quietPlannerToast(title, message, type) {
             const text = `${title || ''} ${message || ''}`.toLowerCase();
-            const automaticCorrection = /hora|horas|corrigid|cronograma|recalcul|replanejad|planejamento|tempo extra|dados sincronizados|progresso preservado|nuvem ativada|rotina/.test(text);
+            const automaticCorrection = /hora|horas|corrigid|cronograma|recalcul|replanejad|planejamento|tempo extra|dados sincronizados|progresso preservado|nuvem ativada|rotina|lançamentos recuperados|lancamentos recuperados/.test(text);
             if (automaticCorrection) return;
             return original.apply(this, arguments);
         };
         window.showToast.__plantaoOriginalToast = original;
-        window.showToast.__quietPlannerV268 = true;
+        window.showToast.__quietPlannerV270 = true;
     }
 
     function taskHours(task) {
@@ -81,9 +95,22 @@
     function taskEntries(state = getDb()) {
         const entries = [];
         Object.entries(state?.metaFixa || {}).forEach(([key, tasks]) => {
-            (tasks || []).forEach(task => entries.push({ key, task }));
+            (tasks || []).forEach(task => entries.push({ key, normalizedKey: normalizeDayKey(key), task }));
         });
         return entries;
+    }
+
+    function matterInitialOpenForReview(task, state = getDb()) {
+        if (!task || task.k === 'E' || isExtraTask(task) || isDone(task)) return null;
+        return (state?.lista || [])
+            .filter(item => item.m === task.m)
+            .filter(item => {
+                const total = parseFloat(item.h?.E) || 0;
+                const done = parseFloat(item.hF) || 0;
+                const extra = parseFloat(item.extraTeoria) || 0;
+                return !item.f || extra > 0.01 || done < total - 0.01;
+            })
+            .sort((a, b) => orderOf(a, state) - orderOf(b, state))[0] || null;
     }
 
     function earlierPendingStudyEntries(task, state = getDb(), batchEntries = []) {
@@ -101,7 +128,8 @@
 
     function violatesPreviousLessonDate(task, targetKey, state = getDb(), batchEntries = []) {
         if (!targetKey) return false;
-        return earlierPendingStudyEntries(task, state, batchEntries).some(entry => targetKey <= entry.key);
+        const normalizedTarget = normalizeDayKey(targetKey);
+        return earlierPendingStudyEntries(task, state, batchEntries).some(entry => normalizedTarget <= entry.normalizedKey);
     }
 
     function sameItemTheoryPending(task, state = getDb()) {
@@ -116,6 +144,8 @@
 
     function blockedByCycle(task, targetKey, state = getDb(), batchEntries = []) {
         if (!appReady(state) || !task || isDone(task) || isExtraTask(task)) return false;
+        const openMatterStudy = matterInitialOpenForReview(task, state);
+        if (openMatterStudy) return true;
         if (sameItemTheoryPending(task, state)) return true;
         return violatesPreviousLessonDate(task, targetKey, state, batchEntries);
     }
@@ -126,17 +156,36 @@
         if (typeof save === 'function') save();
     }
 
+    function hasPendingExtraTask(item, state = getDb()) {
+        return taskEntries(state).some(entry => entry.task?.extraStudy === true && !isDone(entry.task) && samePlannedItem(entry.task, item));
+    }
+
     function normalizePartialStudyHours(state = getDb()) {
         if (!appReady(state)) return false;
         let changed = false;
+
         (state.lista || []).forEach(item => {
             const extra = roundHours(parseFloat(item.extraTeoria) || 0);
-            const total = roundHours(parseFloat(item.h?.E) || 0);
+            let total = roundHours(parseFloat(item.h?.E) || 0);
+            let done = roundHours(parseFloat(item.hF) || 0);
             if (extra <= 0.01 || total <= 0) return;
 
-            const studiedToday = roundHours(Math.max(0, total - extra));
-            if ((parseFloat(item.hF) || 0) > studiedToday + 0.01 || item.f || item.done?.E) {
-                item.hF = studiedToday;
+            const completedStudyTasks = taskEntries(state)
+                .filter(entry => entry.task?.k === 'E' && !isExtraTask(entry.task) && isDone(entry.task) && samePlannedItem(entry.task, item));
+            const maxCompletedCard = completedStudyTasks.reduce((max, entry) => Math.max(max, taskHours(entry.task)), 0);
+
+            if (total >= done + extra - 0.01 && done > extra + 0.01 && Math.abs(maxCompletedCard - done) <= 0.01) {
+                total = done;
+                done = roundHours(Math.max(0, total - extra));
+                item.h = item.h || {};
+                item.h.E = total;
+                item.hF = done;
+                changed = true;
+            }
+
+            const studiedHours = roundHours(Math.max(0, total - extra));
+            if ((parseFloat(item.hF) || 0) !== studiedHours || item.f || item.done?.E) {
+                item.hF = studiedHours;
                 item.f = false;
                 item.sinalizado = false;
                 item.cicloConcluidoManual = false;
@@ -149,17 +198,21 @@
                 changed = true;
             }
 
-            taskEntries(state)
-                .filter(entry => entry.task?.k === 'E' && !isExtraTask(entry.task) && isDone(entry.task) && samePlannedItem(entry.task, item))
-                .forEach(entry => {
-                    const task = entry.task;
-                    if (Math.abs(taskHours(task) - studiedToday) > 0.01) {
-                        task.h = studiedToday;
-                        task.hReal = studiedToday;
-                        task.tempoLancado = studiedToday;
-                        changed = true;
-                    }
-                });
+            completedStudyTasks.forEach((entry, index) => {
+                const target = index === 0 ? studiedHours : taskHours(entry.task);
+                if (Math.abs(taskHours(entry.task) - target) > 0.01) {
+                    entry.task.h = target;
+                    entry.task.hReal = target;
+                    entry.task.tempoLancado = target;
+                    changed = true;
+                }
+            });
+
+            const remaining = roundHours(Math.max(0, (parseFloat(item.h?.E) || 0) - (parseFloat(item.hF) || 0)));
+            if (remaining >= MIN_TASK_HOURS - 0.01 && !hasPendingExtraTask(item, state)) {
+                placeTask(makeExtraStudyTask(completedStudyTasks[0]?.task || itemToTask(item), item, remaining, dateKey(getViewDate())), getViewDate());
+                changed = true;
+            }
         });
         return changed;
     }
@@ -167,7 +220,7 @@
     function filterInvalidScheduledTasks(state = getDb()) {
         if (!appReady(state)) return false;
         let changed = false;
-        Object.keys(state.metaFixa || {}).sort().forEach(key => {
+        Object.keys(state.metaFixa || {}).sort((a, b) => normalizeDayKey(a).localeCompare(normalizeDayKey(b))).forEach(key => {
             const keptTasks = [];
             const keptEntries = [];
             (state.metaFixa[key] || []).forEach(task => {
@@ -176,7 +229,7 @@
                     return;
                 }
                 keptTasks.push(task);
-                keptEntries.push({ key, task });
+                keptEntries.push({ key, normalizedKey: normalizeDayKey(key), task });
             });
             if (keptTasks.length) state.metaFixa[key] = keptTasks;
             else delete state.metaFixa[key];
@@ -259,13 +312,12 @@
 
     function setCompletedStudyCard(item, hours) {
         const data = getDb();
-        taskEntries(data)
-            .filter(entry => entry.task?.k === 'E' && !isExtraTask(entry.task) && isDone(entry.task) && samePlannedItem(entry.task, item))
-            .forEach(entry => {
-                entry.task.h = roundHours(hours);
-                entry.task.hReal = roundHours(hours);
-                entry.task.tempoLancado = roundHours(hours);
-            });
+        const entries = taskEntries(data)
+            .filter(entry => entry.task?.k === 'E' && !isExtraTask(entry.task) && isDone(entry.task) && samePlannedItem(entry.task, item));
+        if (!entries.length) return;
+        entries[0].task.h = roundHours(hours);
+        entries[0].task.hReal = roundHours(hours);
+        entries[0].task.tempoLancado = roundHours(hours);
     }
 
     function getPendingTheoryTask() {
@@ -300,8 +352,8 @@
         markItemPending(item, totalBefore, nextExtra, studiedHours);
         setCompletedStudyCard(item, studiedHours);
         placeTask(makeExtraStudyTask(baseTask, item, extraHours, dateKey(today)), today);
-        normalizePartialStudyHours(data);
-        filterInvalidScheduledTasks(data);
+        const a = normalizePartialStudyHours(data);
+        const b = filterInvalidScheduledTasks(data);
         saveNow();
 
         if (typeof renderSemanal === 'function') renderSemanal();
@@ -309,17 +361,18 @@
         if (typeof updateDashboard === 'function') updateDashboard();
         if (typeof renderLancamentos === 'function') renderLancamentos();
         if (typeof fecharModais === 'function') fecharModais();
-        return true;
+        return a || b || true;
     }
 
     function runLightCorrections() {
-        const changed = normalizePartialStudyHours() || filterInvalidScheduledTasks();
-        if (changed) saveNow();
-        return changed;
+        const changedHours = normalizePartialStudyHours();
+        const changedCycle = filterInvalidScheduledTasks();
+        if (changedHours || changedCycle) saveNow();
+        return changedHours || changedCycle;
     }
 
     function wrapPlanner() {
-        if (typeof window.planejarDia !== 'function' || window.planejarDia.__cycleRulesV268) return;
+        if (typeof window.planejarDia !== 'function' || window.planejarDia.__cycleRulesV270) return;
         const original = window.planejarDia;
         window.planejarDia = function wrappedPlanejarDia(state, date, limit, mutarEstado) {
             const planned = original.apply(this, arguments) || [];
@@ -330,16 +383,16 @@
             planned.forEach(task => {
                 if (!blockedByCycle(task, key, state, acceptedEntries)) {
                     accepted.push(task);
-                    acceptedEntries.push({ key, task });
+                    acceptedEntries.push({ key, normalizedKey: normalizeDayKey(key), task });
                 }
             });
             return accepted;
         };
-        window.planejarDia.__cycleRulesV268 = true;
+        window.planejarDia.__cycleRulesV270 = true;
     }
 
     function wrapTempoExtra() {
-        if (typeof window.aplicarTempoExtraTeoria !== 'function' || window.aplicarTempoExtraTeoria.__cycleRulesV268) return;
+        if (typeof window.aplicarTempoExtraTeoria !== 'function' || window.aplicarTempoExtraTeoria.__cycleRulesV270) return;
         const original = window.aplicarTempoExtraTeoria;
         window.aplicarTempoExtraTeoria = function wrappedTempoExtra(destino) {
             const hours = Math.max(MIN_TASK_HOURS, parseFloat(document.getElementById('teoria-extra-horas')?.value) || 1);
@@ -350,17 +403,17 @@
             runLightCorrections();
             return result;
         };
-        window.aplicarTempoExtraTeoria.__cycleRulesV268 = true;
+        window.aplicarTempoExtraTeoria.__cycleRulesV270 = true;
     }
 
     function wrapRenderer(name) {
-        if (typeof window[name] !== 'function' || window[name].__cycleRulesV268) return;
+        if (typeof window[name] !== 'function' || window[name].__cycleRulesV270) return;
         const original = window[name];
         window[name] = function wrappedRenderer() {
             runLightCorrections();
             return original.apply(this, arguments);
         };
-        window[name].__cycleRulesV268 = true;
+        window[name].__cycleRulesV270 = true;
     }
 
     function boot() {
