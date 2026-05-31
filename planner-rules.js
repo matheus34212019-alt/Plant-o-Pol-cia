@@ -53,7 +53,7 @@
             return original.apply(this, arguments);
         };
         window.showToast.__plantaoOriginalToast = original;
-        window.showToast.__quietPlannerV270 = true;
+        window.showToast.__quietPlannerV271 = true;
     }
 
     function taskHours(task) {
@@ -92,6 +92,15 @@
         return Number.isFinite(fromItem) ? fromItem : 0;
     }
 
+    function itemStudyOpen(item) {
+        const total = parseFloat(item?.h?.E) || 0;
+        const done = parseFloat(item?.hF) || 0;
+        const extra = parseFloat(item?.extraTeoria) || 0;
+        if (extra > 0.01) return true;
+        if (done < total - 0.01) return true;
+        return !(item?.f || item?.sinalizado || item?.cicloConcluidoManual);
+    }
+
     function taskEntries(state = getDb()) {
         const entries = [];
         Object.entries(state?.metaFixa || {}).forEach(([key, tasks]) => {
@@ -104,13 +113,32 @@
         if (!task || task.k === 'E' || isExtraTask(task) || isDone(task)) return null;
         return (state?.lista || [])
             .filter(item => item.m === task.m)
-            .filter(item => {
-                const total = parseFloat(item.h?.E) || 0;
-                const done = parseFloat(item.hF) || 0;
-                const extra = parseFloat(item.extraTeoria) || 0;
-                return !item.f || extra > 0.01 || done < total - 0.01;
-            })
+            .filter(itemStudyOpen)
             .sort((a, b) => orderOf(a, state) - orderOf(b, state))[0] || null;
+    }
+
+    function earlierOpenStudyItems(task, state = getDb()) {
+        if (!task?.m || isExtraTask(task) || isDone(task)) return [];
+        const taskItem = findItemForTask(task, state) || task;
+        const taskOrder = orderOf(taskItem, state);
+        return (state?.lista || [])
+            .filter(item => item.m === task.m)
+            .filter(item => !samePlannedItem(taskItem, item))
+            .filter(item => orderOf(item, state) < taskOrder)
+            .filter(itemStudyOpen);
+    }
+
+    function earliestScheduledDateForItem(item, state = getDb(), batchEntries = []) {
+        const dates = taskEntries(state)
+            .concat(batchEntries || [])
+            .filter(entry => {
+                const candidate = entry.task;
+                return candidate && candidate.k === 'E' && isStudy(candidate) && !isExtraTask(candidate) && !isDone(candidate) && samePlannedItem(candidate, item);
+            })
+            .map(entry => entry.normalizedKey)
+            .filter(Boolean)
+            .sort();
+        return dates[0] || null;
     }
 
     function earlierPendingStudyEntries(task, state = getDb(), batchEntries = []) {
@@ -126,6 +154,15 @@
             });
     }
 
+    function violatesSequentialStudyOrder(task, targetKey, state = getDb(), batchEntries = []) {
+        if (!targetKey || !isStudy(task) || task?.k !== 'E') return false;
+        const normalizedTarget = normalizeDayKey(targetKey);
+        return earlierOpenStudyItems(task, state).some(item => {
+            const scheduledKey = earliestScheduledDateForItem(item, state, batchEntries);
+            return !scheduledKey || scheduledKey >= normalizedTarget;
+        });
+    }
+
     function violatesPreviousLessonDate(task, targetKey, state = getDb(), batchEntries = []) {
         if (!targetKey) return false;
         const normalizedTarget = normalizeDayKey(targetKey);
@@ -136,10 +173,7 @@
         if (!task || task.k === 'E' || isExtraTask(task) || isDone(task)) return false;
         const item = findItemForTask(task, state);
         if (!item) return false;
-        const total = parseFloat(item.h?.E) || 0;
-        const done = parseFloat(item.hF) || 0;
-        const extra = parseFloat(item.extraTeoria) || 0;
-        return extra > 0.01 || done < total - 0.01;
+        return itemStudyOpen(item);
     }
 
     function blockedByCycle(task, targetKey, state = getDb(), batchEntries = []) {
@@ -147,6 +181,7 @@
         const openMatterStudy = matterInitialOpenForReview(task, state);
         if (openMatterStudy) return true;
         if (sameItemTheoryPending(task, state)) return true;
+        if (violatesSequentialStudyOrder(task, targetKey, state, batchEntries)) return true;
         return violatesPreviousLessonDate(task, targetKey, state, batchEntries);
     }
 
@@ -372,7 +407,7 @@
     }
 
     function wrapPlanner() {
-        if (typeof window.planejarDia !== 'function' || window.planejarDia.__cycleRulesV270) return;
+        if (typeof window.planejarDia !== 'function' || window.planejarDia.__cycleRulesV271) return;
         const original = window.planejarDia;
         window.planejarDia = function wrappedPlanejarDia(state, date, limit, mutarEstado) {
             const planned = original.apply(this, arguments) || [];
@@ -388,11 +423,11 @@
             });
             return accepted;
         };
-        window.planejarDia.__cycleRulesV270 = true;
+        window.planejarDia.__cycleRulesV271 = true;
     }
 
     function wrapTempoExtra() {
-        if (typeof window.aplicarTempoExtraTeoria !== 'function' || window.aplicarTempoExtraTeoria.__cycleRulesV270) return;
+        if (typeof window.aplicarTempoExtraTeoria !== 'function' || window.aplicarTempoExtraTeoria.__cycleRulesV271) return;
         const original = window.aplicarTempoExtraTeoria;
         window.aplicarTempoExtraTeoria = function wrappedTempoExtra(destino) {
             const hours = Math.max(MIN_TASK_HOURS, parseFloat(document.getElementById('teoria-extra-horas')?.value) || 1);
@@ -403,17 +438,17 @@
             runLightCorrections();
             return result;
         };
-        window.aplicarTempoExtraTeoria.__cycleRulesV270 = true;
+        window.aplicarTempoExtraTeoria.__cycleRulesV271 = true;
     }
 
     function wrapRenderer(name) {
-        if (typeof window[name] !== 'function' || window[name].__cycleRulesV270) return;
+        if (typeof window[name] !== 'function' || window[name].__cycleRulesV271) return;
         const original = window[name];
         window[name] = function wrappedRenderer() {
             runLightCorrections();
             return original.apply(this, arguments);
         };
-        window[name].__cycleRulesV270 = true;
+        window[name].__cycleRulesV271 = true;
     }
 
     function boot() {
