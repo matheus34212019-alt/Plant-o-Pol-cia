@@ -30,16 +30,16 @@
     }
 
     function installQuietToasts() {
-        if (typeof window.showToast !== 'function' || window.showToast.__quietPlannerV267) return;
-        const original = window.showToast;
-        const quietTitles = /cronograma|dados sincronizados|progresso preservado|nuvem ativada|tempo extra replanejado|rotina|planejamento/i;
+        if (typeof window.showToast !== 'function') return;
+        const original = window.showToast.__plantaoOriginalToast || window.showToast;
         window.showToast = function quietPlannerToast(title, message, type) {
-            const text = `${title || ''} ${message || ''}`;
-            const important = /erro|senha|login|acesso|bloqueio|pendente|indispon/i.test(text);
-            if (quietTitles.test(text) && !important) return;
+            const text = `${title || ''} ${message || ''}`.toLowerCase();
+            const automaticCorrection = /hora|horas|corrigid|cronograma|recalcul|replanejad|planejamento|tempo extra|dados sincronizados|progresso preservado|nuvem ativada|rotina/.test(text);
+            if (automaticCorrection) return;
             return original.apply(this, arguments);
         };
-        window.showToast.__quietPlannerV267 = true;
+        window.showToast.__plantaoOriginalToast = original;
+        window.showToast.__quietPlannerV268 = true;
     }
 
     function taskHours(task) {
@@ -319,7 +319,7 @@
     }
 
     function wrapPlanner() {
-        if (typeof window.planejarDia !== 'function' || window.planejarDia.__cycleRulesV267) return;
+        if (typeof window.planejarDia !== 'function' || window.planejarDia.__cycleRulesV268) return;
         const original = window.planejarDia;
         window.planejarDia = function wrappedPlanejarDia(state, date, limit, mutarEstado) {
             const planned = original.apply(this, arguments) || [];
@@ -335,11 +335,11 @@
             });
             return accepted;
         };
-        window.planejarDia.__cycleRulesV267 = true;
+        window.planejarDia.__cycleRulesV268 = true;
     }
 
     function wrapTempoExtra() {
-        if (typeof window.aplicarTempoExtraTeoria !== 'function' || window.aplicarTempoExtraTeoria.__cycleRulesV267) return;
+        if (typeof window.aplicarTempoExtraTeoria !== 'function' || window.aplicarTempoExtraTeoria.__cycleRulesV268) return;
         const original = window.aplicarTempoExtraTeoria;
         window.aplicarTempoExtraTeoria = function wrappedTempoExtra(destino) {
             const hours = Math.max(MIN_TASK_HOURS, parseFloat(document.getElementById('teoria-extra-horas')?.value) || 1);
@@ -350,17 +350,17 @@
             runLightCorrections();
             return result;
         };
-        window.aplicarTempoExtraTeoria.__cycleRulesV267 = true;
+        window.aplicarTempoExtraTeoria.__cycleRulesV268 = true;
     }
 
     function wrapRenderer(name) {
-        if (typeof window[name] !== 'function' || window[name].__cycleRulesV267) return;
+        if (typeof window[name] !== 'function' || window[name].__cycleRulesV268) return;
         const original = window[name];
         window[name] = function wrappedRenderer() {
             runLightCorrections();
             return original.apply(this, arguments);
         };
-        window[name].__cycleRulesV267 = true;
+        window[name].__cycleRulesV268 = true;
     }
 
     function boot() {
