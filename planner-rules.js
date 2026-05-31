@@ -30,7 +30,7 @@
     }
 
     function installQuietToasts() {
-        if (typeof window.showToast !== 'function' || window.showToast.__quietPlannerV265) return;
+        if (typeof window.showToast !== 'function' || window.showToast.__quietPlannerV266) return;
         const original = window.showToast;
         const quietTitles = /cronograma|dados sincronizados|progresso preservado|nuvem ativada|tempo extra replanejado|rotina|planejamento/i;
         window.showToast = function quietPlannerToast(title, message, type) {
@@ -39,7 +39,7 @@
             if (quietTitles.test(text) && !important) return;
             return original.apply(this, arguments);
         };
-        window.showToast.__quietPlannerV265 = true;
+        window.showToast.__quietPlannerV266 = true;
     }
 
     function taskHours(task) {
@@ -78,17 +78,31 @@
         return Number.isFinite(fromItem) ? fromItem : 0;
     }
 
+    function allTasks(state = getDb()) {
+        return Object.values(state?.metaFixa || {}).flat().filter(Boolean);
+    }
+
     function openInitialStudyForMatter(materia, state = getDb()) {
         if (!appReady(state) || !materia) return null;
         return (state.lista || [])
-            .filter(item => item.m === materia && !item.f && (parseFloat(item.hF) || 0) < (parseFloat(item.h?.E) || 0) - 0.01)
+            .filter(item => item.m === materia && (!item.f || (parseFloat(item.hF) || 0) < (parseFloat(item.h?.E) || 0) - 0.01 || (parseFloat(item.extraTeoria) || 0) > 0.01))
+            .sort((a, b) => orderOf(a, state) - orderOf(b, state))[0] || null;
+    }
+
+    function scheduledPendingStudyBlocker(task, state = getDb(), batch = []) {
+        if (!task?.m || isExtraTask(task) || isDone(task)) return null;
+        const taskOrder = orderOf(task, state);
+        const pendingStudies = allTasks(state)
+            .concat(batch || [])
+            .filter(candidate => candidate && candidate.m === task.m && isStudy(candidate) && candidate.k === 'E' && !isExtraTask(candidate) && !isDone(candidate));
+        return pendingStudies
+            .filter(candidate => !samePlannedItem(candidate, findItemForTask(task, state) || task) && orderOf(candidate, state) < taskOrder)
             .sort((a, b) => orderOf(a, state) - orderOf(b, state))[0] || null;
     }
 
     function pendingExtraForMatter(materia, state = getDb()) {
         if (!appReady(state) || !materia) return null;
-        const tasks = Object.values(state.metaFixa || {}).flat();
-        const extraTask = tasks.find(task => task?.extraStudy === true && !isDone(task) && task.m === materia);
+        const extraTask = allTasks(state).find(task => task?.extraStudy === true && !isDone(task) && task.m === materia);
         if (extraTask) return extraTask;
         return (state.lista || []).find(item => item.m === materia && (parseFloat(item.extraTeoria) || 0) > 0.01 && (parseFloat(item.hF) || 0) < (parseFloat(item.h?.E) || 0) - 0.01) || null;
     }
@@ -100,14 +114,18 @@
         return taskOrder && blockerOrder ? taskOrder > blockerOrder : true;
     }
 
-    function blockedByCycle(task, state = getDb()) {
+    function blockedByCycle(task, state = getDb(), batch = []) {
         if (!appReady(state) || !task || isDone(task) || isExtraTask(task)) return false;
+        const scheduledBlocker = scheduledPendingStudyBlocker(task, state, batch);
+        if (scheduledBlocker) return true;
+
         const extraBlocker = pendingExtraForMatter(task.m, state);
         if (extraBlocker && isLaterSameMatter(task, extraBlocker, state)) return true;
+
         const openInitial = openInitialStudyForMatter(task.m, state);
         if (!openInitial) return false;
-        if (task.k !== 'E') return true;
         const item = findItemForTask(task, state);
+        if (task.k !== 'E') return true;
         return !!item && item.id !== openInitial.id;
     }
 
@@ -117,17 +135,52 @@
         if (typeof save === 'function') save();
     }
 
+    function normalizePartialStudyHours(state = getDb()) {
+        if (!appReady(state)) return false;
+        let changed = false;
+        (state.lista || []).forEach(item => {
+            const extra = roundHours(parseFloat(item.extraTeoria) || 0);
+            const total = roundHours(parseFloat(item.h?.E) || 0);
+            if (extra <= 0.01 || total <= 0) return;
+            const actualStudied = roundHours(Math.max(0, total - extra));
+            if ((parseFloat(item.hF) || 0) > actualStudied + 0.01 || item.f || item.done?.E) {
+                item.hF = actualStudied;
+                item.f = false;
+                item.sinalizado = false;
+                item.cicloConcluidoManual = false;
+                item.done = item.done || {E:false, Rev:false, Ex:false};
+                item.done.E = false;
+                item.done.Rev = false;
+                item.done.Ex = false;
+                item.revCycle = null;
+                item.extraTeoriaSaldoCorrigido = true;
+                changed = true;
+            }
+            allTasks(state)
+                .filter(task => task.k === 'E' && !isExtraTask(task) && isDone(task) && samePlannedItem(task, item))
+                .forEach(task => {
+                    if (Math.abs(taskHours(task) - actualStudied) > 0.01) {
+                        task.h = actualStudied;
+                        task.hReal = actualStudied;
+                        task.tempoLancado = actualStudied;
+                        changed = true;
+                    }
+                });
+        });
+        return changed;
+    }
+
     function filterInvalidScheduledTasks(state = getDb()) {
         if (!appReady(state)) return false;
         let changed = false;
-        Object.keys(state.metaFixa || {}).forEach(key => {
-            const before = state.metaFixa[key] || [];
-            const after = before.filter(task => !blockedByCycle(task, state));
-            if (after.length !== before.length) {
-                changed = true;
-                if (after.length) state.metaFixa[key] = after;
-                else delete state.metaFixa[key];
-            }
+        Object.keys(state.metaFixa || {}).sort().forEach(key => {
+            const kept = [];
+            (state.metaFixa[key] || []).forEach(task => {
+                if (blockedByCycle(task, state, kept)) changed = true;
+                else kept.push(task);
+            });
+            if (kept.length) state.metaFixa[key] = kept;
+            else delete state.metaFixa[key];
         });
         return changed;
     }
@@ -207,12 +260,11 @@
 
     function setCompletedStudyCard(item, hours) {
         const data = getDb();
-        const entries = Object.values(data?.metaFixa || {}).flat().filter(task => task?.k === 'E' && !isExtraTask(task) && isDone(task) && samePlannedItem(task, item));
-        if (entries[0]) {
-            entries[0].h = roundHours(hours);
-            entries[0].hReal = roundHours(hours);
-            entries[0].tempoLancado = roundHours(hours);
-        }
+        allTasks(data).filter(task => task?.k === 'E' && !isExtraTask(task) && isDone(task) && samePlannedItem(task, item)).forEach(task => {
+            task.h = roundHours(hours);
+            task.hReal = roundHours(hours);
+            task.tempoLancado = roundHours(hours);
+        });
     }
 
     function getPendingTheoryTask() {
@@ -245,6 +297,7 @@
         markItemPending(item, totalBefore, nextExtra, actualStudied);
         setCompletedStudyCard(item, actualStudied);
         placeTask(makeExtraStudyTask(baseTask, item, extraHours, dateKey(today)), today);
+        normalizePartialStudyHours(data);
         filterInvalidScheduledTasks(data);
         saveNow();
         if (typeof renderSemanal === 'function') renderSemanal();
@@ -255,19 +308,29 @@
         return true;
     }
 
+    function runLightCorrections() {
+        const changed = normalizePartialStudyHours() || filterInvalidScheduledTasks();
+        if (changed) saveNow();
+        return changed;
+    }
+
     function wrapPlanner() {
-        if (typeof window.planejarDia !== 'function' || window.planejarDia.__cycleRulesV265) return;
+        if (typeof window.planejarDia !== 'function' || window.planejarDia.__cycleRulesV266) return;
         const original = window.planejarDia;
         window.planejarDia = function wrappedPlanejarDia(state, date, limit, mutarEstado) {
             const planned = original.apply(this, arguments) || [];
             if (!appReady(state)) return planned;
-            return planned.filter(task => !blockedByCycle(task, state));
+            const accepted = [];
+            planned.forEach(task => {
+                if (!blockedByCycle(task, state, accepted)) accepted.push(task);
+            });
+            return accepted;
         };
-        window.planejarDia.__cycleRulesV265 = true;
+        window.planejarDia.__cycleRulesV266 = true;
     }
 
     function wrapTempoExtra() {
-        if (typeof window.aplicarTempoExtraTeoria !== 'function' || window.aplicarTempoExtraTeoria.__cycleRulesV265) return;
+        if (typeof window.aplicarTempoExtraTeoria !== 'function' || window.aplicarTempoExtraTeoria.__cycleRulesV266) return;
         const original = window.aplicarTempoExtraTeoria;
         window.aplicarTempoExtraTeoria = function wrappedTempoExtra(destino) {
             const hours = Math.max(MIN_TASK_HOURS, parseFloat(document.getElementById('teoria-extra-horas')?.value) || 1);
@@ -275,17 +338,28 @@
                 if (addExtraStudyForAnotherDay(hours)) return;
             }
             const result = original.apply(this, arguments);
-            if (filterInvalidScheduledTasks()) saveNow();
+            runLightCorrections();
             return result;
         };
-        window.aplicarTempoExtraTeoria.__cycleRulesV265 = true;
+        window.aplicarTempoExtraTeoria.__cycleRulesV266 = true;
+    }
+
+    function wrapRenderer(name) {
+        if (typeof window[name] !== 'function' || window[name].__cycleRulesV266) return;
+        const original = window[name];
+        window[name] = function wrappedRenderer() {
+            runLightCorrections();
+            return original.apply(this, arguments);
+        };
+        window[name].__cycleRulesV266 = true;
     }
 
     function boot() {
         installQuietToasts();
         wrapPlanner();
         wrapTempoExtra();
-        if (filterInvalidScheduledTasks()) saveNow();
+        ['renderDiario', 'renderSemanal', 'renderLancamentos', 'updateDashboard'].forEach(wrapRenderer);
+        runLightCorrections();
     }
 
     if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', boot);
