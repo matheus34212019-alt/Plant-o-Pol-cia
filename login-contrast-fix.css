@@ -1,4 +1,4 @@
-/* v262: critical login/home contrast overrides */
+/* v265: critical login/home contrast and spacing overrides */
 
 #login-screen {
     background: linear-gradient(180deg, #07111f 0%, #0b1220 55%, #111827 100%) !important;
@@ -66,6 +66,60 @@ body.plantao-polished .main {
     background: linear-gradient(180deg, #f8fafc 0%, #eef4f8 100%) !important;
 }
 
+.container {
+    padding-left: max(22px, env(safe-area-inset-left)) !important;
+    padding-right: max(22px, env(safe-area-inset-right)) !important;
+}
+
+.sidebar {
+    padding-left: max(14px, env(safe-area-inset-left)) !important;
+    padding-right: 12px !important;
+}
+
+.logo-box,
+.nav-item,
+.sub-link {
+    column-gap: 12px !important;
+}
+
+.nav-item {
+    min-height: 48px !important;
+    padding: 12px 14px !important;
+    touch-action: manipulation !important;
+}
+
+.nav-item i {
+    min-width: 22px !important;
+    text-align: center !important;
+    flex: 0 0 22px !important;
+}
+
+.page-header,
+.welcome-box,
+.stats-grid,
+.stat-card,
+.task-card,
+.day-column {
+    scroll-margin-left: 24px !important;
+}
+
+.task-card {
+    padding: 16px 18px !important;
+}
+
+.btn,
+button,
+.nav-item,
+.perf-tab {
+    touch-action: manipulation !important;
+}
+
+.toast-area .toast,
+.toast-area .toast.system,
+.toast-area .toast.info {
+    display: none !important;
+}
+
 .welcome-box,
 body.plantao-polished .welcome-box {
     background: linear-gradient(135deg, #0f766e, #2563eb) !important;
@@ -105,4 +159,28 @@ body.plantao-polished .cycle-card,
 .nav-item.active i,
 .nav-item.active span {
     color: #1e3a8a !important;
+}
+
+@media (max-width: 920px) {
+    .main {
+        padding-left: 0 !important;
+    }
+
+    .container {
+        width: 100% !important;
+        max-width: none !important;
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+    }
+
+    .weekly-grid,
+    #grid-semanal {
+        padding-left: 6px !important;
+        padding-right: 18px !important;
+        gap: 14px !important;
+    }
+
+    .day-column {
+        min-width: 260px !important;
+    }
 }
