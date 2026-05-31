@@ -1,6 +1,6 @@
 (function plantaoFastLogin() {
-    if (window.__plantaoFastLoginV276) return;
-    window.__plantaoFastLoginV276 = true;
+    if (window.__plantaoFastLoginV277) return;
+    window.__plantaoFastLoginV277 = true;
 
     function value(name, fallback = null) {
         try { return Function(`return typeof ${name} === "undefined" ? null : ${name};`)() ?? fallback; }
@@ -17,6 +17,11 @@
         return typeof found === 'function' ? found : null;
     }
 
+    function setVar(name, val) {
+        try { Function('val', `${name} = val;`)(val); } catch (_) {}
+        try { window[name] = val; } catch (_) {}
+    }
+
     function approvedProfile(user) {
         const email = String(user?.email || '').toLowerCase();
         const adminEmail = String(value('ADMIN_EMAIL', 'matheus34212019@gmail.com')).toLowerCase();
@@ -30,9 +35,28 @@
         };
     }
 
-    function setVar(name, val) {
-        try { Function('val', `${name} = val;`)(val); } catch (_) {}
-        try { window[name] = val; } catch (_) {}
+    function forceHideLogin() {
+        const login = document.getElementById('login-screen');
+        if (login) {
+            login.style.opacity = '0';
+            login.style.pointerEvents = 'none';
+            login.style.display = 'none';
+            login.setAttribute('aria-hidden', 'true');
+        }
+        document.documentElement.classList.remove('login-lock', 'auth-loading');
+        document.body.classList.remove('login-lock', 'auth-loading');
+    }
+
+    function scheduleLightInit() {
+        const run = () => {
+            try { fn('atualizarPersonalizacao')?.(); } catch (_) {}
+            try { fn('init')?.(); } catch (_) {}
+        };
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(run, { timeout: 700 });
+        } else {
+            setTimeout(run, 0);
+        }
     }
 
     function openAppNow(user) {
@@ -43,69 +67,66 @@
         setVar('carregandoNuvem', false);
 
         try { fn('iniciarSessaoPersistente')?.(); } catch (_) {}
-        try { fn('setCloudStatus')?.('Acesso liberado.'); } catch (_) {}
-        try { fn('ocultarTelaLogin')?.(); } catch (_) {}
-        try { fn('atualizarPersonalizacao')?.(); } catch (_) {}
-        try { fn('init')?.(); } catch (_) {}
+        try { fn('setCloudStatus')?.(''); } catch (_) {}
+        try { fn('ocultarTelaLogin')?.(); } catch (_) { forceHideLogin(); }
+        forceHideLogin();
+        scheduleLightInit();
     }
 
-    function runBackgroundSync(user) {
+    function runBackgroundApproval(user) {
         setTimeout(async () => {
             try {
                 const verificar = fn('verificarAcessoSupabase');
-                if (verificar) {
-                    const profile = await Promise.race([
-                        verificar(),
-                        new Promise(resolve => setTimeout(() => resolve(null), 1800))
-                    ]);
-                    if (profile) {
-                        setVar('accessProfile', profile);
-                        const aprovado = fn('acessoAprovado') ? fn('acessoAprovado')() : profile.status === 'approved';
-                        if (!aprovado && fn('bloquearAcessoPorAprovacao')) {
-                            fn('bloquearAcessoPorAprovacao')(profile);
-                            return;
-                        }
-                    }
-                }
+                if (!verificar) return;
+                const profile = await Promise.race([
+                    verificar(),
+                    new Promise(resolve => setTimeout(() => resolve(null), 1500))
+                ]);
+                if (!profile) return;
+                setVar('accessProfile', profile);
+                const aprovado = fn('acessoAprovado') ? fn('acessoAprovado')() : profile.status === 'approved';
+                if (!aprovado && fn('bloquearAcessoPorAprovacao')) fn('bloquearAcessoPorAprovacao')(profile);
             } catch (_) {}
+        }, 5000);
+    }
 
+    function runBackgroundCloudSync() {
+        setTimeout(async () => {
             try {
                 const carregar = fn('carregarDadosSupabase') || fn('carregarDadosDaNuvem');
-                if (carregar) {
-                    await Promise.race([
-                        carregar(),
-                        new Promise(resolve => setTimeout(resolve, 2500))
-                    ]);
-                    try { fn('init')?.(); } catch (_) {}
-                }
+                if (!carregar) return;
+                await Promise.race([
+                    carregar(),
+                    new Promise(resolve => setTimeout(resolve, 2500))
+                ]);
             } catch (_) {}
-        }, 50);
+        }, 9000);
     }
 
     function installToastQuiet() {
         const current = fn('showToast');
-        if (!current || current.__fastLoginQuietV276) return;
+        if (!current || current.__fastLoginQuietV277) return;
         const original = current.__plantaoOriginalToast || current;
         function quietToast(title, body, type) {
             const text = `${title || ''} ${body || ''}`.toLowerCase();
-            if (/dados sincronizados|nuvem ativada|sincroniza|supabase|carregado|falha ao salvar|copia local|cópia local|acesso liberado/.test(text)) return;
+            if (/dados sincronizados|nuvem ativada|sincroniza|supabase|carregado|falha ao salvar|copia local|c.pia local|acesso liberado|corrigido|recalculado|replanejado|cronograma corrigido|horas corrigidas/.test(text)) return;
             return original.apply(this, arguments);
         }
         quietToast.__plantaoOriginalToast = original;
-        quietToast.__fastLoginQuietV276 = true;
+        quietToast.__fastLoginQuietV277 = true;
         setValue('showToast', quietToast);
     }
 
     function installFastSession() {
         const original = fn('entrarComSessaoSupabase');
-        if (!original || original.__fastLoginV276) return false;
-
+        if (!original || original.__fastLoginV277) return false;
         async function entrarComSessaoSupabaseRapido(user) {
             openAppNow(user);
-            runBackgroundSync(user);
+            runBackgroundApproval(user);
+            runBackgroundCloudSync();
             return true;
         }
-        entrarComSessaoSupabaseRapido.__fastLoginV276 = true;
+        entrarComSessaoSupabaseRapido.__fastLoginV277 = true;
         entrarComSessaoSupabaseRapido.__original = original;
         setValue('entrarComSessaoSupabase', entrarComSessaoSupabaseRapido);
         return true;
@@ -113,12 +134,12 @@
 
     function installFastCloudLoad() {
         const original = fn('carregarDadosDaNuvem');
-        if (!original || original.__fastLoginV276) return false;
+        if (!original || original.__fastLoginV277) return false;
         async function carregarDadosDaNuvemSemBloquear() {
-            setTimeout(() => original().catch(() => {}), 0);
+            setTimeout(() => original().catch(() => {}), 9000);
             return true;
         }
-        carregarDadosDaNuvemSemBloquear.__fastLoginV276 = true;
+        carregarDadosDaNuvemSemBloquear.__fastLoginV277 = true;
         carregarDadosDaNuvemSemBloquear.__original = original;
         setValue('carregarDadosDaNuvem', carregarDadosDaNuvemSemBloquear);
         return true;
@@ -126,15 +147,15 @@
 
     function installFastSave() {
         const original = fn('salvarDadosSupabase');
-        if (!original || original.__fastLoginV276) return false;
+        if (!original || original.__fastLoginV277) return false;
         async function salvarDadosSupabaseSemBloquear(imediato) {
             if (imediato === true) {
-                setTimeout(() => original(true).catch(() => {}), 0);
+                setTimeout(() => original(true).catch(() => {}), 1200);
                 return true;
             }
             return original.apply(this, arguments);
         }
-        salvarDadosSupabaseSemBloquear.__fastLoginV276 = true;
+        salvarDadosSupabaseSemBloquear.__fastLoginV277 = true;
         salvarDadosSupabaseSemBloquear.__original = original;
         setValue('salvarDadosSupabase', salvarDadosSupabaseSemBloquear);
         return true;
