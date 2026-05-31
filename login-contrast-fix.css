@@ -1,4 +1,4 @@
-/* v265: critical login/home contrast and spacing overrides */
+/* v268: keep login readable without overriding the app layout */
 
 #login-screen {
     background: linear-gradient(180deg, #07111f 0%, #0b1220 55%, #111827 100%) !important;
@@ -61,126 +61,9 @@
     border-color: rgba(148, 163, 184, 0.34) !important;
 }
 
-.main,
-body.plantao-polished .main {
-    background: linear-gradient(180deg, #f8fafc 0%, #eef4f8 100%) !important;
-}
-
-.container {
-    padding-left: max(22px, env(safe-area-inset-left)) !important;
-    padding-right: max(22px, env(safe-area-inset-right)) !important;
-}
-
-.sidebar {
-    padding-left: max(14px, env(safe-area-inset-left)) !important;
-    padding-right: 12px !important;
-}
-
-.logo-box,
-.nav-item,
-.sub-link {
-    column-gap: 12px !important;
-}
-
-.nav-item {
-    min-height: 48px !important;
-    padding: 12px 14px !important;
-    touch-action: manipulation !important;
-}
-
-.nav-item i {
-    min-width: 22px !important;
-    text-align: center !important;
-    flex: 0 0 22px !important;
-}
-
-.page-header,
-.welcome-box,
-.stats-grid,
-.stat-card,
-.task-card,
-.day-column {
-    scroll-margin-left: 24px !important;
-}
-
-.task-card {
-    padding: 16px 18px !important;
-}
-
 .btn,
 button,
 .nav-item,
 .perf-tab {
-    touch-action: manipulation !important;
-}
-
-.toast-area .toast,
-.toast-area .toast.system,
-.toast-area .toast.info {
-    display: none !important;
-}
-
-.welcome-box,
-body.plantao-polished .welcome-box {
-    background: linear-gradient(135deg, #0f766e, #2563eb) !important;
-    color: #ffffff !important;
-    border-color: rgba(37, 99, 235, 0.28) !important;
-    box-shadow: 0 14px 30px rgba(37, 99, 235, 0.18) !important;
-}
-
-.welcome-box *,
-body.plantao-polished .welcome-box * {
-    color: #ffffff !important;
-}
-
-.cycle-card,
-body.plantao-polished .cycle-card,
-.stats-grid .stat-card,
-.task-card,
-.day-column,
-.stat-card {
-    background-color: #ffffff !important;
-}
-
-.stat-val,
-#prog-dia,
-#horas-hoje,
-#precisao-dia {
-    color: #0f172a !important;
-}
-
-.nav-item.active {
-    background: #dbeafe !important;
-    color: #1e3a8a !important;
-    border-color: #93c5fd !important;
-    box-shadow: inset 3px 0 0 #2563eb !important;
-}
-
-.nav-item.active i,
-.nav-item.active span {
-    color: #1e3a8a !important;
-}
-
-@media (max-width: 920px) {
-    .main {
-        padding-left: 0 !important;
-    }
-
-    .container {
-        width: 100% !important;
-        max-width: none !important;
-        padding-left: 24px !important;
-        padding-right: 24px !important;
-    }
-
-    .weekly-grid,
-    #grid-semanal {
-        padding-left: 6px !important;
-        padding-right: 18px !important;
-        gap: 14px !important;
-    }
-
-    .day-column {
-        min-width: 260px !important;
-    }
+    touch-action: manipulation;
 }
