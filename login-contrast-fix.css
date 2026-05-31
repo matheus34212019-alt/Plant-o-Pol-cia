@@ -1,64 +1,64 @@
-/* v268: keep login readable without overriding the app layout */
+/* v269: restore light login; do not override app layout */
 
-#login-screen {
-    background: linear-gradient(180deg, #07111f 0%, #0b1220 55%, #111827 100%) !important;
-    color: #f8fafc !important;
+html body #login-screen {
+    background: #f4f7fb !important;
+    color: #0f172a !important;
 }
 
-#login-screen .login-card {
-    background: #0f172a !important;
-    color: #f8fafc !important;
-    border: 1px solid rgba(125, 211, 252, 0.45) !important;
-    box-shadow: 0 24px 64px rgba(2, 6, 23, 0.5) !important;
+html body #login-screen .login-card {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(15, 23, 42, 0.10) !important;
+    box-shadow: 0 24px 64px rgba(15, 23, 42, 0.12) !important;
 }
 
-#login-screen .login-card h2,
-#login-screen .login-card h2::before,
-#login-screen .login-card label,
-#login-screen .login-status,
-#login-screen .login-divider span {
-    color: #f8fafc !important;
+html body #login-screen .login-card h2,
+html body #login-screen .login-card h2::before,
+html body #login-screen .login-card label,
+html body #login-screen .login-status,
+html body #login-screen .login-divider span {
+    color: #0f172a !important;
 }
 
-#login-screen input:not([type="checkbox"]),
-#login-screen textarea,
-#login-screen select {
-    background: #111827 !important;
-    color: #f8fafc !important;
-    border: 1px solid rgba(148, 163, 184, 0.58) !important;
+html body #login-screen input:not([type="checkbox"]),
+html body #login-screen textarea,
+html body #login-screen select {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(148, 163, 184, 0.75) !important;
     box-shadow: none !important;
 }
 
-#login-screen input::placeholder {
-    color: #cbd5e1 !important;
+html body #login-screen input::placeholder {
+    color: #64748b !important;
     opacity: 1 !important;
 }
 
-#login-screen .google-btn {
-    background: #f8fafc !important;
+html body #login-screen .google-btn {
+    background: #ffffff !important;
     color: #0f172a !important;
-    border-color: #e2e8f0 !important;
-    box-shadow: 0 16px 34px rgba(37, 99, 235, 0.24) !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 14px 30px rgba(37, 99, 235, 0.12) !important;
 }
 
-#login-screen .btn-outline {
-    background: #111827 !important;
-    color: #f8fafc !important;
-    border-color: rgba(125, 211, 252, 0.5) !important;
+html body #login-screen .btn-outline {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
     box-shadow: none !important;
 }
 
-#login-screen .btn-link {
+html body #login-screen .btn-link {
     background: transparent !important;
-    color: #38bdf8 !important;
+    color: #2563eb !important;
     border-color: transparent !important;
     box-shadow: none !important;
 }
 
-#login-screen .login-divider,
-#login-screen .login-divider::before,
-#login-screen .login-divider::after {
-    border-color: rgba(148, 163, 184, 0.34) !important;
+html body #login-screen .login-divider,
+html body #login-screen .login-divider::before,
+html body #login-screen .login-divider::after {
+    border-color: rgba(148, 163, 184, 0.45) !important;
 }
 
 .btn,
