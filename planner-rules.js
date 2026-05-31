@@ -3,6 +3,7 @@
     const MAX_STUDY_PER_DAY = 2;
     const MAX_HOURS_PER_MATTER_DAY = 2;
     const MIN_TASK_HOURS = 0.5;
+    const FUTURE_REPLAN_DAYS = 21;
 
     const pad = n => String(n).padStart(2, '0');
     const cleanDate = value => {
@@ -257,6 +258,37 @@
         return removed.length;
     }
 
+    function replanFutureDays(startDate = addDays(getViewDate(), 1), days = FUTURE_REPLAN_DAYS) {
+        const data = getDb();
+        if (!data?.metaFixa || typeof planejarDia !== 'function') return false;
+        let changed = false;
+
+        for (let offset = 0; offset < days; offset++) {
+            const date = addDays(startDate, offset);
+            const key = dateKey(date);
+            const current = data.metaFixa[key] || [];
+            const keep = current.filter(task => isDone(task) || isExtraTask(task));
+            if (JSON.stringify(current) !== JSON.stringify(keep)) changed = true;
+            data.metaFixa[key] = keep;
+
+            const remaining = Math.max(0, dayCapacity(date) - dayUsage(data.metaFixa[key]));
+            if (remaining > 0.01) {
+                const planned = planejarDia(data, date, remaining, true) || [];
+                planned.forEach(task => {
+                    if (candidateAllowed(task) && canFit(data.metaFixa[key] || [], date, task)) {
+                        data.metaFixa[key] = (data.metaFixa[key] || []).concat(task);
+                        changed = true;
+                    }
+                });
+            }
+
+            balanceExistingDay(key);
+            if (!data.metaFixa[key]?.length) delete data.metaFixa[key];
+        }
+
+        return changed;
+    }
+
     function wrapPlanner() {
         if (typeof window.planejarDia !== 'function' || window.planejarDia.__balanceRulesWrapped) return;
         const original = window.planejarDia;
@@ -284,6 +316,7 @@
         const extraTask = makeExtraStudyTask(baseTask, hours, dateKey(today));
         placeTask(extraTask, today);
         replaceBlockedActivities();
+        replanFutureDays(addDays(today, 1));
         saveNow();
         refresh(today);
         if (typeof showToast === 'function') {
@@ -340,6 +373,7 @@
         wrapTempoExtra();
         ['renderDiario', 'renderSemanal', 'renderLancamentos', 'updateDashboard'].forEach(wrapRender);
         replaceBlockedActivities();
+        replanFutureDays();
         clampLaunchHours();
         if (balanceExistingPlans()) saveNow();
     }
