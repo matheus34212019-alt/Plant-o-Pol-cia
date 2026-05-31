@@ -3,6 +3,7 @@
     const MIN_TASK_HOURS = 0.5;
     const MAX_HOURS_PER_MATTER_DAY = 2;
     const LEGACY_ADMIN_AULA13_RECOVERY = 'rec-admin-2026-05-13-direito-administrativo-aula13-estudo-2h';
+    const STARTUP_SUPPRESS_UNTIL = Date.now() + 12000;
 
     const pad = n => String(n).padStart(2, '0');
     const roundHours = value => Math.round((parseFloat(value) || 0) * 10) / 10;
@@ -56,12 +57,12 @@
         const original = window.showToast.__plantaoOriginalToast || window.showToast;
         window.showToast = function quietPlannerToast(title, message, type) {
             const text = `${title || ''} ${message || ''}`.toLowerCase();
-            const automaticCorrection = /hora|horas|corrigid|cronograma|recalcul|replanejad|planejamento|tempo extra|dados sincronizados|progresso preservado|nuvem ativada|rotina|lançamentos recuperados|lancamentos recuperados/.test(text);
-            if (automaticCorrection) return;
+            const systemToast = /hora|horas|corrigid|cronograma|recalcul|replanejad|planejamento|tempo extra|dados sincronizados|progresso preservado|nuvem ativada|rotina|lançamentos recuperados|lancamentos recuperados|sincroniza|supabase|carregado|carregad|indisponivel|copia local|cópia local|atividade atualizada/.test(text);
+            if (Date.now() < STARTUP_SUPPRESS_UNTIL || systemToast) return;
             return original.apply(this, arguments);
         };
         window.showToast.__plantaoOriginalToast = original;
-        window.showToast.__quietPlannerV272 = true;
+        window.showToast.__quietPlannerV273 = true;
     }
 
     function taskHours(task) {
@@ -174,10 +175,9 @@
         return violatesPreviousLessonDate(task, targetKey, state, batchEntries);
     }
 
-    function saveNow() {
+    function persistLocalOnly() {
         const data = getDb();
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (error) {}
-        if (typeof save === 'function') save();
     }
 
     function hasPendingExtraTask(item, state = getDb()) {
@@ -377,27 +377,37 @@
         markItemPending(item, totalBefore, nextExtra, studiedHours);
         setCompletedStudyCard(item, studiedHours);
         placeTask(makeExtraStudyTask(baseTask, item, extraHours, dateKey(today)), today);
-        const a = normalizePartialStudyHours(data);
-        const b = filterInvalidScheduledTasks(data);
-        saveNow();
+        normalizePartialStudyHours(data);
+        filterInvalidScheduledTasks(data);
+        persistLocalOnly();
 
         if (typeof renderSemanal === 'function') renderSemanal();
         if (typeof renderDiario === 'function') renderDiario(today);
         if (typeof updateDashboard === 'function') updateDashboard();
         if (typeof renderLancamentos === 'function') renderLancamentos();
         if (typeof fecharModais === 'function') fecharModais();
-        return a || b || true;
+        return true;
     }
 
     function runLightCorrections() {
+        if (window.__plantaoRulesAutoCorrectedV273) return false;
+        window.__plantaoRulesAutoCorrectedV273 = true;
         const changedHours = normalizePartialStudyHours();
         const changedCycle = filterInvalidScheduledTasks();
-        if (changedHours || changedCycle) saveNow();
+        if (changedHours || changedCycle) persistLocalOnly();
         return changedHours || changedCycle;
     }
 
+    function renderOnceAfterCorrection() {
+        const today = getViewDate();
+        if (typeof renderSemanal === 'function') renderSemanal();
+        if (typeof renderDiarioSemRecalcular === 'function') renderDiarioSemRecalcular(today);
+        else if (typeof renderDiario === 'function') renderDiario(today);
+        if (typeof updateDashboard === 'function') updateDashboard();
+    }
+
     function wrapPlanner() {
-        if (typeof window.planejarDia !== 'function' || window.planejarDia.__cycleRulesV272) return;
+        if (typeof window.planejarDia !== 'function' || window.planejarDia.__cycleRulesV273) return;
         const original = window.planejarDia;
         window.planejarDia = function wrappedPlanejarDia(state, date, limit, mutarEstado) {
             const planned = original.apply(this, arguments) || [];
@@ -413,11 +423,11 @@
             });
             return accepted;
         };
-        window.planejarDia.__cycleRulesV272 = true;
+        window.planejarDia.__cycleRulesV273 = true;
     }
 
     function wrapTempoExtra() {
-        if (typeof window.aplicarTempoExtraTeoria !== 'function' || window.aplicarTempoExtraTeoria.__cycleRulesV272) return;
+        if (typeof window.aplicarTempoExtraTeoria !== 'function' || window.aplicarTempoExtraTeoria.__cycleRulesV273) return;
         const original = window.aplicarTempoExtraTeoria;
         window.aplicarTempoExtraTeoria = function wrappedTempoExtra(destino) {
             const hours = Math.max(MIN_TASK_HOURS, parseFloat(document.getElementById('teoria-extra-horas')?.value) || 1);
@@ -425,32 +435,22 @@
                 if (addExtraStudyForAnotherDay(hours)) return;
             }
             const result = original.apply(this, arguments);
-            runLightCorrections();
+            normalizePartialStudyHours();
+            filterInvalidScheduledTasks();
+            persistLocalOnly();
             return result;
         };
-        window.aplicarTempoExtraTeoria.__cycleRulesV272 = true;
-    }
-
-    function wrapRenderer(name) {
-        if (typeof window[name] !== 'function' || window[name].__cycleRulesV272) return;
-        const original = window[name];
-        window[name] = function wrappedRenderer() {
-            runLightCorrections();
-            return original.apply(this, arguments);
-        };
-        window[name].__cycleRulesV272 = true;
+        window.aplicarTempoExtraTeoria.__cycleRulesV273 = true;
     }
 
     function boot() {
         installQuietToasts();
         wrapPlanner();
         wrapTempoExtra();
-        ['renderDiario', 'renderSemanal', 'renderLancamentos', 'updateDashboard'].forEach(wrapRenderer);
-        runLightCorrections();
+        if (runLightCorrections()) setTimeout(renderOnceAfterCorrection, 0);
     }
 
     if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', boot);
     else boot();
     setTimeout(boot, 800);
-    setTimeout(boot, 2000);
 })();
