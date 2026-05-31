@@ -212,41 +212,28 @@
             const doneHours = parseFloat(item.hF) || 0;
             const totalHours = parseFloat(item.h?.E) || 0;
             const extra = parseFloat(item.extraTeoria) || 0;
-            if (extra > 0.01 && doneHours > 0 && doneHours < totalHours - 0.01 && Math.abs(taskHours(task) - doneHours) > 0.01) {
-                task.h = roundHours(doneHours);
-                changed = true;
-            }
+            if (extra <= 0.01 || totalHours <= 0) return;
+
+            const inferredDone = Math.max(0, totalHours - extra);
+            const effectiveDone = doneHours > 0
+                ? Math.min(doneHours, inferredDone || doneHours)
+                : inferredDone;
+            if (effectiveDone <= 0 || effectiveDone >= totalHours - 0.01) return;
+
+            const before = JSON.stringify({ item, task });
+            item.hF = roundHours(effectiveDone);
+            item.done = item.done || {E:false, Rev:false, Ex:false};
+            item.done.E = false;
+            item.done.Rev = false;
+            item.done.Ex = false;
+            item.f = false;
+            item.sinalizado = false;
+            item.cicloConcluidoManual = false;
+            item.revCycle = null;
+            task.h = roundHours(effectiveDone);
+            task.c = true;
+            if (JSON.stringify({ item, task }) !== before) changed = true;
         });
-
-        const aula13 = data.lista.find(item =>
-            item?.m === 'DIREITO ADMINISTRATIVO' &&
-            /Aula\s*13/i.test(item.a || '') &&
-            /Agentes/i.test(item.a || '')
-        );
-        if (aula13) {
-            const before = JSON.stringify(aula13);
-            aula13.h = aula13.h || {};
-            aula13.h.E = Math.max(parseFloat(aula13.h.E) || 0, 2);
-            aula13.hF = 1;
-            aula13.extraTeoria = Math.max(parseFloat(aula13.extraTeoria) || 0, 1);
-            aula13.done = aula13.done || {E:false, Rev:false, Ex:false};
-            aula13.done.E = false;
-            aula13.done.Rev = false;
-            aula13.done.Ex = false;
-            aula13.f = false;
-            aula13.sinalizado = false;
-            aula13.cicloConcluidoManual = false;
-            aula13.revCycle = null;
-            if (JSON.stringify(aula13) !== before) changed = true;
-
-            Object.values(data.metaFixa).flat().forEach(task => {
-                if (!samePlannedItem(task, aula13) || task.k !== 'E' || !isDone(task) || isExtraTask(task)) return;
-                if (Math.abs(taskHours(task) - 1) > 0.01) {
-                    task.h = 1;
-                    changed = true;
-                }
-            });
-        }
 
         return changed;
     }
@@ -450,8 +437,9 @@
         if (typeof window[name] !== 'function' || window[name].__extraRulesWrapped) return;
         const original = window[name];
         window[name] = function wrappedRender() {
-            replaceBlockedActivities();
+            const changed = repairPartialStudyHours() || replaceBlockedActivities() || restoreTodayStudyHours() || replanFutureDays();
             clampLaunchHours();
+            if (changed) saveNow();
             const result = original.apply(this, arguments);
             return result;
         };
@@ -462,12 +450,14 @@
         wrapPlanner();
         wrapTempoExtra();
         ['renderDiario', 'renderSemanal', 'renderLancamentos', 'updateDashboard'].forEach(wrapRender);
-        repairPartialStudyHours();
-        replaceBlockedActivities();
-        restoreTodayStudyHours();
-        replanFutureDays();
+        let changed = false;
+        changed = repairPartialStudyHours() || changed;
+        changed = replaceBlockedActivities() || changed;
+        changed = restoreTodayStudyHours() || changed;
+        changed = replanFutureDays() || changed;
         clampLaunchHours();
-        if (balanceExistingPlans()) saveNow();
+        changed = balanceExistingPlans() || changed;
+        if (changed) saveNow();
     }
 
     if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', boot);
