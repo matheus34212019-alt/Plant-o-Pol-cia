@@ -85,6 +85,16 @@
     document.head.appendChild(script);
 })();
 
+(function plantaoScheduleLogicFixLoader() {
+    if(window.__plantaoScheduleLogicFixLoader) return;
+    window.__plantaoScheduleLogicFixLoader = true;
+    if(window.__plantaoScheduleLogicFix) return;
+    const script = document.createElement('script');
+    script.src = 'schedule-logic-fix.js?v=251-schedule-logic';
+    script.defer = true;
+    document.head.appendChild(script);
+})();
+
 (function plantaoOAuthSessionReturnFix() {
     if(window.__plantaoOAuthSessionReturnFix) return;
     window.__plantaoOAuthSessionReturnFix = true;
