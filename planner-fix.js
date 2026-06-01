@@ -55,8 +55,18 @@
         }
     }
 
+    function loadScheduleLogicFix() {
+        if(window.__plantaoScheduleLogicFix || window.__plantaoScheduleLogicFixLoader) return;
+        window.__plantaoScheduleLogicFixLoader = true;
+        const script = document.createElement('script');
+        script.src = 'schedule-logic-fix.js?v=251-schedule-logic';
+        script.defer = true;
+        document.head.appendChild(script);
+    }
+
     function boot() {
         installMergeGuard();
+        loadScheduleLogicFix();
     }
 
     if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', boot);
